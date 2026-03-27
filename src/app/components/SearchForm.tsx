@@ -1,0 +1,119 @@
+import { EVENT_TYPES, TOUR_TYPES, YEARS } from "@/lib/constants";
+
+function Spinner() {
+  return (
+    <svg
+      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+      />
+    </svg>
+  );
+}
+
+const selectClass =
+  "w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
+
+export function SearchForm({
+  year,
+  setYear,
+  typ,
+  setTyp,
+  eventType,
+  setEventType,
+  loading,
+  onSearch,
+}: {
+  year: string;
+  setYear: (v: string) => void;
+  typ: string;
+  setTyp: (v: string) => void;
+  eventType: string;
+  setEventType: (v: string) => void;
+  loading: boolean;
+  onSearch: () => void;
+}) {
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Year
+          </label>
+          <select
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            className={selectClass}
+          >
+            {YEARS.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Tour Type
+          </label>
+          <select
+            value={typ}
+            onChange={(e) => setTyp(e.target.value)}
+            className={selectClass}
+          >
+            {TOUR_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Event Type
+          </label>
+          <select
+            value={eventType}
+            onChange={(e) => setEventType(e.target.value)}
+            className={selectClass}
+          >
+            {EVENT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-end">
+          <button
+            onClick={onSearch}
+            disabled={loading}
+            className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? (
+              <>
+                <Spinner />
+                Searching...
+              </>
+            ) : (
+              "Search Tours"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
