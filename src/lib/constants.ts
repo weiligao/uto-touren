@@ -35,3 +35,10 @@ export const STATUS_COLORS: Record<TourStatus, string> = {
   not_yet_open: "bg-gray-400",
   unknown: "bg-gray-300",
 };
+
+export const STATUS_LABELS: Record<TourStatus, string> = {
+  open: "Open",
+  full_or_cancelled: "Full/Cancelled",
+  not_yet_open: "Not yet open",
+  unknown: "Unknown",
+};

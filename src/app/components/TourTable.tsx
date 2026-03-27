@@ -1,15 +1,15 @@
-import { STATUS_COLORS } from "@/lib/constants";
+import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import { Tour, TourStatus } from "@/lib/types";
 
 const TABLE_COLUMNS = [
   "Date",
   "Event Type",
-  "Type",
+  "Tour Type",
   "Difficulty",
   "Duration",
   "Group",
   "Title",
-  "Leader",
+  "Tour Leader(s)",
   "Status",
 ] as const;
 
@@ -17,7 +17,7 @@ function StatusDot({ status }: { status: TourStatus }) {
   return (
     <span
       className={`inline-block h-3 w-3 rounded-full ${STATUS_COLORS[status] || STATUS_COLORS.unknown}`}
-      title={status}
+      title={STATUS_LABELS[status]}
     />
   );
 }
