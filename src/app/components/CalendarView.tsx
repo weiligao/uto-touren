@@ -87,16 +87,19 @@ function TourTooltip({ tour, eventType, anchorRef, onClose }: { tour: Tour; even
     >
       <p className="font-semibold text-sm text-gray-900 mb-2">
         {tour.detail_url ? (
-          <a href={tour.detail_url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+          <a href={tour.detail_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
             {tour.title}
+            <svg className="inline h-3 w-3 ml-1 mb-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
           </a>
         ) : tour.title}
       </p>
       <div className="space-y-1 text-xs text-gray-600">
         <p><span className="font-medium text-gray-700">Date:</span> {formatDate(tour.start_date, tour.date)}</p>
+        <p><span className="font-medium text-gray-700">Duration:</span> {formatDuration(tour.duration_days)}</p>
         <p><span className="font-medium text-gray-700">Type:</span> {eventType} / {na(tour.tour_type)}</p>
         <p><span className="font-medium text-gray-700">Difficulty:</span> {na(tour.difficulty)}</p>
-        <p><span className="font-medium text-gray-700">Duration:</span> {formatDuration(tour.duration_days)}</p>
         <p><span className="font-medium text-gray-700">Group:</span> {na(tour.group)}</p>
         <p><span className="font-medium text-gray-700">Leader:</span> {na(tour.leader)}</p>
         <p className="flex items-center gap-1">
