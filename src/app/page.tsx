@@ -35,7 +35,7 @@ export default function Home() {
       const res = await fetch(`/api/scrape?${params.toString()}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `Request failed: ${res.status}`);
+        throw new Error(body.error ?? `Request failed: ${res.status}`);
       }
       setResult(await res.json());
     } catch (err) {
@@ -50,8 +50,10 @@ export default function Home() {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 leading-none">
-            <svg className="h-6 w-6 text-blue-600 shrink-0 self-center" fill="none" viewBox="0 0 20 14" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M0 13 L7 0 L11 6 L14 2 L20 13 Z" />
+            <svg aria-hidden="true" className="h-6 w-6 text-blue-600 shrink-0 self-center" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2 21 L8 10 L12 16 L16 10 L22 21" />
+              <circle cx="12" cy="12" r="8" />
+              <line x1="18" y1="18" x2="23" y2="23" strokeLinecap="round" />
             </svg>
             UtoMate
           </h1>
@@ -85,6 +87,8 @@ export default function Home() {
           <div>
             <div className="inline-flex w-full sm:w-48 rounded-md border border-gray-300 overflow-hidden mb-4">
               <button
+                type="button"
+                aria-pressed={viewMode === "table"}
                 onClick={() => setViewMode("table")}
                 className={`flex-1 px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
                   viewMode === "table"
@@ -95,6 +99,8 @@ export default function Home() {
                 Table
               </button>
               <button
+                type="button"
+                aria-pressed={viewMode === "calendar"}
                 onClick={() => setViewMode("calendar")}
                 className={`flex-1 px-4 py-1.5 text-sm font-medium border-l border-gray-300 transition-colors cursor-pointer ${
                   viewMode === "calendar"

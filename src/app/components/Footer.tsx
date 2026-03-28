@@ -21,7 +21,7 @@ export function Footer() {
               GitHub
             </a>
           </div>
-          <div className="flex items-center gap-2 text-gray-400">
+          <div className="flex items-center gap-2 text-gray-500">
             <span>{process.env.NEXT_PUBLIC_APP_VERSION}</span>
             <span aria-hidden="true">·</span>
             <a

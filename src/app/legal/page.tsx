@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Legal Notice — UtoMate",
+  title: "Legal Notice",
+  description: "Legal notice for UtoMate. This app is not affiliated with SAC Sektion Uto. Data sourced from sac-uto.ch.",
+  robots: { index: false },
 };
 
 export default function LegalPage() {

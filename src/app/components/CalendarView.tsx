@@ -9,6 +9,7 @@ import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAY_FULL_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -83,6 +84,14 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
   }, [anchorRef]);
 
   useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
       if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
         onClose();
@@ -136,6 +145,9 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
     <>
       {/* Mobile: full-width */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={tour.title}
         className="sm:hidden fixed z-50 left-3 right-3 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
         style={{ top: pos.above ? pos.top - 8 : pos.top + 8, transform: pos.above ? "translateY(-100%)" : "none" }}
       >
@@ -143,6 +155,9 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
       </div>
       {/* Desktop: anchored */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={tour.title}
         className="hidden sm:block fixed z-50 w-64 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
         style={{ top: pos.top, left: pos.left, transform: `translate(-50%, ${pos.above ? "-100%" : "0"})` }}
       >
@@ -159,16 +174,25 @@ function TourPill({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dotColor = STATUS_COLORS[ct.tour.status];
-  const handleClose = useCallback(() => setOpen(false), []);
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    buttonRef.current?.focus();
+  }, []);
 
   return (
     <div ref={ref} className="relative">
       <button
+        ref={buttonRef}
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-label={`${ct.tour.title} — ${STATUS_LABELS[ct.tour.status]}`}
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight bg-blue-50 hover:bg-blue-100 text-left cursor-pointer"
       >
-        <span className={`shrink-0 inline-block h-2 w-2 rounded-full ${dotColor}`} />
+        <span aria-hidden="true" className={`shrink-0 inline-block h-2 w-2 rounded-full ${dotColor}`} />
         <span className="truncate">{ct.tour.title}</span>
       </button>
       {open && <TourTooltip tour={ct.tour} anchorRef={ref} onClose={handleClose} />}
@@ -201,7 +225,7 @@ export function CalendarView({
         .map((tour) => ({
           tour,
           startDate: parseDateString(tour.start_date!),
-          days: tour.duration_days,
+          days: Math.max(1, tour.duration_days),
         })),
     [tours],
   );
@@ -215,7 +239,7 @@ export function CalendarView({
   );
 
   const { minMonth, maxMonth } = useMemo(() => {
-    if (calendarTours.length === 0) return { minMonth: 0, maxMonth: 11 };
+    if (calendarTours.length === 0) { return { minMonth: 0, maxMonth: 11 }; }
     const months = calendarTours.map((ct) => ct.startDate.getMonth());
     return { minMonth: Math.min(...months), maxMonth: Math.max(...months) };
   }, [calendarTours]);
@@ -256,8 +280,10 @@ export function CalendarView({
       {/* Month navigation */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
         <button
+          type="button"
           onClick={prevMonth}
           disabled={month <= minMonth}
+          aria-label={month <= minMonth ? `No tours before ${MONTH_NAMES[minMonth]}` : `Go to ${MONTH_NAMES[month - 1]}`}
           title={month <= minMonth ? `No tours before ${MONTH_NAMES[minMonth]}` : `Go to ${MONTH_NAMES[month - 1]}`}
           className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
@@ -269,8 +295,10 @@ export function CalendarView({
           {MONTH_NAMES[month]} {yearNum}
         </span>
         <button
+          type="button"
           onClick={nextMonth}
           disabled={month >= maxMonth}
+          aria-label={month >= maxMonth ? `No tours after ${MONTH_NAMES[maxMonth]}` : `Go to ${MONTH_NAMES[month + 1]}`}
           title={month >= maxMonth ? `No tours after ${MONTH_NAMES[maxMonth]}` : `Go to ${MONTH_NAMES[month + 1]}`}
           className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
@@ -282,11 +310,13 @@ export function CalendarView({
 
       {/* Calendar grid */}
       <div className="p-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
+        <div role="grid" aria-label={`${MONTH_NAMES[month]} ${yearNum} calendar`} className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
           {/* Header */}
-          {WEEKDAYS.map((d) => (
+          {WEEKDAYS.map((d, idx) => (
             <div
               key={d}
+              role="columnheader"
+              aria-label={WEEKDAY_FULL_NAMES[idx]}
               className="bg-gray-50 text-center text-xs font-medium text-gray-500 py-2"
             >
               {d}
@@ -307,8 +337,8 @@ export function CalendarView({
                   <>
                     <div className="text-xs text-gray-500 mb-0.5">{day}</div>
                     <div className="space-y-0.5 overflow-y-auto max-h-17.5">
-                      {toursForDay.map((ct, j) => (
-                        <TourPill key={j} ct={ct} />
+                      {toursForDay.map((ct) => (
+                        <TourPill key={`${ct.tour.title}-${ct.tour.start_date}`} ct={ct} />
                       ))}
                     </div>
                   </>

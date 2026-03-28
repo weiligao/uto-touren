@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — UtoMate",
+  title: "Privacy Policy",
+  description: "Privacy policy for UtoMate. We collect no personal data. Hosted on Vercel with anonymized analytics only.",
+  robots: { index: false },
 };
 
 export default function PrivacyPage() {

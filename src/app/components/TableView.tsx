@@ -21,8 +21,9 @@ const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }
 function StatusDot({ status }: { status: TourStatus }) {
   return (
     <span
+      role="img"
+      aria-label={STATUS_LABELS[status]}
       className={`inline-block h-3 w-3 rounded-full ${STATUS_COLORS[status]}`}
-      title={STATUS_LABELS[status]}
     />
   );
 }
@@ -61,6 +62,7 @@ export function TableView({
               {TABLE_COLUMNS.map((col) => (
                 <th
                   key={col.label}
+                  scope="col"
                   className={[
                     "px-4 py-3 font-medium text-gray-600",
                     col.center ? "text-center" : "text-left",
@@ -70,8 +72,8 @@ export function TableView({
                   {col.label}
                 </th>
               ))}
-              <th className="hidden sm:table-cell px-2 py-3 w-8" aria-label="Add to calendar" />
-              <th className="sm:hidden px-2 pr-4 py-3 w-8" aria-label="Expand row" />
+              <th scope="col" className="hidden sm:table-cell px-2 py-3 w-8" aria-label="Add to calendar" />
+              <th scope="col" className="sm:hidden px-2 pr-4 py-3 w-8" aria-label="Expand row" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -84,7 +86,8 @@ export function TableView({
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-gray-900">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className={`sm:hidden inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
+                        <span aria-hidden="true" className={`sm:hidden inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
+                        <span className="sr-only sm:hidden">{STATUS_LABELS[tour.status]}</span>
                         {formatDate(tour.start_date, tour.date)}
                       </span>
                     </td>
@@ -145,7 +148,7 @@ export function TableView({
                           <div>
                             <dt className="font-medium text-gray-500">Status</dt>
                             <dd className="flex items-center gap-1.5 text-gray-800">
-                              <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
+                              <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
                               {STATUS_LABELS[tour.status]}
                             </dd>
                           </div>

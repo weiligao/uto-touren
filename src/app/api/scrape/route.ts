@@ -196,7 +196,7 @@ const scrapeTours = unstable_cache(
   (year: string, typ: string, anlasstyp: string, gruppe: string): Promise<Tour[]> => {
     const key = `${year}:${typ}:${anlasstyp}:${gruppe}`;
     const existing = inFlight.get(key);
-    if (existing) return existing;
+    if (existing) { return existing; }
     const promise = scrapeToursUncached(year, typ, anlasstyp, gruppe).finally(() => {
       inFlight.delete(key);
     });
