@@ -19,6 +19,7 @@ export function Footer() {
               className="hover:text-gray-700 hover:underline"
             >
               GitHub
+              <span className="sr-only"> (opens in new tab)</span>
             </a>
           </div>
           <div className="flex items-center gap-2 text-gray-500">
@@ -31,6 +32,7 @@ export function Footer() {
               className="hover:text-gray-700 hover:underline"
             >
               Release notes
+              <span className="sr-only"> (opens in new tab)</span>
             </a>
           </div>
         </div>

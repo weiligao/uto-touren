@@ -4,6 +4,7 @@ import { useState } from "react";
 function Spinner() {
   return (
     <svg
+      aria-hidden="true"
       className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
       fill="none"
       viewBox="0 0 24 24"
@@ -64,6 +65,7 @@ export function SearchForm({
       >
         <span className="text-base font-semibold text-gray-800">Search Tours</span>
         <svg
+          aria-hidden="true"
           className={`h-5 w-5 text-gray-500 transition-transform ${expanded ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
