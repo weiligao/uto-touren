@@ -42,9 +42,14 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">UtoMate</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 leading-none">
+            <svg className="h-6 w-6 text-blue-600 shrink-0 self-center" fill="none" viewBox="0 0 20 14" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M0 13 L7 0 L11 6 L14 2 L20 13 Z" />
+            </svg>
+            UtoMate
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Search and browse tours from sac-uto.ch
+            Search, browse, and download tours from sac-uto.ch
           </p>
         </div>
       </header>
@@ -74,7 +79,7 @@ export default function Home() {
             <div className="flex items-center gap-2 mb-4">
               <button
                 onClick={() => setViewMode("table")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                   viewMode === "table"
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -84,7 +89,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setViewMode("calendar")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                   viewMode === "calendar"
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"

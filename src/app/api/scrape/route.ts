@@ -7,6 +7,8 @@ import { unstable_cache } from "next/cache";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+export const maxDuration = 60;
+
 const BASE_URL = "https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/";
 const PAGE_SIZE = 50;
 const MAX_OFFSET = 2000;
@@ -96,7 +98,9 @@ function parseTourRows(html: string, year: number): Tour[] {
 
     tours.push({
       date: dateStr,
-      start_date: startDate ? startDate.toISOString() : null,
+      start_date: startDate
+        ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`
+        : null,
       duration_days: parseDuration(durationStr),
       tour_type: text[CELL.TOUR_TYPE],
       difficulty: text[CELL.DIFFICULTY],
@@ -218,8 +222,8 @@ export async function GET(request: NextRequest) {
     if (err instanceof UpstreamError) {
       return NextResponse.json({ error: err.message }, { status: err.httpStatus });
     }
-    const message = err instanceof Error ? err.message : "Internal server error";
+    // eslint-disable-next-line no-console
     console.error("Scrape failed:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

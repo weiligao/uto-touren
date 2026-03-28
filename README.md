@@ -1,13 +1,17 @@
-# UtoMate
+<p align="center">
+  <img src="public/logo.svg" alt="UtoMate" width="96" height="96">
+</p>
+<h1 align="center">UtoMate</h1>
 
-A web app for searching and browsing tours from [SAC Uto](https://sac-uto.ch). Scrapes the official tour listing, parses results server-side, and displays them in a table or month calendar view.
+A web app for searching and browsing tours from [SAC Uto](https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/). Scrapes the official tour listing, parses results server-side, displays them in a table or month calendar view, and lets you download tours as `.ics` calendar files.
 
 ## Features
 
 - Filter by year, tour type, event type, and group
 - Table view and calendar view with multi-day tour spanning
 - Status indicators (open, full/cancelled, not yet open)
-- Hover tooltips with tour details and links to the original listing
+- Click tooltips with tour details and links to the original listing
+- Download individual tours as `.ics` calendar files
 - Results cached for 24 hours to avoid hammering the upstream site
 
 ## Development
