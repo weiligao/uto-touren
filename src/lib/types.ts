@@ -10,7 +10,6 @@ export interface Tour {
   duration_days: number;
   tour_type: string;
   difficulty: string;
-  duration: string;
   group: string;
   title: string;
   leader: string;

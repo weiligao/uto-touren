@@ -2,8 +2,11 @@
 
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
-import { downloadTourIcs, formatDate, formatDuration, na, parseDateString } from "@/lib/utils";
+import { formatDate, formatDuration, na, parseDateString } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { IcsButton } from "./IcsButton";
+import { ResultsHeader } from "./ResultsHeader";
+import { TourTitle } from "./TourTitle";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTH_NAMES = [
@@ -56,70 +59,104 @@ function buildTourMap(tours: CalendarTour[], year: number, month: number) {
   return map;
 }
 
+const TOOLTIP_WIDTH = 256; // w-64
+const TOOLTIP_APPROX_HEIGHT = 300;
+const VIEWPORT_MARGIN = 8;
+
 function TourTooltip({ tour, eventType, anchorRef, onClose }: { tour: Tour; eventType: string; anchorRef: React.RefObject<HTMLDivElement | null>; onClose: () => void }) {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; above: boolean } | null>(null);
 
   useEffect(() => {
     if (!anchorRef.current) {return;}
     const rect = anchorRef.current.getBoundingClientRect();
+    const rawLeft = rect.left + rect.width / 2;
+    const clampedLeft = Math.min(
+      Math.max(rawLeft, TOOLTIP_WIDTH / 2 + VIEWPORT_MARGIN),
+      window.innerWidth - TOOLTIP_WIDTH / 2 - VIEWPORT_MARGIN,
+    );
+    const above = rect.top - TOOLTIP_APPROX_HEIGHT > VIEWPORT_MARGIN;
     setPos({
-      top: rect.top - 8,
-      left: rect.left + rect.width / 2,
+      top: above ? rect.top - 8 : rect.bottom + 8,
+      left: clampedLeft,
+      above,
     });
   }, [anchorRef]);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
         onClose();
       }
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, [anchorRef, onClose]);
 
   if (!pos) {return null;}
 
-  return (
-    <div
-      className="fixed z-50 w-64 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
-      style={{ top: pos.top, left: pos.left, transform: "translate(-50%, -100%)" }}
-    >
-      <p className="font-semibold text-sm text-gray-900 mb-2">
-        {tour.detail_url ? (
-          <a href={tour.detail_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-            {tour.title}
-            <svg className="inline h-3 w-3 ml-1 mb-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
-        ) : tour.title}
+  const tooltipContent = (
+    <>
+      <p className="font-semibold text-sm text-gray-900 mb-3">
+        <TourTitle title={tour.title} url={tour.detail_url} />
       </p>
-      <div className="space-y-1 text-xs text-gray-600">
-        <p><span className="font-medium text-gray-700">Date:</span> {formatDate(tour.start_date, tour.date)}</p>
-        <p><span className="font-medium text-gray-700">Duration:</span> {formatDuration(tour.duration_days)}</p>
-        <p><span className="font-medium text-gray-700">Type:</span> {eventType} / {na(tour.tour_type)}</p>
-        <p><span className="font-medium text-gray-700">Difficulty:</span> {na(tour.difficulty)}</p>
-        <p><span className="font-medium text-gray-700">Group:</span> {na(tour.group)}</p>
-        <p><span className="font-medium text-gray-700">Leader:</span> {na(tour.leader)}</p>
-        <p className="flex items-center gap-1">
-          <span className="font-medium text-gray-700">Status:</span>
-          <span className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_COLORS[tour.status]}`} />
-          {STATUS_LABELS[tour.status]}
-        </p>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+        <div>
+          <dt className="font-medium text-gray-500">Date</dt>
+          <dd className="text-gray-800">{formatDate(tour.start_date, tour.date)}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-gray-500">Duration</dt>
+          <dd className="text-gray-800">{formatDuration(tour.duration_days)}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-gray-500">Type</dt>
+          <dd className="text-gray-800">{eventType} / {na(tour.tour_type)}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-gray-500">Difficulty</dt>
+          <dd className="text-gray-800">{na(tour.difficulty)}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-gray-500">Group</dt>
+          <dd className="text-gray-800">{na(tour.group)}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-gray-500">Leader</dt>
+          <dd className="text-gray-800">{na(tour.leader)}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-gray-500">Status</dt>
+          <dd className="flex items-center gap-1.5 text-gray-800">
+            <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
+            {STATUS_LABELS[tour.status]}
+          </dd>
+        </div>
+      </dl>
+      <IcsButton tour={tour} onAfterDownload={onClose} fullWidth />
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile: full-width */}
+      <div
+        className="sm:hidden fixed z-50 left-3 right-3 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
+        style={{ top: pos.above ? pos.top - 8 : pos.top + 8, transform: pos.above ? "translateY(-100%)" : "none" }}
+      >
+        {tooltipContent}
       </div>
-      {tour.start_date && (
-        <button
-          onClick={() => { downloadTourIcs(tour); onClose(); }}
-          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
-        >
-          <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          Add to calendar (.ics)
-        </button>
-      )}
-    </div>
+      {/* Desktop: anchored */}
+      <div
+        className="hidden sm:block fixed z-50 w-64 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
+        style={{ top: pos.top, left: pos.left, transform: `translate(-50%, ${pos.above ? "-100%" : "0"})` }}
+      >
+        {tooltipContent}
+      </div>
+    </>
   );
 }
 
@@ -151,10 +188,10 @@ function TourPill({
 
 function detectInitialMonth(tours: CalendarTour[]): number {
   if (tours.length === 0) {return new Date().getMonth();}
-  // Find the earliest tour month
-  const months = tours.map((ct) => ct.startDate.getMonth());
-  return Math.min(...months);
+  return tours.reduce((min, ct) => Math.min(min, ct.startDate.getMonth()), 11);
 }
+
+const SWIPE_THRESHOLD = 50;
 
 export function CalendarView({
   tours,
@@ -182,30 +219,45 @@ export function CalendarView({
   );
 
   const [month, setMonth] = useState(() => detectInitialMonth(calendarTours));
+  const [hideFull, setHideFull] = useState(false);
+
+  const visibleCalendarTours = useMemo(
+    () => hideFull ? calendarTours.filter((ct) => ct.tour.status !== "full_or_cancelled") : calendarTours,
+    [calendarTours, hideFull],
+  );
 
   useEffect(() => {
     setMonth(detectInitialMonth(calendarTours));
   }, [calendarTours]);
 
   const cells = getCalendarDays(yearNum, month);
-  const tourMap = buildTourMap(calendarTours, yearNum, month);
+  const tourMap = buildTourMap(visibleCalendarTours, yearNum, month);
 
-  function prevMonth() {
-    setMonth((m) => (m > 0 ? m - 1 : 11));
-  }
+  const prevMonth = useCallback(() => setMonth((m) => (m > 0 ? m - 1 : 11)), []);
+  const nextMonth = useCallback(() => setMonth((m) => (m < 11 ? m + 1 : 0)), []);
 
-  function nextMonth() {
-    setMonth((m) => (m < 11 ? m + 1 : 0));
-  }
+  const swipeStartX = useRef<number | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    swipeStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (swipeStartX.current === null) { return; }
+    const dx = e.changedTouches[0].clientX - swipeStartX.current;
+    swipeStartX.current = null;
+    if (dx > SWIPE_THRESHOLD) { prevMonth(); }
+    else if (dx < -SWIPE_THRESHOLD) { nextMonth(); }
+  }, [prevMonth, nextMonth]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-800">Results</h2>
-        <span className="text-sm text-gray-500">
-          {totalScraped} tours found
-        </span>
-      </div>
+      <ResultsHeader
+        totalScraped={totalScraped}
+        visibleCount={visibleCalendarTours.length}
+        hideFull={hideFull}
+        onHideFullChange={setHideFull}
+      />
 
       {/* Month navigation */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
@@ -231,7 +283,7 @@ export function CalendarView({
       </div>
 
       {/* Calendar grid */}
-      <div className="p-4">
+      <div className="p-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
           {/* Header */}
           {WEEKDAYS.map((d) => (

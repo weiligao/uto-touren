@@ -4,7 +4,7 @@ import { CalendarView } from "@/app/components/CalendarView";
 import { SearchForm } from "@/app/components/SearchForm";
 import { TableView } from "@/app/components/TableView";
 import type { ScrapeResult } from "@/lib/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ViewMode = "table" | "calendar";
 
@@ -17,6 +17,13 @@ export default function Home() {
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 300);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   async function handleSearch() {
     setLoading(true);
@@ -76,23 +83,23 @@ export default function Home() {
 
         {result && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="inline-flex w-full sm:w-48 rounded-md border border-gray-300 overflow-hidden mb-4">
               <button
                 onClick={() => setViewMode("table")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                className={`flex-1 px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
                   viewMode === "table"
                     ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 Table
               </button>
               <button
                 onClick={() => setViewMode("calendar")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                className={`flex-1 px-4 py-1.5 text-sm font-medium border-l border-gray-300 transition-colors cursor-pointer ${
                   viewMode === "calendar"
                     ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 Calendar
@@ -116,6 +123,19 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
+          aria-label="Back to top"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

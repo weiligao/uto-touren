@@ -2,19 +2,23 @@
 
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { downloadTourIcs, formatDate, formatDuration, na } from "@/lib/utils";
+import { formatDate, formatDuration, na } from "@/lib/utils";
+import { Fragment, useState } from "react";
+import { IcsButton } from "./IcsButton";
+import { ResultsHeader } from "./ResultsHeader";
+import { TourTitle } from "./TourTitle";
 
-const TABLE_COLUMNS = [
-  "Date",
-  "Duration",
-  "Tour Type",
-  "Event Type",
-  "Difficulty",
-  "Group",
-  "Title",
-  "Leader",
-  "Status",
-] as const;
+const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
+  { label: "Date" },
+  { label: "Duration", mobileHidden: true },
+  { label: "Tour Type", mobileHidden: true },
+  { label: "Event Type", mobileHidden: true },
+  { label: "Difficulty", mobileHidden: true },
+  { label: "Group", mobileHidden: true },
+  { label: "Title" },
+  { label: "Tour Leader(s)", mobileHidden: true },
+  { label: "Status", center: true, mobileHidden: true },
+];
 
 function StatusDot({ status }: { status: TourStatus }) {
   return (
@@ -23,25 +27,6 @@ function StatusDot({ status }: { status: TourStatus }) {
       title={STATUS_LABELS[status]}
     />
   );
-}
-
-function TourTitle({ title, url }: { title: string; url: string | null }) {
-  if (url) {
-    return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 hover:underline"
-      >
-        {title}
-        <svg className="inline h-3 w-3 ml-1 mb-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-        </svg>
-      </a>
-    );
-  }
-  return <>{title}</>;
 }
 
 export function TableView({
@@ -53,74 +38,145 @@ export function TableView({
   eventType: string;
   totalScraped: number;
 }) {
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [hideFull, setHideFull] = useState(false);
+  const toggleRow = (i: number) => setExpandedRows((prev) => {
+    const next = new Set(prev);
+    if (next.has(i)) { next.delete(i); } else { next.add(i); }
+    return next;
+  });
+
+  const visibleTours = tours
+    .map((tour, i) => ({ tour, i }))
+    .filter(({ tour }) => !hideFull || tour.status !== "full_or_cancelled");
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-800">Results</h2>
-        <span className="text-sm text-gray-500">
-          {totalScraped} tours found
-        </span>
-      </div>
+      <ResultsHeader
+        totalScraped={totalScraped}
+        visibleCount={visibleTours.length}
+        hideFull={hideFull}
+        onHideFullChange={setHideFull}
+      />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               {TABLE_COLUMNS.map((col) => (
                 <th
-                  key={col}
-                  className={`px-4 py-3 font-medium text-gray-600 ${col === "Status" ? "text-center" : "text-left"}`}
+                  key={col.label}
+                  className={[
+                    "px-4 py-3 font-medium text-gray-600",
+                    col.center ? "text-center" : "text-left",
+                    col.mobileHidden ? "hidden sm:table-cell" : "",
+                  ].join(" ")}
                 >
-                  {col}
+                  {col.label}
                 </th>
               ))}
-              <th className="px-2 py-3 w-8" aria-label="Add to calendar" />
+              <th className="hidden sm:table-cell px-2 py-3 w-8" aria-label="Add to calendar" />
+              <th className="sm:hidden px-2 pr-4 py-3 w-8" aria-label="Expand row" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {tours.map((tour, i) => (
-              <tr key={i} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 whitespace-nowrap text-gray-900">
-                  {formatDate(tour.start_date, tour.date)}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {formatDuration(tour.duration_days)}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {na(tour.tour_type)}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {eventType}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {na(tour.difficulty)}
-                </td>
-                
-                <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {na(tour.group)}
-                </td>
-                <td className="px-4 py-3 text-gray-900">
-                  <TourTitle title={na(tour.title)} url={tour.detail_url} />
-                </td>
-                <td className="px-4 py-3 text-gray-700">{na(tour.leader)}</td>
-                <td className="px-4 py-3 text-center">
-                  <StatusDot status={tour.status} />
-                </td>
-                <td className="px-3 py-3 text-center">
-                  {tour.start_date && (
-                    <button
-                      onClick={() => downloadTourIcs(tour)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
-                      title="Download .ics to add this tour to your calendar"
-                    >
-                      <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      .ics
-                    </button>
+            {visibleTours.map(({ tour, i }) => {
+              const expanded = expandedRows.has(i);
+              return (
+                <Fragment key={i}>
+                  <tr
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-900">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className={`sm:hidden inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
+                        {formatDate(tour.start_date, tour.date)}
+                      </span>
+                    </td>
+                    <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+                      {formatDuration(tour.duration_days)}
+                    </td>
+                    <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+                      {na(tour.tour_type)}
+                    </td>
+                    <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+                      {eventType}
+                    </td>
+                    <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+                      {na(tour.difficulty)}
+                    </td>
+                    <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+                      {na(tour.group)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-900">
+                      <TourTitle title={na(tour.title)} url={tour.detail_url} />
+                    </td>
+                    <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{na(tour.leader)}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 text-center">
+                      <StatusDot status={tour.status} />
+                    </td>
+                    <td className="hidden sm:table-cell px-3 py-3 text-center">
+                      <IcsButton tour={tour} compact />
+                    </td>
+                    <td className="sm:hidden px-2 pr-4 py-3 text-center">
+                      <button
+                        onClick={() => toggleRow(i)}
+                        className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-pointer"
+                        aria-label={expanded ? "Collapse" : "Expand"}
+                      >
+                        <svg
+                          className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                  {expanded && (
+                    <tr className="sm:hidden bg-gray-50 border-b border-gray-100">
+                      <td colSpan={4} className="px-4 py-3">
+                        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                          <div>
+                            <dt className="font-medium text-gray-500">Duration</dt>
+                            <dd className="text-gray-800">{formatDuration(tour.duration_days)}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-gray-500">Tour Type</dt>
+                            <dd className="text-gray-800">{na(tour.tour_type)}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-gray-500">Event Type</dt>
+                            <dd className="text-gray-800">{eventType}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-gray-500">Difficulty</dt>
+                            <dd className="text-gray-800">{na(tour.difficulty)}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-gray-500">Group</dt>
+                            <dd className="text-gray-800">{na(tour.group)}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-gray-500">Leader</dt>
+                            <dd className="text-gray-800">{na(tour.leader)}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-gray-500">Status</dt>
+                            <dd className="flex items-center gap-1.5 text-gray-800">
+                              <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
+                              {STATUS_LABELS[tour.status]}
+                            </dd>
+                          </div>
+                          <div className="flex items-end">
+                            <IcsButton tour={tour} />
+                          </div>
+                        </dl>
+                      </td>
+                    </tr>
                   )}
-                </td>
-              </tr>
-            ))}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
