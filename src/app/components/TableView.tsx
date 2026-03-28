@@ -8,7 +8,7 @@ import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
 
-const TABLE_COLUMNS = [
+const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
   { label: "Date" },
   { label: "Duration", mobileHidden: true },
   { label: "Tour Type", mobileHidden: true },
@@ -18,7 +18,7 @@ const TABLE_COLUMNS = [
   { label: "Title" },
   { label: "Tour Leader(s)", mobileHidden: true },
   { label: "Status", center: true, mobileHidden: true },
-] as const;
+];
 
 function StatusDot({ status }: { status: TourStatus }) {
   return (
