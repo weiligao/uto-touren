@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "**.md"
+      - LICENSE
+      - .github/dependabot.yml
+      - .github/workflows/ci.yml
 
 permissions:
   contents: write

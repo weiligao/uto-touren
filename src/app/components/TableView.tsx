@@ -1,6 +1,8 @@
+"use client";
+
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { formatDate, formatDuration, na } from "@/lib/utils";
+import { downloadTourIcs, formatDate, formatDuration, na } from "@/lib/utils";
 
 const TABLE_COLUMNS = [
   { label: "Date" },
@@ -33,6 +35,9 @@ function TourTitle({ title, url }: { title: string; url: string | null }) {
         className="text-blue-600 hover:underline"
       >
         {title}
+        <svg className="inline h-3 w-3 ml-1 mb-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
       </a>
     );
   }
@@ -72,6 +77,7 @@ export function TableView({
                   {col.label}
                 </th>
               ))}
+              <th className="px-2 py-3 w-8" aria-label="Add to calendar" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -101,6 +107,20 @@ export function TableView({
                 <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{na(tour.leader)}</td>
                 <td className="px-4 py-3 text-center">
                   <StatusDot status={tour.status} />
+                </td>
+                <td className="px-3 py-3 text-center">
+                  {tour.start_date && (
+                    <button
+                      onClick={() => downloadTourIcs(tour)}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                      title="Download .ics to add this tour to your calendar"
+                    >
+                      <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      .ics
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
