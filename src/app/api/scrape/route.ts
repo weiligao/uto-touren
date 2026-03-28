@@ -1,7 +1,7 @@
 import { EVENT_TYPES, GROUPS, TOUR_TYPES, YEARS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { parseDuration, parseGermanDate } from "@/lib/utils";
-import { JSDOM } from "jsdom";
+import * as cheerio from "cheerio";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
@@ -61,9 +61,10 @@ function parseStatus(className: string): TourStatus {
   return "unknown";
 }
 
-function parseDetailUrl(cell: Element): string | null {
-  const link = cell.querySelector("a");
-  const href = link?.getAttribute("href");
+import type { Element } from "domhandler";
+
+function parseDetailUrl($cell: cheerio.Cheerio<Element>): string | null {
+  const href = $cell.find("a").attr("href");
   if (!href) {return null;}
   const url = href.startsWith("/") ? `https://sac-uto.ch${href}` : href;
   try {
@@ -78,35 +79,33 @@ function parseDetailUrl(cell: Element): string | null {
 }
 
 function parseTourRows(html: string, year: number): Tour[] {
-  const doc = new JSDOM(html).window.document;
+  const $ = cheerio.load(html);
   const tours: Tour[] = [];
 
-  for (const table of doc.querySelectorAll("table")) {
-    for (const row of table.querySelectorAll("tr")) {
-      const cells = row.querySelectorAll("td");
-      if (cells.length < CELL.MIN_LENGTH) {continue;}
+  $("table tr").each((_i, row) => {
+    const cells = $(row).find("td");
+    if (cells.length < CELL.MIN_LENGTH) {return;}
 
-      const text = Array.from(cells).map((c) => c.textContent?.trim() || "");
+    const text = cells.map((_j, c) => $(c).text().trim()).get();
 
-      const dateStr = text[CELL.DATE];
-      const startDate = parseGermanDate(dateStr, year);
-      const durationStr = text[CELL.DURATION];
+    const dateStr = text[CELL.DATE];
+    const startDate = parseGermanDate(dateStr, year);
+    const durationStr = text[CELL.DURATION];
 
-      tours.push({
-        date: dateStr,
-        start_date: startDate ? startDate.toISOString() : null,
-        duration_days: parseDuration(durationStr),
-        tour_type: text[CELL.TOUR_TYPE],
-        difficulty: text[CELL.DIFFICULTY],
-        duration: durationStr,
-        group: text[CELL.GROUP],
-        title: text[CELL.TITLE],
-        leader: text[CELL.LEADER],
-        status: parseStatus(cells[CELL.DATE].className),
-        detail_url: parseDetailUrl(cells[CELL.TITLE]),
-      });
-    }
-  }
+    tours.push({
+      date: dateStr,
+      start_date: startDate ? startDate.toISOString() : null,
+      duration_days: parseDuration(durationStr),
+      tour_type: text[CELL.TOUR_TYPE],
+      difficulty: text[CELL.DIFFICULTY],
+      duration: durationStr,
+      group: text[CELL.GROUP],
+      title: text[CELL.TITLE],
+      leader: text[CELL.LEADER],
+      status: parseStatus(cells.eq(CELL.DATE).attr("class") ?? ""),
+      detail_url: parseDetailUrl(cells.eq(CELL.TITLE)),
+    });
+  });
 
   return tours;
 }
