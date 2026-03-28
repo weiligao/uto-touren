@@ -7,32 +7,32 @@ export function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500">
           <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1">
             <Link href="/privacy" className="hover:text-gray-700 hover:underline">
-              Privacy Policy
+              Datenschutz
             </Link>
             <Link href="/legal" className="hover:text-gray-700 hover:underline">
-              Legal Notice
+              Impressum
             </Link>
             <a
-              href="https://github.com/weiligao/utomate"
+              href="https://github.com/weiligao/uto-touren"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-gray-700 hover:underline"
             >
               GitHub
-              <span className="sr-only"> (opens in new tab)</span>
+              <span className="sr-only"> (öffnet neuen Tab)</span>
             </a>
           </div>
           <div className="flex items-center gap-2 text-gray-500">
             <span>{process.env.NEXT_PUBLIC_APP_VERSION}</span>
             <span aria-hidden="true">·</span>
             <a
-              href="https://github.com/weiligao/utomate/releases"
+              href="https://github.com/weiligao/uto-touren/releases"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-gray-700 hover:underline"
             >
-              Release notes
-              <span className="sr-only"> (opens in new tab)</span>
+              Versionshinweise
+              <span className="sr-only"> (öffnet neuen Tab)</span>
             </a>
           </div>
         </div>

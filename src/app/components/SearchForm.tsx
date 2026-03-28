@@ -63,7 +63,7 @@ export function SearchForm({
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between px-6 py-4 cursor-pointer"
       >
-        <span className="text-base font-semibold text-gray-800">Search Tours</span>
+        <span className="text-base font-semibold text-gray-800">Touren suchen</span>
         <svg
           aria-hidden="true"
           className={`h-5 w-5 text-gray-500 transition-transform ${expanded ? "rotate-180" : ""}`}
@@ -81,7 +81,7 @@ export function SearchForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label htmlFor="filter-year" className="block text-sm font-medium text-gray-700 mb-1">
-                Year
+                Jahr
               </label>
               <select
                 id="filter-year"
@@ -98,7 +98,7 @@ export function SearchForm({
             </div>
             <div>
               <label htmlFor="filter-tour-type" className="block text-sm font-medium text-gray-700 mb-1">
-                Tour Type
+                Tourtyp
               </label>
               <select
                 id="filter-tour-type"
@@ -115,7 +115,7 @@ export function SearchForm({
             </div>
             <div>
               <label htmlFor="filter-event-type" className="block text-sm font-medium text-gray-700 mb-1">
-                Event Type
+                Anlasstyp
               </label>
               <select
                 id="filter-event-type"
@@ -123,7 +123,7 @@ export function SearchForm({
                 onChange={(e) => setEventType(e.target.value)}
                 className={selectClass}
               >
-                <option value="">All</option>
+                <option value="">Alle</option>
                 {EVENT_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
@@ -133,7 +133,7 @@ export function SearchForm({
             </div>
             <div>
               <label htmlFor="filter-group" className="block text-sm font-medium text-gray-700 mb-1">
-                Group
+                Gruppe
               </label>
               <select
                 id="filter-group"
@@ -141,7 +141,7 @@ export function SearchForm({
                 onChange={(e) => setGroup(e.target.value)}
                 className={selectClass}
               >
-                <option value="">All</option>
+                <option value="">Alle</option>
                 {GROUPS.map((g) => (
                   <option key={g.value} value={g.value}>
                     {g.label}
@@ -159,10 +159,10 @@ export function SearchForm({
                 {loading ? (
                   <>
                     <Spinner />
-                    Searching...
+                    Suchen…
                   </>
                 ) : (
-                  "Search"
+                  "Suchen"
                 )}
               </button>
             </div>

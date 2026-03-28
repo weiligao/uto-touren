@@ -8,11 +8,11 @@ import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const WEEKDAY_FULL_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const WEEKDAY_FULL_NAMES = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "Januar", "Februar", "März", "April", "Mai", "Juni",
+  "Juli", "August", "September", "Oktober", "November", "Dezember",
 ];
 
 interface CalendarTour {
@@ -114,19 +114,19 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
       </p>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
         <div>
-          <dt className="font-medium text-gray-500">Duration</dt>
+          <dt className="font-medium text-gray-500">Dauer</dt>
           <dd className="text-gray-800">{formatDuration(tour.duration_days)}</dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-500">Difficulty</dt>
+          <dt className="font-medium text-gray-500">Schwierigkeit</dt>
           <dd className="text-gray-800">{na(tour.difficulty)}</dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-500">Group</dt>
+          <dt className="font-medium text-gray-500">Gruppe</dt>
           <dd className="text-gray-800">{na(tour.group)}</dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-500">Leader</dt>
+          <dt className="font-medium text-gray-500">Leiter/in</dt>
           <dd className="text-gray-800">{na(tour.leader)}</dd>
         </div>
         <div>
@@ -283,8 +283,8 @@ export function CalendarView({
           type="button"
           onClick={prevMonth}
           disabled={month <= minMonth}
-          aria-label={month <= minMonth ? `No tours before ${MONTH_NAMES[minMonth]}` : `Go to ${MONTH_NAMES[month - 1]}`}
-          title={month <= minMonth ? `No tours before ${MONTH_NAMES[minMonth]}` : `Go to ${MONTH_NAMES[month - 1]}`}
+          aria-label={month <= minMonth ? `Keine Touren vor ${MONTH_NAMES[minMonth]}` : `Zu ${MONTH_NAMES[month - 1]}`}
+          title={month <= minMonth ? `Keine Touren vor ${MONTH_NAMES[minMonth]}` : `Zu ${MONTH_NAMES[month - 1]}`}
           className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -298,8 +298,8 @@ export function CalendarView({
           type="button"
           onClick={nextMonth}
           disabled={month >= maxMonth}
-          aria-label={month >= maxMonth ? `No tours after ${MONTH_NAMES[maxMonth]}` : `Go to ${MONTH_NAMES[month + 1]}`}
-          title={month >= maxMonth ? `No tours after ${MONTH_NAMES[maxMonth]}` : `Go to ${MONTH_NAMES[month + 1]}`}
+          aria-label={month >= maxMonth ? `Keine Touren nach ${MONTH_NAMES[maxMonth]}` : `Zu ${MONTH_NAMES[month + 1]}`}
+          title={month >= maxMonth ? `Keine Touren nach ${MONTH_NAMES[maxMonth]}` : `Zu ${MONTH_NAMES[month + 1]}`}
           className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

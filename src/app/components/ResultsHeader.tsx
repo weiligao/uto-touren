@@ -13,7 +13,7 @@ export function ResultsHeader({
 }) {
   return (
     <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-      <h2 className="text-lg font-semibold text-gray-800">Results</h2>
+      <h2 className="text-lg font-semibold text-gray-800">Ergebnisse</h2>
       <div className="flex items-center justify-between sm:justify-end gap-12">
         <label className="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer select-none">
           <input
@@ -22,10 +22,10 @@ export function ResultsHeader({
             onChange={(e) => onHideFullChange(e.target.checked)}
             className="rounded border-gray-300 text-blue-600 cursor-pointer"
           />
-          Hide full/cancelled
+          Ausgebucht/Abgesagt ausblenden
         </label>
         <span className="text-sm text-gray-500 tabular-nums">
-          {visibleCount} of {totalScraped} tours found
+          {visibleCount} von {totalScraped} Touren gefunden
         </span>
       </div>
     </div>

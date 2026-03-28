@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Legal Notice",
-  description: "Legal notice for UtoMate. This app is not affiliated with SAC Sektion Uto. Data sourced from sac-uto.ch.",
+  title: "Impressum",
+  description: "Impressum für UtoTouren. Diese App ist nicht mit der SAC Sektion Uto verbunden. Daten stammen von sac-uto.ch.",
   robots: { index: false },
 };
 
@@ -12,45 +12,45 @@ export default function LegalPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-10">
         <Link href="/" className="text-sm text-blue-600 hover:underline mb-6 inline-block">
-          ← Back to UtoMate
+          ← Zurück zu UtoTouren
         </Link>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Legal Notice</h1>
-        <p className="text-sm text-gray-500 mb-8">Last updated: March 2026</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Impressum</h1>
+        <p className="text-sm text-gray-500 mb-8">Stand: März 2026</p>
 
         <div className="prose prose-sm prose-gray max-w-none space-y-6 text-gray-700">
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">About This Application</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Über diese Anwendung</h2>
             <p>
-              UtoMate is a free, open-source, non-commercial web application that lets users search,
-              browse, and export tour listings from SAC Sektion Uto as calendar files. The source code
-              is publicly available at{" "}
+              UtoTouren ist eine kostenlose, quelloffene, nicht-kommerzielle Webanwendung, mit der Nutzer
+              Tourenlisten der SAC Sektion Uto suchen, filtern und als Kalenderdateien exportieren können.
+              Der Quellcode ist öffentlich verfügbar unter{" "}
               <a
-                href="https://github.com/weiligao/utomate"
+                href="https://github.com/weiligao/uto-touren"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
-                github.com/weiligao/utomate
+                github.com/weiligao/uto-touren
               </a>
               .
             </p>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">No Affiliation with SAC Sektion Uto</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Keine Verbindung zur SAC Sektion Uto</h2>
             <p>
-              UtoMate is an independent project. It is <strong>not</strong> affiliated with, endorsed
-              by, sponsored by, or in any way officially connected to SAC Sektion Uto or the Swiss
-              Alpine Club (SAC/CAS). The SAC Uto name and any related trademarks are the property of
-              their respective owners.
+              UtoTouren ist ein unabhängiges Projekt. Es ist <strong>nicht</strong> mit der SAC Sektion Uto
+              oder dem Schweizer Alpen-Club (SAC/CAS) verbunden, von diesen unterstützt, gesponsert oder
+              offiziell anerkannt. Der Name SAC Uto sowie allfällige Markenzeichen sind Eigentum ihrer
+              jeweiligen Inhaber.
             </p>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Data Source and Accuracy</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Datenquelle und Genauigkeit</h2>
             <p>
-              Tour data displayed by UtoMate is scraped from{" "}
+              Die von UtoTouren angezeigten Tourdaten werden von{" "}
               <a
                 href="https://www.sac-uto.ch"
                 target="_blank"
@@ -59,102 +59,102 @@ export default function LegalPage() {
               >
                 sac-uto.ch
               </a>
-              , the official website of SAC Sektion Uto. The displayed data is the property of SAC
-              Sektion Uto.
+              , der offiziellen Website der SAC Sektion Uto, abgerufen. Die angezeigten Daten sind
+              Eigentum der SAC Sektion Uto.
             </p>
             <p className="mt-2">
-              UtoMate provides no guarantee of accuracy, completeness, timeliness, or availability of
-              the data. Always verify tour details directly on the{" "}
+              UtoTouren übernimmt keine Gewähr für die Richtigkeit, Vollständigkeit, Aktualität oder
+              Verfügbarkeit der Daten. Überprüfen Sie Tourdetails stets direkt auf der{" "}
               <a
                 href="https://www.sac-uto.ch"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
-                official SAC Uto website
+                offiziellen SAC-Uto-Website
               </a>{" "}
-              before making any plans.
+              bevor Sie Planungen vornehmen.
             </p>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Non-Commercial Use</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Nicht-kommerzielle Nutzung</h2>
             <p>
-              This application is entirely non-commercial. It does not generate revenue, does not sell
-              data to third parties, and does not contain advertising. It is provided free of charge
-              solely as a convenience tool for users of sac-uto.ch.
+              Diese Anwendung ist vollständig nicht-kommerziell. Sie erzielt keine Einnahmen, verkauft
+              keine Daten an Dritte und enthält keine Werbung. Sie wird kostenlos und ausschliesslich
+              als Hilfsmittel für Nutzer von sac-uto.ch bereitgestellt.
             </p>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Acceptable Use</h2>
-            <p>By using UtoMate, you agree not to:</p>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Zulässige Nutzung</h2>
+            <p>Mit der Nutzung von UtoTouren erklären Sie sich damit einverstanden, Folgendes zu unterlassen:</p>
             <ul className="list-disc pl-5 mt-2 space-y-1">
               <li>
-                Use this application to mass-scrape, harvest, or systematically extract data from
-                sac-uto.ch or from UtoMate itself
+                Diese Anwendung zum Massen-Scraping, Harvesting oder systematischen Extrahieren von Daten
+                von sac-uto.ch oder UtoTouren selbst zu nutzen
               </li>
               <li>
-                Redistribute, resell, or republish data obtained through this application without
-                permission from SAC Sektion Uto
+                Über diese Anwendung erhaltene Daten ohne Genehmigung der SAC Sektion Uto weiterzuverbreiten,
+                weiterzuverkaufen oder neu zu veröffentlichen
               </li>
               <li>
-                Use this application for any commercial purpose or in a way that violates the terms
-                of sac-uto.ch
+                Diese Anwendung für kommerzielle Zwecke oder in einer Weise zu nutzen, die gegen die
+                Nutzungsbedingungen von sac-uto.ch verstösst
               </li>
               <li>
-                Attempt to circumvent rate limits, overload the application, or interfere with its
-                operation
+                Ratenlimits zu umgehen, die Anwendung zu überlasten oder ihren Betrieb zu stören
               </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Disclaimer of Liability</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Haftungsausschluss</h2>
             <p>
-              UtoMate is provided &quot;as is&quot;, without warranty of any kind. The author accepts no
-              liability for any loss, injury, or inconvenience arising from use of this application or
-              reliance on the information it displays. Use of mountain tour information carries
-              inherent risks — always consult official sources and qualified guides.
+              UtoTouren wird &quot;wie besehen&quot; ohne jegliche Gewährleistung bereitgestellt. Der Autor übernimmt
+              keine Haftung für Verluste, Schäden oder Unannehmlichkeiten, die aus der Nutzung dieser
+              Anwendung oder dem Vertrauen auf die darin angezeigten Informationen entstehen. Die Nutzung
+              von Bergtoureninformationen ist mit inhärenten Risiken verbunden — konsultieren Sie stets
+              offizielle Quellen und qualifizierte Bergführer.
             </p>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Open Source License</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Open-Source-Lizenz</h2>
             <p>
-              UtoMate is released under the{" "}
+              UtoTouren steht unter der{" "}
               <a
-                href="https://github.com/weiligao/utomate/blob/main/LICENSE"
+                href="https://github.com/weiligao/uto-touren/blob/main/LICENSE"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
-                MIT License
+                MIT-Lizenz
               </a>
               .
             </p>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Applicable Law and Jurisdiction</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Anwendbares Recht und Gerichtsstand</h2>
             <p>
-              These terms and any disputes arising from the use of this application are governed
-              exclusively by Swiss law, excluding its conflict-of-law rules. The exclusive place of
-              jurisdiction for any disputes is Zurich, Switzerland, to the extent permitted by law.
+              Diese Bedingungen und allfällige Streitigkeiten aus der Nutzung dieser Anwendung unterliegen
+              ausschliesslich Schweizer Recht unter Ausschluss der Kollisionsnormen. Ausschliesslicher
+              Gerichtsstand für Streitigkeiten ist, soweit gesetzlich zulässig, Zürich, Schweiz.
             </p>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Contact</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Kontakt</h2>
             <p>
-              For legal inquiries or to report concerns, please open an issue on the{" "}
+              Für rechtliche Anfragen oder zur Meldung von Problemen eröffnen Sie bitte ein Issue im{" "}
               <a
-                href="https://github.com/weiligao/utomate/issues"
+                href="https://github.com/weiligao/uto-touren/issues"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
-                GitHub repository
+                GitHub-Repository
               </a>
               .
             </p>

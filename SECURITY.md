@@ -4,7 +4,7 @@
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Use [GitHub private vulnerability reporting](https://github.com/weiligao/utomate/security/advisories/new) to submit a report confidentially. Please include:
+Use [GitHub private vulnerability reporting](https://github.com/weiligao/uto-touren/security/advisories/new) to submit a report confidentially. Please include:
 
 - A description of the vulnerability
 - Steps to reproduce

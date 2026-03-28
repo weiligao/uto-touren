@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://utomate.vercel.app/sitemap.xml
+Sitemap: https://uto-touren.vercel.app/sitemap.xml

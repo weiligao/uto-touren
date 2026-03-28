@@ -1,4 +1,4 @@
-# Contributing to UtoMate
+# Contributing to UtoTouren
 
 Thank you for taking the time to contribute! Whether you're fixing a bug, improving accessibility, or proposing a new feature, you're welcome here.
 
@@ -22,7 +22,7 @@ This project follows the [Contributor Covenant](https://www.contributor-covenant
 
 Before opening an issue, please:
 
-1. Search [existing issues](https://github.com/weiligao/utomate/issues) to avoid duplicates.
+1. Search [existing issues](https://github.com/weiligao/uto-touren/issues) to avoid duplicates.
 2. Reproduce the problem on the latest `main` branch.
 
 When filing a bug report, include:
@@ -36,7 +36,7 @@ When filing a bug report, include:
 
 ## Suggesting Features
 
-Open a [GitHub Discussion](https://github.com/weiligao/utomate/discussions) for general ideas, or use the [feature request template](https://github.com/weiligao/utomate/issues/new?template=feature_request.md) to open an issue. Describe:
+Open a [GitHub Discussion](https://github.com/weiligao/uto-touren/discussions) for general ideas, or use the [feature request template](https://github.com/weiligao/uto-touren/issues/new?template=feature_request.md) to open an issue. Describe:
 
 - The problem you're trying to solve.
 - Your proposed solution or idea.
@@ -45,8 +45,8 @@ Open a [GitHub Discussion](https://github.com/weiligao/utomate/discussions) for 
 ## Development Setup
 
 ```bash
-git clone https://github.com/weiligao/utomate.git
-cd utomate
+git clone https://github.com/weiligao/uto-touren.git
+cd uto-touren
 npm install
 npm run dev          # http://localhost:3000
 ```
@@ -120,4 +120,4 @@ Unit tests live in `src/lib/utils.test.ts` and use [Vitest](https://vitest.dev).
 
 **Please do not open public issues for security vulnerabilities.**
 
-Report them privately to the maintainer via [GitHub private vulnerability reporting](https://github.com/weiligao/utomate/security/advisories/new). Include a description, steps to reproduce, and potential impact. You'll receive a response within 72 hours.
+Report them privately to the maintainer via [GitHub private vulnerability reporting](https://github.com/weiligao/uto-touren/security/advisories/new). Include a description, steps to reproduce, and potential impact. You'll receive a response within 72 hours.

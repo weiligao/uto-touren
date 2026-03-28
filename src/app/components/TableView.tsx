@@ -9,12 +9,12 @@ import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
 
 const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
-  { label: "Date" },
-  { label: "Duration", mobileHidden: true },
-  { label: "Difficulty", mobileHidden: true },
-  { label: "Group", mobileHidden: true },
-  { label: "Title" },
-  { label: "Tour Leader(s)", mobileHidden: true },
+  { label: "Datum" },
+  { label: "Dauer", mobileHidden: true },
+  { label: "Schwierigkeit", mobileHidden: true },
+  { label: "Gruppe", mobileHidden: true },
+  { label: "Titel" },
+  { label: "Leiter/in", mobileHidden: true },
   { label: "Status", center: true, mobileHidden: true },
 ];
 
@@ -114,7 +114,7 @@ export function TableView({
                       <button
                         onClick={() => toggleRow(i)}
                         className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-pointer"
-                        aria-label={expanded ? "Collapse" : "Expand"}
+                        aria-label={expanded ? "Zuklappen" : "Aufklappen"}
                       >
                         <svg
                           className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
@@ -130,19 +130,19 @@ export function TableView({
                       <td colSpan={4} className="px-4 py-3">
                         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                           <div>
-                            <dt className="font-medium text-gray-500">Duration</dt>
+                            <dt className="font-medium text-gray-500">Dauer</dt>
                             <dd className="text-gray-800">{formatDuration(tour.duration_days)}</dd>
                           </div>
                           <div>
-                            <dt className="font-medium text-gray-500">Difficulty</dt>
+                            <dt className="font-medium text-gray-500">Schwierigkeit</dt>
                             <dd className="text-gray-800">{na(tour.difficulty)}</dd>
                           </div>
                           <div>
-                            <dt className="font-medium text-gray-500">Group</dt>
+                            <dt className="font-medium text-gray-500">Gruppe</dt>
                             <dd className="text-gray-800">{na(tour.group)}</dd>
                           </div>
                           <div>
-                            <dt className="font-medium text-gray-500">Leader</dt>
+                            <dt className="font-medium text-gray-500">Leiter/in</dt>
                             <dd className="text-gray-800">{na(tour.leader)}</dd>
                           </div>
                           <div>

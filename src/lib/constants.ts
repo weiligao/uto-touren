@@ -45,8 +45,8 @@ export const STATUS_COLORS: Record<TourStatus, string> = {
 };
 
 export const STATUS_LABELS: Record<TourStatus, string> = {
-  open: "Open",
-  full_or_cancelled: "Full/Cancelled",
-  not_yet_open: "Not yet open",
-  unknown: "Unknown",
+  open: "Offen",
+  full_or_cancelled: "Ausgebucht/Abgesagt",
+  not_yet_open: "Noch nicht offen",
+  unknown: "Unbekannt",
 };
