@@ -1,11 +1,20 @@
-import { Tour, TourStatus } from "@/lib/types";
-import { JSDOM } from "jsdom";
-import { NextRequest, NextResponse } from "next/server";
+import { EVENT_TYPES, GROUPS, TOUR_TYPES, YEARS } from "@/lib/constants";
+import type { Tour, TourStatus } from "@/lib/types";
+import { parseDuration, parseGermanDate } from "@/lib/utils";
+import * as cheerio from "cheerio";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 const BASE_URL = "https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/";
 const PAGE_SIZE = 50;
 const MAX_OFFSET = 2000;
 const DELAY_BETWEEN_PAGES_MS = 1000;
+const FETCH_TIMEOUT_MS = 10_000;
+
+const VALID_YEARS = new Set<string>(YEARS);
+const VALID_TYPES = new Set<string>(TOUR_TYPES.map((t) => t.value));
+const VALID_EVENT_TYPES = new Set<string>(EVENT_TYPES.map((t) => t.value));
+const VALID_GROUPS = new Set<string>(GROUPS.map((g) => g.value));
 
 // Cell indices in the scraped HTML table
 const CELL = {
@@ -16,18 +25,25 @@ const CELL = {
   GROUP: 5,
   TITLE: 7,
   LEADER: 10,
-  MIN_COUNT: 11,
+  MIN_LENGTH: 11,
 } as const;
 
-function buildUrl(params: Record<string, string>): string {
+function buildUrl(
+  year: string,
+  typ: string,
+  anlasstyp: string,
+  gruppe: string,
+  offset: number,
+): string {
   const searchParams = new URLSearchParams({
     page: "touren",
-    year: params.year || "2026",
-    typ: params.typ || "",
-    anlasstyp: params.anlasstyp || "",
+    year,
+    typ,
+    anlasstyp,
+    gruppe,
   });
-  if (params.offset && parseInt(params.offset) > 0) {
-    searchParams.set("offset", params.offset);
+  if (offset > 0) {
+    searchParams.set("offset", String(offset));
   }
   return `${BASE_URL}?${searchParams.toString()}`;
 }
@@ -45,44 +61,58 @@ function parseStatus(className: string): TourStatus {
   return "unknown";
 }
 
-function parseDetailUrl(cell: Element): string | null {
-  const link = cell.querySelector("a");
-  const href = link?.getAttribute("href");
-  if (!href) return null;
-  return href.startsWith("http") ? href : `https://sac-uto.ch${href}`;
+import type { Element } from "domhandler";
+
+function parseDetailUrl($cell: cheerio.Cheerio<Element>): string | null {
+  const href = $cell.find("a").attr("href");
+  if (!href) {return null;}
+  const url = href.startsWith("/") ? `https://sac-uto.ch${href}` : href;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== "sac-uto.ch" && !parsed.hostname.endsWith(".sac-uto.ch")) {
+      return null;
+    }
+    return parsed.href;
+  } catch {
+    return null;
+  }
 }
 
-function parseTourRows(html: string): Tour[] {
-  const doc = new JSDOM(html).window.document;
+function parseTourRows(html: string, year: number): Tour[] {
+  const $ = cheerio.load(html);
   const tours: Tour[] = [];
 
-  for (const table of doc.querySelectorAll("table")) {
-    for (const row of table.querySelectorAll("tr")) {
-      const cells = row.querySelectorAll("td");
-      if (cells.length < CELL.MIN_COUNT) continue;
+  $("table tr").each((_i, row) => {
+    const cells = $(row).find("td");
+    if (cells.length < CELL.MIN_LENGTH) {return;}
 
-      const text = Array.from(cells).map((c) => c.textContent?.trim() || "");
+    const text = cells.map((_j, c) => $(c).text().trim()).get();
 
-      tours.push({
-        date: text[CELL.DATE],
-        tour_type: text[CELL.TOUR_TYPE],
-        difficulty: text[CELL.DIFFICULTY],
-        duration: text[CELL.DURATION],
-        group: text[CELL.GROUP],
-        title: text[CELL.TITLE],
-        leader: text[CELL.LEADER],
-        status: parseStatus(cells[0].className || ""),
-        detail_url: parseDetailUrl(cells[CELL.TITLE]),
-      });
-    }
-  }
+    const dateStr = text[CELL.DATE];
+    const startDate = parseGermanDate(dateStr, year);
+    const durationStr = text[CELL.DURATION];
+
+    tours.push({
+      date: dateStr,
+      start_date: startDate ? startDate.toISOString() : null,
+      duration_days: parseDuration(durationStr),
+      tour_type: text[CELL.TOUR_TYPE],
+      difficulty: text[CELL.DIFFICULTY],
+      duration: durationStr,
+      group: text[CELL.GROUP],
+      title: text[CELL.TITLE],
+      leader: text[CELL.LEADER],
+      status: parseStatus(cells.eq(CELL.DATE).attr("class") ?? ""),
+      detail_url: parseDetailUrl(cells.eq(CELL.TITLE)),
+    });
+  });
 
   return tours;
 }
 
 function getTotalCount(html: string): number | null {
-  const match = html.match(/(\d+)-(\d+)\s*\/\s*(\d+)/);
-  return match ? parseInt(match[3], 10) : null;
+  const match = html.match(/\d+-\d+\s*\/\s*(\d+)/);
+  return match ? parseInt(match[1], 10) : null;
 }
 
 function sleep(ms: number) {
@@ -91,26 +121,50 @@ function sleep(ms: number) {
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
-  const params: Record<string, string> = {
-    year: sp.get("year") || "2026",
-    typ: sp.get("typ") || "",
-    anlasstyp: sp.get("anlasstyp") || "",
-  };
+  const rawYear = sp.get("year") ?? "";
+  const rawTyp = sp.get("typ") ?? "";
+  const rawAnlasstyp = sp.get("anlasstyp") ?? "";
+  const rawGruppe = sp.get("gruppe") ?? "";
+
+  if (!VALID_YEARS.has(rawYear)) {
+    return NextResponse.json({ error: "Invalid year" }, { status: 400 });
+  }
+  if (rawTyp && !VALID_TYPES.has(rawTyp)) {
+    return NextResponse.json({ error: "Invalid tour type" }, { status: 400 });
+  }
+  if (rawAnlasstyp && !VALID_EVENT_TYPES.has(rawAnlasstyp)) {
+    return NextResponse.json({ error: "Invalid event type" }, { status: 400 });
+  }
+  if (rawGruppe && !VALID_GROUPS.has(rawGruppe)) {
+    return NextResponse.json({ error: "Invalid group" }, { status: 400 });
+  }
 
   const allTours: Tour[] = [];
   let offset = 0;
   let total: number | null = null;
+  const yearNum = parseInt(rawYear, 10);
 
   while (true) {
-    const url = buildUrl({ ...params, offset: String(offset) });
+    const url = buildUrl(rawYear, rawTyp, rawAnlasstyp, rawGruppe, offset);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     const resp = await fetch(url, {
+      signal: controller.signal,
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "de-CH,de;q=0.9,en;q=0.8",
       },
-    });
+    }).catch(() => null);
+    clearTimeout(timeoutId);
+
+    if (!resp) {
+      return NextResponse.json(
+        { error: "Upstream request failed" },
+        { status: 502 }
+      );
+    }
 
     if (!resp.ok) {
       return NextResponse.json(
@@ -122,23 +176,23 @@ export async function GET(request: NextRequest) {
     const html = await resp.text();
     total ??= getTotalCount(html);
 
-    const tours = parseTourRows(html);
-    if (tours.length === 0) break;
+    const tours = parseTourRows(html, yearNum);
+    if (tours.length === 0) {break;}
 
     allTours.push(...tours);
 
-    if (total && allTours.length >= total) break;
+    if (total !== null && allTours.length >= total) {break;}
     offset += PAGE_SIZE;
-    if (offset > MAX_OFFSET) break;
+    if (offset > MAX_OFFSET) {break;}
 
     await sleep(DELAY_BETWEEN_PAGES_MS);
   }
 
   return NextResponse.json({
     source: "sac-uto.ch",
-    year: params.year,
-    type_filter: params.typ || "all",
-    event_type: params.anlasstyp || "all",
+    year: rawYear,
+    type_filter: rawTyp || "all",
+    event_type: rawAnlasstyp || "all",
     total_scraped: allTours.length,
     tours: allTours,
   });

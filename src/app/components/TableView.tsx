@@ -1,23 +1,24 @@
-import { STATUS_COLORS } from "@/lib/constants";
-import { Tour, TourStatus } from "@/lib/types";
+import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import type { Tour, TourStatus } from "@/lib/types";
+import { formatDate, formatDuration, na } from "@/lib/utils";
 
 const TABLE_COLUMNS = [
   "Date",
   "Event Type",
-  "Type",
+  "Tour Type",
   "Difficulty",
   "Duration",
   "Group",
   "Title",
-  "Leader",
+  "Tour Leader(s)",
   "Status",
 ] as const;
 
 function StatusDot({ status }: { status: TourStatus }) {
   return (
     <span
-      className={`inline-block h-3 w-3 rounded-full ${STATUS_COLORS[status] || STATUS_COLORS.unknown}`}
-      title={status}
+      className={`inline-block h-3 w-3 rounded-full ${STATUS_COLORS[status]}`}
+      title={STATUS_LABELS[status]}
     />
   );
 }
@@ -38,7 +39,7 @@ function TourTitle({ title, url }: { title: string; url: string | null }) {
   return <>{title}</>;
 }
 
-export function TourTable({
+export function TableView({
   tours,
   eventType,
   totalScraped,
@@ -73,29 +74,29 @@ export function TourTable({
             {tours.map((tour, i) => (
               <tr key={i} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 whitespace-nowrap text-gray-900">
-                  {tour.date}
+                  {formatDate(tour.start_date, tour.date)}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-gray-700">
                   {eventType}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {tour.tour_type}
+                  {na(tour.tour_type)}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <span className="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-2 py-0.5 rounded">
-                    {tour.difficulty}
+                    {na(tour.difficulty)}
                   </span>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {tour.duration}
+                  {formatDuration(tour.duration_days)}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {tour.group}
+                  {na(tour.group)}
                 </td>
                 <td className="px-4 py-3 text-gray-900">
-                  <TourTitle title={tour.title} url={tour.detail_url} />
+                  <TourTitle title={na(tour.title)} url={tour.detail_url} />
                 </td>
-                <td className="px-4 py-3 text-gray-700">{tour.leader}</td>
+                <td className="px-4 py-3 text-gray-700">{na(tour.leader)}</td>
                 <td className="px-4 py-3 text-center">
                   <StatusDot status={tour.status} />
                 </td>
