@@ -56,24 +56,49 @@ function buildTourMap(tours: CalendarTour[], year: number, month: number) {
   return map;
 }
 
-function TourTooltip({ tour, eventType, anchorRef }: { tour: Tour; eventType: string; anchorRef: React.RefObject<HTMLDivElement | null> }) {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+const TOOLTIP_WIDTH = 256; // w-64
+const TOOLTIP_APPROX_HEIGHT = 300;
+const VIEWPORT_MARGIN = 8;
+
+function TourTooltip({ tour, eventType, anchorRef, onClose }: { tour: Tour; eventType: string; anchorRef: React.RefObject<HTMLDivElement | null>; onClose: () => void }) {
+  const [pos, setPos] = useState<{ top: number; left: number; above: boolean } | null>(null);
 
   useEffect(() => {
     if (!anchorRef.current) {return;}
     const rect = anchorRef.current.getBoundingClientRect();
+    const rawLeft = rect.left + rect.width / 2;
+    const clampedLeft = Math.min(
+      Math.max(rawLeft, TOOLTIP_WIDTH / 2 + VIEWPORT_MARGIN),
+      window.innerWidth - TOOLTIP_WIDTH / 2 - VIEWPORT_MARGIN,
+    );
+    const above = rect.top - TOOLTIP_APPROX_HEIGHT > VIEWPORT_MARGIN;
     setPos({
-      top: rect.top - 8,
-      left: rect.left + rect.width / 2,
+      top: above ? rect.top - 8 : rect.bottom + 8,
+      left: clampedLeft,
+      above,
     });
   }, [anchorRef]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [anchorRef, onClose]);
 
   if (!pos) {return null;}
 
   return (
     <div
-      className="fixed z-50 w-64 bg-white border border-gray-200 rounded-lg p-3 shadow-lg pointer-events-none"
-      style={{ top: pos.top, left: pos.left, transform: "translate(-50%, -100%)" }}
+      className="fixed z-50 w-64 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
+      style={{ top: pos.top, left: pos.left, transform: `translate(-50%, ${pos.above ? "-100%" : "0"})` }}
     >
       <p className="font-semibold text-sm text-gray-900 mb-2">{tour.title}</p>
       <div className="space-y-1 text-xs text-gray-600">

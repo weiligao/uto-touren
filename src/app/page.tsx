@@ -71,23 +71,23 @@ export default function Home() {
 
         {result && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="inline-flex w-full sm:w-48 rounded-md border border-gray-300 overflow-hidden mb-4">
               <button
                 onClick={() => setViewMode("table")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                className={`flex-1 px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
                   viewMode === "table"
                     ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 Table
               </button>
               <button
                 onClick={() => setViewMode("calendar")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                className={`flex-1 px-4 py-1.5 text-sm font-medium border-l border-gray-300 transition-colors cursor-pointer ${
                   viewMode === "calendar"
                     ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 Calendar

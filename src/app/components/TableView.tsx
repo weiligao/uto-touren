@@ -3,15 +3,15 @@ import type { Tour, TourStatus } from "@/lib/types";
 import { formatDate, formatDuration, na } from "@/lib/utils";
 
 const TABLE_COLUMNS = [
-  "Date",
-  "Event Type",
-  "Tour Type",
-  "Difficulty",
-  "Duration",
-  "Group",
-  "Title",
-  "Tour Leader(s)",
-  "Status",
+  { label: "Date" },
+  { label: "Duration", mobileHidden: true },
+  { label: "Tour Type", mobileHidden: true },
+  { label: "Event Type", mobileHidden: true },
+  { label: "Difficulty", mobileHidden: true },
+  { label: "Group", mobileHidden: true },
+  { label: "Title" },
+  { label: "Tour Leader(s)", mobileHidden: true },
+  { label: "Status", center: true },
 ] as const;
 
 function StatusDot({ status }: { status: TourStatus }) {
@@ -62,10 +62,14 @@ export function TableView({
             <tr className="bg-gray-50 border-b border-gray-200">
               {TABLE_COLUMNS.map((col) => (
                 <th
-                  key={col}
-                  className={`px-4 py-3 font-medium text-gray-600 ${col === "Status" ? "text-center" : "text-left"}`}
+                  key={col.label}
+                  className={[
+                    "px-4 py-3 font-medium text-gray-600",
+                    col.center ? "text-center" : "text-left",
+                    col.mobileHidden ? "hidden sm:table-cell" : "",
+                  ].join(" ")}
                 >
-                  {col}
+                  {col.label}
                 </th>
               ))}
             </tr>
@@ -76,27 +80,25 @@ export function TableView({
                 <td className="px-4 py-3 whitespace-nowrap text-gray-900">
                   {formatDate(tour.start_date, tour.date)}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {eventType}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                  {na(tour.tour_type)}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-2 py-0.5 rounded">
-                    {na(tour.difficulty)}
-                  </span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-gray-700">
+                <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
                   {formatDuration(tour.duration_days)}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-gray-700">
+                <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+                  {na(tour.tour_type)}
+                </td>
+                <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+                  {eventType}
+                </td>
+                <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+                  {na(tour.difficulty)}
+                </td>
+                <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
                   {na(tour.group)}
                 </td>
                 <td className="px-4 py-3 text-gray-900">
                   <TourTitle title={na(tour.title)} url={tour.detail_url} />
                 </td>
-                <td className="px-4 py-3 text-gray-700">{na(tour.leader)}</td>
+                <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{na(tour.leader)}</td>
                 <td className="px-4 py-3 text-center">
                   <StatusDot status={tour.status} />
                 </td>
