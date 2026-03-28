@@ -75,87 +75,89 @@ export function SearchForm({
       {expanded && (
         <div className="px-6 pb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Year
-          </label>
-          <select
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            className={selectClass}
-          >
-            {YEARS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Tour Type
-          </label>
-          <select
-            value={typ}
-            onChange={(e) => setTyp(e.target.value)}
-            className={selectClass}
-          >
-            {TOUR_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Event Type
-          </label>
-          <select
-            value={eventType}
-            onChange={(e) => setEventType(e.target.value)}
-            className={selectClass}
-          >
-            {EVENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Group
-          </label>
-          <select
-            value={group}
-            onChange={(e) => setGroup(e.target.value)}
-            className={selectClass}
-          >
-            <option value="">All</option>
-            {GROUPS.map((g) => (
-              <option key={g.value} value={g.value}>
-                {g.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-end">
-          <button
-            onClick={onSearch}
-            disabled={loading}
-            className="w-full justify-center inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          >
-            {loading ? (
-              <>
-                <Spinner />
-                Searching...
-              </>
-            ) : (
-              "Search"
-            )}
-          </button>
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Year
+              </label>
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className={selectClass}
+              >
+                {YEARS.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tour Type
+              </label>
+              <select
+                value={typ}
+                onChange={(e) => setTyp(e.target.value)}
+                className={selectClass}
+              >
+                {TOUR_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Event Type
+              </label>
+              <select
+                value={eventType}
+                onChange={(e) => setEventType(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">All</option>
+                {EVENT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Group
+              </label>
+              <select
+                value={group}
+                onChange={(e) => setGroup(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">All</option>
+                {GROUPS.map((g) => (
+                  <option key={g.value} value={g.value}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end mt-2 sm:mt-0">
+              <button
+                type="button"
+                onClick={onSearch}
+                disabled={loading}
+                className="w-full justify-center inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              >
+                {loading ? (
+                  <>
+                    <Spinner />
+                    Searching...
+                  </>
+                ) : (
+                  "Search"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

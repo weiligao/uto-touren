@@ -2,7 +2,7 @@
 
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
-import { formatDate, formatDuration, na, parseDateString } from "@/lib/utils";
+import { formatDuration, na, parseDateString } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
@@ -63,7 +63,7 @@ const TOOLTIP_WIDTH = 256; // w-64
 const TOOLTIP_APPROX_HEIGHT = 300;
 const VIEWPORT_MARGIN = 8;
 
-function TourTooltip({ tour, eventType, anchorRef, onClose }: { tour: Tour; eventType: string; anchorRef: React.RefObject<HTMLDivElement | null>; onClose: () => void }) {
+function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: React.RefObject<HTMLDivElement | null>; onClose: () => void }) {
   const [pos, setPos] = useState<{ top: number; left: number; above: boolean } | null>(null);
 
   useEffect(() => {
@@ -105,16 +105,8 @@ function TourTooltip({ tour, eventType, anchorRef, onClose }: { tour: Tour; even
       </p>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
         <div>
-          <dt className="font-medium text-gray-500">Date</dt>
-          <dd className="text-gray-800">{formatDate(tour.start_date, tour.date)}</dd>
-        </div>
-        <div>
           <dt className="font-medium text-gray-500">Duration</dt>
           <dd className="text-gray-800">{formatDuration(tour.duration_days)}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-gray-500">Type</dt>
-          <dd className="text-gray-800">{eventType} / {na(tour.tour_type)}</dd>
         </div>
         <div>
           <dt className="font-medium text-gray-500">Difficulty</dt>
@@ -162,10 +154,8 @@ function TourTooltip({ tour, eventType, anchorRef, onClose }: { tour: Tour; even
 
 function TourPill({
   ct,
-  eventType,
 }: {
   ct: CalendarTour;
-  eventType: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -181,7 +171,7 @@ function TourPill({
         <span className={`shrink-0 inline-block h-2 w-2 rounded-full ${dotColor}`} />
         <span className="truncate">{ct.tour.title}</span>
       </button>
-      {open && <TourTooltip tour={ct.tour} eventType={eventType} anchorRef={ref} onClose={handleClose} />}
+      {open && <TourTooltip tour={ct.tour} anchorRef={ref} onClose={handleClose} />}
     </div>
   );
 }
@@ -195,12 +185,10 @@ const SWIPE_THRESHOLD = 50;
 
 export function CalendarView({
   tours,
-  eventType,
   totalScraped,
   year,
 }: {
   tours: Tour[];
-  eventType: string;
   totalScraped: number;
   year: string;
 }) {
@@ -226,6 +214,12 @@ export function CalendarView({
     [calendarTours, hideFull],
   );
 
+  const { minMonth, maxMonth } = useMemo(() => {
+    if (calendarTours.length === 0) return { minMonth: 0, maxMonth: 11 };
+    const months = calendarTours.map((ct) => ct.startDate.getMonth());
+    return { minMonth: Math.min(...months), maxMonth: Math.max(...months) };
+  }, [calendarTours]);
+
   useEffect(() => {
     setMonth(detectInitialMonth(calendarTours));
   }, [calendarTours]);
@@ -233,8 +227,8 @@ export function CalendarView({
   const cells = getCalendarDays(yearNum, month);
   const tourMap = buildTourMap(visibleCalendarTours, yearNum, month);
 
-  const prevMonth = useCallback(() => setMonth((m) => (m > 0 ? m - 1 : 11)), []);
-  const nextMonth = useCallback(() => setMonth((m) => (m < 11 ? m + 1 : 0)), []);
+  const prevMonth = useCallback(() => setMonth((m) => Math.max(m - 1, minMonth)), [minMonth]);
+  const nextMonth = useCallback(() => setMonth((m) => Math.min(m + 1, maxMonth)), [maxMonth]);
 
   const swipeStartX = useRef<number | null>(null);
 
@@ -263,7 +257,9 @@ export function CalendarView({
       <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
         <button
           onClick={prevMonth}
-          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer"
+          disabled={month <= minMonth}
+          title={month <= minMonth ? `No tours before ${MONTH_NAMES[minMonth]}` : `Go to ${MONTH_NAMES[month - 1]}`}
+          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -274,7 +270,9 @@ export function CalendarView({
         </span>
         <button
           onClick={nextMonth}
-          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer"
+          disabled={month >= maxMonth}
+          title={month >= maxMonth ? `No tours after ${MONTH_NAMES[maxMonth]}` : `Go to ${MONTH_NAMES[month + 1]}`}
+          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -310,7 +308,7 @@ export function CalendarView({
                     <div className="text-xs text-gray-500 mb-0.5">{day}</div>
                     <div className="space-y-0.5 overflow-y-auto max-h-17.5">
                       {toursForDay.map((ct, j) => (
-                        <TourPill key={j} ct={ct} eventType={eventType} />
+                        <TourPill key={j} ct={ct} />
                       ))}
                     </div>
                   </>

@@ -11,7 +11,7 @@ type ViewMode = "table" | "calendar";
 export default function Home() {
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [typ, setTyp] = useState("Ht");
-  const [eventType, setEventType] = useState("Tour");
+  const [eventType, setEventType] = useState("");
   const [group, setGroup] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScrapeResult | null>(null);
@@ -46,7 +46,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50 flex-1">
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 leading-none">
@@ -109,13 +109,11 @@ export default function Home() {
             {viewMode === "table" ? (
               <TableView
                 tours={result.tours}
-                eventType={result.event_type}
                 totalScraped={result.total_scraped}
               />
             ) : (
               <CalendarView
                 tours={result.tours}
-                eventType={result.event_type}
                 totalScraped={result.total_scraped}
                 year={result.year}
               />

@@ -130,6 +130,10 @@ class UpstreamError extends Error {
   }
 }
 
+// In-flight deduplication: if a scrape for the same params is already running,
+// return the same promise instead of issuing duplicate upstream requests.
+const inFlight = new Map<string, Promise<Tour[]>>();
+
 async function scrapeToursUncached(
   year: string,
   typ: string,
@@ -160,6 +164,13 @@ async function scrapeToursUncached(
       throw new UpstreamError("Upstream request failed", 502);
     }
     if (!resp.ok) {
+      if (resp.status === 429) {
+        const retryAfter = resp.headers.get("Retry-After");
+        const msg = retryAfter
+          ? `SAC server is rate-limiting requests. Retry after ${retryAfter}s.`
+          : "SAC server is rate-limiting requests. Please try again later.";
+        throw new UpstreamError(msg, 429);
+      }
       throw new UpstreamError(`Upstream returned ${resp.status}`, 502);
     }
 
@@ -182,7 +193,16 @@ async function scrapeToursUncached(
 }
 
 const scrapeTours = unstable_cache(
-  scrapeToursUncached,
+  (year: string, typ: string, anlasstyp: string, gruppe: string): Promise<Tour[]> => {
+    const key = `${year}:${typ}:${anlasstyp}:${gruppe}`;
+    const existing = inFlight.get(key);
+    if (existing) return existing;
+    const promise = scrapeToursUncached(year, typ, anlasstyp, gruppe).finally(() => {
+      inFlight.delete(key);
+    });
+    inFlight.set(key, promise);
+    return promise;
+  },
   ["scrape-tours"],
   { revalidate: CACHE_REVALIDATE_SECONDS },
 );
@@ -212,8 +232,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       source: "sac-uto.ch",
       year: rawYear,
-      type_filter: rawTyp || "all",
-      event_type: rawAnlasstyp || "all",
+      type_filter: rawTyp,
+      event_type: rawAnlasstyp,
       total_scraped: tours.length,
       tours,
     });

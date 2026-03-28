@@ -44,16 +44,8 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-CH", {
   month: "short",
 });
 
-/** Parse a YYYY-MM-DD date string as a local-time Date, avoiding UTC midnight shifting.
- *  Also handles legacy ISO strings from old cache entries (e.g. "2026-06-12T22:00:00.000Z")
- *  by using local-time getters — callers are all client components running in the user's browser.
- */
+/** Parse a YYYY-MM-DD date string as a local-time Date, avoiding UTC midnight shifting. */
 export function parseDateString(s: string): Date {
-  if (s.includes("T")) {
-    // Legacy ISO: new Date gives the correct local Date object in the user's timezone.
-    const dt = new Date(s);
-    return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-  }
   const [y, m, d] = s.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
@@ -68,7 +60,7 @@ export function formatDuration(days: number): string {
 }
 
 export function na(value: string): string {
-  return value || "N/A";
+  return value || "-";
 }
 
 function icsDate(dt: Date): string {

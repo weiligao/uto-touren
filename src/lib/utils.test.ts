@@ -6,9 +6,25 @@ import {
   formatDuration,
   generateIcs,
   na,
+  parseDateString,
   parseDuration,
   parseGermanDate,
 } from "./utils";
+
+describe("parseDateString", () => {
+  it("parses a YYYY-MM-DD string as local date", () => {
+    const result = parseDateString("2026-06-12");
+    expect(result).toEqual(new Date(2026, 5, 12));
+  });
+
+  it("parses month boundary correctly (January)", () => {
+    expect(parseDateString("2026-01-01")).toEqual(new Date(2026, 0, 1));
+  });
+
+  it("parses month boundary correctly (December)", () => {
+    expect(parseDateString("2026-12-31")).toEqual(new Date(2026, 11, 31));
+  });
+});
 
 describe("parseGermanDate", () => {
   it("parses standard date with weekday prefix", () => {
@@ -101,8 +117,8 @@ describe("na", () => {
     expect(na("hello")).toBe("hello");
   });
 
-  it("returns N/A for empty string", () => {
-    expect(na("")).toBe("N/A");
+  it("returns - for empty string", () => {
+    expect(na("")).toBe("-");
   });
 });
 

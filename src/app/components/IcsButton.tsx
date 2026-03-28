@@ -23,6 +23,7 @@ export function IcsButton({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       title={compact ? "Download .ics to add this tour to your calendar" : undefined}
       className={[

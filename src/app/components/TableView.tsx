@@ -11,8 +11,6 @@ import { TourTitle } from "./TourTitle";
 const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
   { label: "Date" },
   { label: "Duration", mobileHidden: true },
-  { label: "Tour Type", mobileHidden: true },
-  { label: "Event Type", mobileHidden: true },
   { label: "Difficulty", mobileHidden: true },
   { label: "Group", mobileHidden: true },
   { label: "Title" },
@@ -31,11 +29,9 @@ function StatusDot({ status }: { status: TourStatus }) {
 
 export function TableView({
   tours,
-  eventType,
   totalScraped,
 }: {
   tours: Tour[];
-  eventType: string;
   totalScraped: number;
 }) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -96,12 +92,6 @@ export function TableView({
                       {formatDuration(tour.duration_days)}
                     </td>
                     <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
-                      {na(tour.tour_type)}
-                    </td>
-                    <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
-                      {eventType}
-                    </td>
-                    <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
                       {na(tour.difficulty)}
                     </td>
                     <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
@@ -139,14 +129,6 @@ export function TableView({
                           <div>
                             <dt className="font-medium text-gray-500">Duration</dt>
                             <dd className="text-gray-800">{formatDuration(tour.duration_days)}</dd>
-                          </div>
-                          <div>
-                            <dt className="font-medium text-gray-500">Tour Type</dt>
-                            <dd className="text-gray-800">{na(tour.tour_type)}</dd>
-                          </div>
-                          <div>
-                            <dt className="font-medium text-gray-500">Event Type</dt>
-                            <dd className="text-gray-800">{eventType}</dd>
                           </div>
                           <div>
                             <dt className="font-medium text-gray-500">Difficulty</dt>
