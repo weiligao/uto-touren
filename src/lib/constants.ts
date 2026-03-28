@@ -1,4 +1,4 @@
-import { TourStatus } from "@/lib/types";
+import type { TourStatus } from "@/lib/types";
 
 export const TOUR_TYPES = [
   { value: "Ak", label: "Alpinklettern" },
@@ -27,7 +27,15 @@ export const EVENT_TYPES = [
   { value: "Kurs", label: "Kurs" },
 ] as const;
 
-export const YEARS = ["2026", "2027", "2028", "2029", "2030"] as const;
+export const GROUPS = [
+  { value: "Jugend", label: "Jugend" },
+  { value: "Jung-Alpinist/innen", label: "Jung-Alpinist/innen" },
+  { value: "Alpinist/innen", label: "Alpinist/innen" },
+  { value: "Senior/innen", label: "Senior/innen" },
+] as const;
+
+const currentYear = new Date().getFullYear();
+export const YEARS = [String(currentYear), String(currentYear + 1)];
 
 export const STATUS_COLORS: Record<TourStatus, string> = {
   open: "bg-green-500",

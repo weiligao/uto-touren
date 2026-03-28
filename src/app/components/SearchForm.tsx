@@ -1,4 +1,4 @@
-import { EVENT_TYPES, TOUR_TYPES, YEARS } from "@/lib/constants";
+import { EVENT_TYPES, GROUPS, TOUR_TYPES, YEARS } from "@/lib/constants";
 
 function Spinner() {
   return (
@@ -34,6 +34,8 @@ export function SearchForm({
   setTyp,
   eventType,
   setEventType,
+  group,
+  setGroup,
   loading,
   onSearch,
 }: {
@@ -43,12 +45,14 @@ export function SearchForm({
   setTyp: (v: string) => void;
   eventType: string;
   setEventType: (v: string) => void;
+  group: string;
+  setGroup: (v: string) => void;
   loading: boolean;
   onSearch: () => void;
 }) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Year
@@ -93,6 +97,23 @@ export function SearchForm({
             {EVENT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Group
+          </label>
+          <select
+            value={group}
+            onChange={(e) => setGroup(e.target.value)}
+            className={selectClass}
+          >
+            <option value="">All</option>
+            {GROUPS.map((g) => (
+              <option key={g.value} value={g.value}>
+                {g.label}
               </option>
             ))}
           </select>

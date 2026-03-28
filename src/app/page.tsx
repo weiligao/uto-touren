@@ -1,24 +1,29 @@
 "use client";
 
+import { CalendarView } from "@/app/components/CalendarView";
 import { SearchForm } from "@/app/components/SearchForm";
-import { TourTable } from "@/app/components/TourTable";
-import { ScrapeResult } from "@/lib/types";
+import { TableView } from "@/app/components/TableView";
+import type { ScrapeResult } from "@/lib/types";
 import { useState } from "react";
+
+type ViewMode = "table" | "calendar";
 
 export default function Home() {
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [typ, setTyp] = useState("Ht");
   const [eventType, setEventType] = useState("Tour");
+  const [group, setGroup] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   async function handleSearch() {
     setLoading(true);
     setError(null);
     setResult(null);
 
-    const params = new URLSearchParams({ year, typ, anlasstyp: eventType });
+    const params = new URLSearchParams({ year, typ, anlasstyp: eventType, gruppe: group });
     try {
       const res = await fetch(`/api/scrape?${params.toString()}`);
       if (!res.ok) {
@@ -52,6 +57,8 @@ export default function Home() {
           setTyp={setTyp}
           eventType={eventType}
           setEventType={setEventType}
+          group={group}
+          setGroup={setGroup}
           loading={loading}
           onSearch={handleSearch}
         />
@@ -63,11 +70,45 @@ export default function Home() {
         )}
 
         {result && (
-          <TourTable
-            tours={result.tours}
-            eventType={result.event_type}
-            totalScraped={result.total_scraped}
-          />
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setViewMode("table")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === "table"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                Table
+              </button>
+              <button
+                onClick={() => setViewMode("calendar")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === "calendar"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                Calendar
+              </button>
+            </div>
+
+            {viewMode === "table" ? (
+              <TableView
+                tours={result.tours}
+                eventType={result.event_type}
+                totalScraped={result.total_scraped}
+              />
+            ) : (
+              <CalendarView
+                tours={result.tours}
+                eventType={result.event_type}
+                totalScraped={result.total_scraped}
+                year={result.year}
+              />
+            )}
+          </div>
         )}
       </main>
     </div>
