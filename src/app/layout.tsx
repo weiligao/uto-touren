@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "UtoMate",
-  description: "Search and browse tours from SAC Uto",
+  description: "Search and browse tours from SAC Uto, and download them as calendar files",
 };
 
 export default function RootLayout({

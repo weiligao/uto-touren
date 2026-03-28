@@ -1,3 +1,5 @@
+import type { Tour } from "@/lib/types";
+
 const GERMAN_MONTHS: Record<string, number> = {
   Jan: 0,
   Feb: 1,
@@ -42,9 +44,23 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-CH", {
   month: "short",
 });
 
+/** Parse a YYYY-MM-DD date string as a local-time Date, avoiding UTC midnight shifting.
+ *  Also handles legacy ISO strings from old cache entries (e.g. "2026-06-12T22:00:00.000Z")
+ *  by using local-time getters — callers are all client components running in the user's browser.
+ */
+export function parseDateString(s: string): Date {
+  if (s.includes("T")) {
+    // Legacy ISO: new Date gives the correct local Date object in the user's timezone.
+    const dt = new Date(s);
+    return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  }
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 export function formatDate(startDate: string | null, fallback: string): string {
   if (!startDate) {return fallback;}
-  return DATE_FORMAT.format(new Date(startDate));
+  return DATE_FORMAT.format(parseDateString(startDate));
 }
 
 export function formatDuration(days: number): string {
@@ -53,4 +69,64 @@ export function formatDuration(days: number): string {
 
 export function na(value: string): string {
   return value || "N/A";
+}
+
+function icsDate(dt: Date): string {
+  const y = dt.getFullYear();
+  const mo = String(dt.getMonth() + 1).padStart(2, "0");
+  const d = String(dt.getDate()).padStart(2, "0");
+  return `${y}${mo}${d}`;
+}
+
+function escapeIcs(s: string): string {
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
+}
+
+/**
+ * Trigger a browser download of an ICS file for the given tour.
+ * Only call this when `tour.start_date` is non-null.
+ */
+export function downloadTourIcs(tour: Tour): void {
+  const content = generateIcs(tour);
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 60)}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Generate an ICS (iCalendar) string for a tour as a full-day event.
+ * Only call this when `tour.start_date` is non-null.
+ */
+export function generateIcs(tour: Tour): string {
+  // start_date is stored as YYYY-MM-DD — parse as local date to avoid UTC shifting.
+  const start = parseDateString(tour.start_date!);
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + tour.duration_days);
+  const uid = `${icsDate(start)}-${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40)}@utomate`;
+
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//UtoMate//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `DTSTART;VALUE=DATE:${icsDate(start)}`,
+    `DTEND;VALUE=DATE:${icsDate(end)}`,
+    `SUMMARY:${escapeIcs(tour.title)}`,
+  ];
+
+  if (tour.detail_url) {
+    lines.push(`URL:${tour.detail_url}`);
+  }
+
+  lines.push(`UID:${uid}`, "END:VEVENT", "END:VCALENDAR");
+
+  return lines.join("\r\n");
 }

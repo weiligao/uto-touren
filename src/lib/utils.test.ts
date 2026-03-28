@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import type { Tour } from "./types";
 import {
   formatDate,
   formatDuration,
+  generateIcs,
   na,
   parseDuration,
   parseGermanDate,
@@ -65,8 +67,8 @@ describe("parseDuration", () => {
 });
 
 describe("formatDate", () => {
-  it("formats a valid ISO date", () => {
-    const result = formatDate("2026-06-12T00:00:00.000Z", "fallback");
+  it("formats a valid date string", () => {
+    const result = formatDate("2026-06-12", "fallback");
     expect(result).toBeTruthy();
     expect(result).not.toBe("fallback");
   });
@@ -101,5 +103,52 @@ describe("na", () => {
 
   it("returns N/A for empty string", () => {
     expect(na("")).toBe("N/A");
+  });
+});
+
+describe("generateIcs", () => {
+  const baseTour: Tour = {
+    date: "Fr 12. Jun.",
+    start_date: "2026-06-12",
+    duration_days: 3,
+    tour_type: "Ht",
+    difficulty: "L",
+    duration: "3 Tage",
+    group: "Alpinist/innen",
+    title: "Matterhorn",
+    leader: "Max Muster",
+    status: "open",
+    detail_url: "https://sac-uto.ch/de/touren/123",
+  };
+
+  it("includes required ICS structure", () => {
+    const ics = generateIcs(baseTour);
+    expect(ics).toContain("BEGIN:VCALENDAR");
+    expect(ics).toContain("BEGIN:VEVENT");
+    expect(ics).toContain("END:VEVENT");
+    expect(ics).toContain("END:VCALENDAR");
+  });
+
+  it("sets full-day DTSTART and exclusive DTEND", () => {
+    const ics = generateIcs(baseTour);
+    expect(ics).toContain("DTSTART;VALUE=DATE:20260612");
+    expect(ics).toContain("DTEND;VALUE=DATE:20260615"); // +3 days, exclusive
+  });
+
+  it("includes title as SUMMARY", () => {
+    expect(generateIcs(baseTour)).toContain("SUMMARY:Matterhorn");
+  });
+
+  it("includes URL when detail_url is set", () => {
+    expect(generateIcs(baseTour)).toContain("URL:https://sac-uto.ch/de/touren/123");
+  });
+
+  it("omits URL when detail_url is null", () => {
+    expect(generateIcs({ ...baseTour, detail_url: null })).not.toContain("URL:");
+  });
+
+  it("escapes special characters in title", () => {
+    const ics = generateIcs({ ...baseTour, title: "Tour, with; special\\chars" });
+    expect(ics).toContain("SUMMARY:Tour\\, with\\; special\\\\chars");
   });
 });

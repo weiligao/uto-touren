@@ -2,8 +2,8 @@
 
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
-import { formatDate, formatDuration, na } from "@/lib/utils";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { downloadTourIcs, formatDate, formatDuration, na, parseDateString } from "@/lib/utils";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTH_NAMES = [
@@ -56,7 +56,7 @@ function buildTourMap(tours: CalendarTour[], year: number, month: number) {
   return map;
 }
 
-function TourTooltip({ tour, eventType, anchorRef }: { tour: Tour; eventType: string; anchorRef: React.RefObject<HTMLDivElement | null> }) {
+function TourTooltip({ tour, eventType, anchorRef, onClose }: { tour: Tour; eventType: string; anchorRef: React.RefObject<HTMLDivElement | null>; onClose: () => void }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
@@ -68,19 +68,38 @@ function TourTooltip({ tour, eventType, anchorRef }: { tour: Tour; eventType: st
     });
   }, [anchorRef]);
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [anchorRef, onClose]);
+
   if (!pos) {return null;}
 
   return (
     <div
-      className="fixed z-50 w-64 bg-white border border-gray-200 rounded-lg p-3 shadow-lg pointer-events-none"
+      className="fixed z-50 w-64 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
       style={{ top: pos.top, left: pos.left, transform: "translate(-50%, -100%)" }}
     >
-      <p className="font-semibold text-sm text-gray-900 mb-2">{tour.title}</p>
+      <p className="font-semibold text-sm text-gray-900 mb-2">
+        {tour.detail_url ? (
+          <a href={tour.detail_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            {tour.title}
+            <svg className="inline h-3 w-3 ml-1 mb-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        ) : tour.title}
+      </p>
       <div className="space-y-1 text-xs text-gray-600">
         <p><span className="font-medium text-gray-700">Date:</span> {formatDate(tour.start_date, tour.date)}</p>
-        <p><span className="font-medium text-gray-700">Type:</span> {eventType} / {na(tour.tour_type)}</p>
-        <p><span className="font-medium text-gray-700">Difficulty:</span> <span className="inline-block bg-blue-50 text-blue-700 font-medium px-1.5 py-0.5 rounded">{na(tour.difficulty)}</span></p>
         <p><span className="font-medium text-gray-700">Duration:</span> {formatDuration(tour.duration_days)}</p>
+        <p><span className="font-medium text-gray-700">Type:</span> {eventType} / {na(tour.tour_type)}</p>
+        <p><span className="font-medium text-gray-700">Difficulty:</span> {na(tour.difficulty)}</p>
         <p><span className="font-medium text-gray-700">Group:</span> {na(tour.group)}</p>
         <p><span className="font-medium text-gray-700">Leader:</span> {na(tour.leader)}</p>
         <p className="flex items-center gap-1">
@@ -89,6 +108,17 @@ function TourTooltip({ tour, eventType, anchorRef }: { tour: Tour; eventType: st
           {STATUS_LABELS[tour.status]}
         </p>
       </div>
+      {tour.start_date && (
+        <button
+          onClick={() => { downloadTourIcs(tour); onClose(); }}
+          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+        >
+          <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Add to calendar (.ics)
+        </button>
+      )}
     </div>
   );
 }
@@ -100,27 +130,21 @@ function TourPill({
   ct: CalendarTour;
   eventType: string;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const dotColor = STATUS_COLORS[ct.tour.status];
+  const handleClose = useCallback(() => setOpen(false), []);
 
   return (
-    <div
-      ref={ref}
-      className="relative"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <a
-        href={ct.tour.detail_url ?? undefined}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight bg-blue-50 hover:bg-blue-100 truncate cursor-pointer"
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight bg-blue-50 hover:bg-blue-100 text-left cursor-pointer"
       >
         <span className={`shrink-0 inline-block h-2 w-2 rounded-full ${dotColor}`} />
         <span className="truncate">{ct.tour.title}</span>
-      </a>
-      {hovered && <TourTooltip tour={ct.tour} eventType={eventType} anchorRef={ref} />}
+      </button>
+      {open && <TourTooltip tour={ct.tour} eventType={eventType} anchorRef={ref} onClose={handleClose} />}
     </div>
   );
 }
@@ -151,7 +175,7 @@ export function CalendarView({
         .filter((tour) => tour.start_date !== null)
         .map((tour) => ({
           tour,
-          startDate: new Date(tour.start_date!),
+          startDate: parseDateString(tour.start_date!),
           days: tour.duration_days,
         })),
     [tours],
@@ -187,7 +211,7 @@ export function CalendarView({
       <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
         <button
           onClick={prevMonth}
-          className="p-1 rounded hover:bg-gray-100 text-gray-600"
+          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -198,7 +222,7 @@ export function CalendarView({
         </span>
         <button
           onClick={nextMonth}
-          className="p-1 rounded hover:bg-gray-100 text-gray-600"
+          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
