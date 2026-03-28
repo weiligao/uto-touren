@@ -104,7 +104,6 @@ function parseTourRows(html: string, year: number): Tour[] {
       duration_days: parseDuration(durationStr),
       tour_type: text[CELL.TOUR_TYPE],
       difficulty: text[CELL.DIFFICULTY],
-      duration: durationStr,
       group: text[CELL.GROUP],
       title: text[CELL.TITLE],
       leader: text[CELL.LEADER],

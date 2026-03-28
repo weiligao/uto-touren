@@ -113,7 +113,6 @@ describe("generateIcs", () => {
     duration_days: 3,
     tour_type: "Ht",
     difficulty: "L",
-    duration: "3 Tage",
     group: "Alpinist/innen",
     title: "Matterhorn",
     leader: "Max Muster",

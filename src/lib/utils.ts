@@ -90,7 +90,7 @@ function escapeIcs(s: string): string {
  * Trigger a browser download of an ICS file for the given tour.
  * Only call this when `tour.start_date` is non-null.
  */
-export function downloadTourIcs(tour: Tour): void {
+export function downloadIcs(tour: Tour): void {
   const content = generateIcs(tour);
   const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -98,7 +98,7 @@ export function downloadTourIcs(tour: Tour): void {
   a.href = url;
   a.download = `${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 60)}.ics`;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /**
@@ -125,6 +125,14 @@ export function generateIcs(tour: Tour): string {
   if (tour.detail_url) {
     lines.push(`URL:${tour.detail_url}`);
   }
+
+  lines.push(
+    "BEGIN:VALARM",
+    "TRIGGER:PT0S",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:${escapeIcs(tour.title)}`,
+    "END:VALARM",
+  );
 
   lines.push(`UID:${uid}`, "END:VEVENT", "END:VCALENDAR");
 

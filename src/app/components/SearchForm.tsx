@@ -1,4 +1,5 @@
 import { EVENT_TYPES, GROUPS, TOUR_TYPES, YEARS } from "@/lib/constants";
+import { useState } from "react";
 
 function Spinner() {
   return (
@@ -50,9 +51,30 @@ export function SearchForm({
   loading: boolean;
   onSearch: () => void;
 }) {
+  const [expanded, setExpanded] = useState(true);
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between px-6 py-4 cursor-pointer"
+      >
+        <h2 className="text-base font-semibold text-gray-800">Search Tours</h2>
+        <svg
+          className={`h-5 w-5 text-gray-500 transition-transform ${expanded ? "rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {expanded && (
+        <div className="px-6 pb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Year
@@ -122,7 +144,7 @@ export function SearchForm({
           <button
             onClick={onSearch}
             disabled={loading}
-            className="w-full justify-center inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full justify-center inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             {loading ? (
               <>
@@ -130,11 +152,13 @@ export function SearchForm({
                 Searching...
               </>
             ) : (
-              "Search Tours"
+              "Search"
             )}
           </button>
         </div>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
