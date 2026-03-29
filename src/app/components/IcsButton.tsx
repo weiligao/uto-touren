@@ -17,7 +17,7 @@ export function IcsButton({
   if (!tour.start_date) { return null; }
 
   function handleClick() {
-    downloadIcs(tour);
+    downloadIcs(tour as Tour & { start_date: string });
     onAfterDownload?.();
   }
 

@@ -25,7 +25,7 @@ export function ResultsHeader({
           Ausgebucht/Abgesagt ausblenden
         </label>
         <span className="text-sm text-gray-500 tabular-nums">
-          {visibleCount} von {totalScraped} Touren gefunden
+          {visibleCount} von {totalScraped} Touren angezeigt
         </span>
       </div>
     </div>

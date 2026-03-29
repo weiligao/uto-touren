@@ -56,7 +56,7 @@ export function formatDate(startDate: string | null, fallback: string): string {
 }
 
 export function formatDuration(days: number): string {
-  return days === 1 ? "1 day" : `${days} days`;
+  return days === 1 ? "1 Tag" : `${days} Tage`;
 }
 
 export function na(value: string): string {
@@ -82,7 +82,7 @@ function escapeIcs(s: string): string {
  * Trigger a browser download of an ICS file for the given tour.
  * Only call this when `tour.start_date` is non-null.
  */
-export function downloadIcs(tour: Tour): void {
+export function downloadIcs(tour: Tour & { start_date: string }): void {
   const content = generateIcs(tour);
   const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -97,9 +97,9 @@ export function downloadIcs(tour: Tour): void {
  * Generate an ICS (iCalendar) string for a tour as a full-day event.
  * Only call this when `tour.start_date` is non-null.
  */
-export function generateIcs(tour: Tour): string {
+export function generateIcs(tour: Tour & { start_date: string }): string {
   // start_date is stored as YYYY-MM-DD — parse as local date to avoid UTC shifting.
-  const start = parseDateString(tour.start_date as string);
+  const start = parseDateString(tour.start_date);
   const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + tour.duration_days);
   const uid = `${icsDate(start)}-${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40)}@uto-touren`;
 
@@ -109,6 +109,7 @@ export function generateIcs(tour: Tour): string {
     "PRODID:-//UtoTouren//EN",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
+    `UID:${uid}`,
     `DTSTART;VALUE=DATE:${icsDate(start)}`,
     `DTEND;VALUE=DATE:${icsDate(end)}`,
     `SUMMARY:${escapeIcs(tour.title)}`,
@@ -118,15 +119,7 @@ export function generateIcs(tour: Tour): string {
     lines.push(`URL:${tour.detail_url}`);
   }
 
-  lines.push(
-    "BEGIN:VALARM",
-    "TRIGGER:PT0S",
-    "ACTION:DISPLAY",
-    `DESCRIPTION:${escapeIcs(tour.title)}`,
-    "END:VALARM",
-  );
-
-  lines.push(`UID:${uid}`, "END:VEVENT", "END:VCALENDAR");
+  lines.push("END:VEVENT", "END:VCALENDAR");
 
   return lines.join("\r\n");
 }

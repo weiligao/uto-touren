@@ -34,8 +34,7 @@ export const GROUPS = [
   { value: "Senior/innen", label: "Senior/innen" },
 ] as const;
 
-const currentYear = new Date().getFullYear();
-export const YEARS = [String(currentYear), String(currentYear + 1)];
+export const YEARS = [String(new Date().getFullYear()), String(new Date().getFullYear() + 1)];
 
 export const STATUS_COLORS: Record<TourStatus, string> = {
   open: "bg-green-500",

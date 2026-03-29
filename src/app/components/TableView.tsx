@@ -101,7 +101,7 @@ export function TableView({
                       {na(tour.group)}
                     </td>
                     <td className="px-4 py-3 text-gray-900">
-                      <TourTitle title={na(tour.title)} url={tour.detail_url} />
+                      <TourTitle title={tour.title} url={tour.detail_url} />
                     </td>
                     <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{na(tour.leader)}</td>
                     <td className="hidden sm:table-cell px-4 py-3 text-center">
@@ -112,6 +112,7 @@ export function TableView({
                     </td>
                     <td className="sm:hidden px-2 pr-4 py-3 text-center">
                       <button
+                        type="button"
                         onClick={() => toggleRow(i)}
                         className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-pointer"
                         aria-label={expanded ? "Zuklappen" : "Aufklappen"}

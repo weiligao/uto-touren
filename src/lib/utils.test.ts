@@ -100,15 +100,15 @@ describe("formatDate", () => {
 
 describe("formatDuration", () => {
   it("singular", () => {
-    expect(formatDuration(1)).toBe("1 day");
+    expect(formatDuration(1)).toBe("1 Tag");
   });
 
   it("plural", () => {
-    expect(formatDuration(3)).toBe("3 days");
+    expect(formatDuration(3)).toBe("3 Tage");
   });
 
   it("zero", () => {
-    expect(formatDuration(0)).toBe("0 days");
+    expect(formatDuration(0)).toBe("0 Tage");
   });
 });
 
