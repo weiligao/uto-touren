@@ -116,6 +116,9 @@ function parseTourRows(html: string, year: number): Tour[] {
 }
 
 function getTotalCount(html: string): number | null {
+  // Matches the SAC pagination indicator "X-Y / N" to extract total count for
+  // early loop termination. Falls back gracefully to the empty-page guard if
+  // sac-uto.ch ever changes its pagination markup.
   const match = html.match(/\d+-\d+\s*\/\s*(\d+)/);
   return match ? parseInt(match[1], 10) : null;
 }

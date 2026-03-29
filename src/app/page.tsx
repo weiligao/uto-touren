@@ -30,11 +30,12 @@ function HomeContent() {
     searchParams.get("view") === "calendar" ? "calendar" : "table",
   );
 
-  // True when the URL already reflects a search (has year or type param)
-  const [hasSearched, setHasSearched] = useState(() =>
-    searchParams.has("year") || searchParams.has("type"),
-  );
+  // True when URL params indicate a previous search — used to decide whether to
+  // auto-trigger on load and whether to start writing params to the URL.
+  // Stored in a ref because it only matters at mount; changes to it must not re-render.
+  const initialFromUrl = useRef(searchParams.has("year") || searchParams.has("type"));
 
+  const [hasSearched, setHasSearched] = useState(() => initialFromUrl.current);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -81,15 +82,16 @@ function HomeContent() {
     }
   }
 
-  // Auto-trigger search on initial load when URL already has params
+  // Auto-trigger search on initial load when the URL already carries search params
   const didAutoSearch = useRef(false);
   useEffect(() => {
     if (didAutoSearch.current) {return;}
     didAutoSearch.current = true;
-    if (hasSearched) {
+    if (initialFromUrl.current) {
       handleSearch();
     }
-    // handleSearch is stable (defined outside hooks) — intentional one-time effect
+    // One-time effect: handleSearch closes over state but we intentionally only
+    // run it once, using the values already initialised from the URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

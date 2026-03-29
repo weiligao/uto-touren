@@ -3,7 +3,7 @@
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
 import { formatDuration, na, parseDateString } from "@/lib/utils";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
@@ -75,8 +75,9 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Measure anchor position synchronously before paint to avoid a layout flash
-  useLayoutEffect(() => {
+  // Measure anchor position after paint. The `if (!dialogStyle) return null` guard
+  // below prevents a visible flash, so useLayoutEffect is not needed here.
+  useEffect(() => {
     function updatePosition() {
       if (!anchorRef.current) { return; }
       const rect = anchorRef.current.getBoundingClientRect();
