@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     title: "UtoTouren",
     description:
       "Touren und Kurse der SAC-Sektion Uto suchen, filtern und herunterladen.",
-    images: [{ url: "/og-image.png", width: 2400, height: 1260, alt: "UtoTouren logo" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 1200, alt: "UtoTouren logo" }],
   },
   twitter: {
     card: "summary",
