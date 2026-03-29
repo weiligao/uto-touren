@@ -3,7 +3,7 @@
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
 import { formatDuration, na, parseDateString } from "@/lib/utils";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
@@ -22,12 +22,9 @@ interface CalendarTour {
 }
 
 function getCalendarDays(year: number, month: number) {
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
   // Monday = 0 ... Sunday = 6
-  const startDow = (firstDay.getDay() + 6) % 7;
-  const daysInMonth = lastDay.getDate();
+  const startDow = (new Date(year, month, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const cells: (number | null)[] = [];
   for (let i = 0; i < startDow; i++) {cells.push(null);}
@@ -46,13 +43,15 @@ function buildTourMap(tours: CalendarTour[], year: number, month: number) {
 
   for (const ct of tours) {
     for (let d = 0; d < ct.days; d++) {
-      const date = new Date(ct.startDate);
-      date.setDate(date.getDate() + d);
+      const date = new Date(
+        ct.startDate.getFullYear(),
+        ct.startDate.getMonth(),
+        ct.startDate.getDate() + d,
+      );
       if (date.getFullYear() === year && date.getMonth() === month) {
         const key = dateKey(year, month, date.getDate());
-        const list = map.get(key) ?? [];
-        list.push(ct);
-        map.set(key, list);
+        const list = map.get(key);
+        if (list) { list.push(ct); } else { map.set(key, [ct]); }
       }
     }
   }
@@ -73,9 +72,11 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
     transform?: string;
   } | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Measure anchor position synchronously before paint to avoid a layout flash
-  useLayoutEffect(() => {
+  // Measure anchor position after paint. The `if (!dialogStyle) return null` guard
+  // below prevents a visible flash, so useLayoutEffect is not needed here.
+  useEffect(() => {
     function updatePosition() {
       if (!anchorRef.current) { return; }
       const rect = anchorRef.current.getBoundingClientRect();
@@ -110,7 +111,10 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
 
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
-      if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const insideAnchor = anchorRef.current?.contains(target) ?? false;
+      const insideDialog = dialogRef.current?.contains(target) ?? false;
+      if (!insideAnchor && !insideDialog) {
         onClose();
       }
     };
@@ -126,6 +130,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="tour-dialog-title"
@@ -212,8 +217,8 @@ function TourPill({
 }
 
 function detectInitialMonth(tours: CalendarTour[]): number {
-  if (tours.length === 0) {return new Date().getMonth();}
-  return tours.reduce((min, ct) => Math.min(min, ct.startDate.getMonth()), 11);
+  if (tours.length === 0) { return new Date().getMonth(); }
+  return Math.min(...tours.map((ct) => ct.startDate.getMonth()));
 }
 
 const SWIPE_THRESHOLD = 50;
@@ -249,8 +254,13 @@ export function CalendarView({
 
   const { minMonth, maxMonth } = useMemo(() => {
     if (calendarTours.length === 0) { return { minMonth: 0, maxMonth: 11 }; }
-    const months = calendarTours.map((ct) => ct.startDate.getMonth());
-    return { minMonth: Math.min(...months), maxMonth: Math.max(...months) };
+    return calendarTours.reduce(
+      (acc, ct) => {
+        const m = ct.startDate.getMonth();
+        return { minMonth: Math.min(acc.minMonth, m), maxMonth: Math.max(acc.maxMonth, m) };
+      },
+      { minMonth: 11, maxMonth: 0 },
+    );
   }, [calendarTours]);
 
   // Skip the initial run — useState already set the correct month via the lazy initializer.
@@ -344,11 +354,11 @@ export function CalendarView({
           {Array.from({ length: Math.ceil(cells.length / 7) }, (_, rowIdx) =>
             cells.slice(rowIdx * 7, rowIdx * 7 + 7)
           ).map((row, rowIdx) => (
-            <div key={rowIdx} role="row" className="contents">
+            <div key={`row-${yearNum}-${month}-${rowIdx}`} role="row" className="contents">
               {row.map((day, colIdx) => {
                 const cellIdx = rowIdx * 7 + colIdx;
                 const key = day ? dateKey(yearNum, month, day) : `empty-${cellIdx}`;
-                const toursForDay = day ? tourMap.get(dateKey(yearNum, month, day)) ?? [] : [];
+                const toursForDay = day ? tourMap.get(key) ?? [] : [];
                 return (
                   <div
                     key={key}

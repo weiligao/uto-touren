@@ -34,6 +34,15 @@ const CELL = {
   MIN_LENGTH: 11,
 } as const;
 
+/** Format a local Date as YYYY-MM-DD. */
+function toIsoDate(date: Date): string {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 function buildUrl(
   year: string,
   typ: string,
@@ -98,9 +107,7 @@ function parseTourRows(html: string, year: number): Tour[] {
 
     tours.push({
       date: dateStr,
-      start_date: startDate
-        ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`
-        : null,
+      start_date: startDate ? toIsoDate(startDate) : null,
       duration_days: parseDuration(durationStr),
       tour_type: text[CELL.TOUR_TYPE],
       difficulty: text[CELL.DIFFICULTY],
@@ -116,6 +123,9 @@ function parseTourRows(html: string, year: number): Tour[] {
 }
 
 function getTotalCount(html: string): number | null {
+  // Matches the SAC pagination indicator "X-Y / N" to extract total count for
+  // early loop termination. Falls back gracefully to the empty-page guard if
+  // sac-uto.ch ever changes its pagination markup.
   const match = html.match(/\d+-\d+\s*\/\s*(\d+)/);
   return match ? parseInt(match[1], 10) : null;
 }
@@ -129,10 +139,6 @@ class UpstreamError extends Error {
     super(message);
   }
 }
-
-// In-flight deduplication: if a scrape for the same params is already running,
-// return the same promise instead of issuing duplicate upstream requests.
-const inFlight = new Map<string, Promise<Tour[]>>();
 
 async function scrapeToursUncached(
   year: string,
@@ -192,20 +198,31 @@ async function scrapeToursUncached(
   return allTours;
 }
 
-const scrapeTours = unstable_cache(
-  (year: string, typ: string, anlasstyp: string, gruppe: string): Promise<Tour[]> => {
-    const key = `${year}:${typ}:${anlasstyp}:${gruppe}`;
-    const existing = inFlight.get(key);
-    if (existing) { return existing; }
-    const promise = scrapeToursUncached(year, typ, anlasstyp, gruppe).finally(() => {
-      inFlight.delete(key);
-    });
-    inFlight.set(key, promise);
-    return promise;
-  },
+const cachedFetchTours = unstable_cache(
+  scrapeToursUncached,
   ["scrape-tours"],
   { revalidate: CACHE_REVALIDATE_SECONDS },
 );
+
+// In-flight deduplication: if a scrape for the same params is already running,
+// return the same promise instead of issuing duplicate upstream requests.
+const inFlight = new Map<string, Promise<Tour[]>>();
+
+async function scrapeTours(
+  year: string,
+  typ: string,
+  anlasstyp: string,
+  gruppe: string,
+): Promise<Tour[]> {
+  const key = `${year}:${typ}:${anlasstyp}:${gruppe}`;
+  const existing = inFlight.get(key);
+  if (existing) { return existing; }
+  const promise = cachedFetchTours(year, typ, anlasstyp, gruppe).finally(() => {
+    inFlight.delete(key);
+  });
+  inFlight.set(key, promise);
+  return promise;
+}
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
@@ -229,7 +246,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const tours = await scrapeTours(rawYear, rawTyp, rawAnlasstyp, rawGruppe);
-    return NextResponse.json({
+    const response = NextResponse.json({
       source: "sac-uto.ch",
       year: rawYear,
       type_filter: rawTyp,
@@ -237,6 +254,8 @@ export async function GET(request: NextRequest) {
       total_scraped: tours.length,
       tours,
     });
+    response.headers.set("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+    return response;
   } catch (err) {
     if (err instanceof UpstreamError) {
       return NextResponse.json({ error: err.message }, { status: err.httpStatus });
