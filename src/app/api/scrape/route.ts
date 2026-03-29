@@ -130,10 +130,6 @@ class UpstreamError extends Error {
   }
 }
 
-// In-flight deduplication: if a scrape for the same params is already running,
-// return the same promise instead of issuing duplicate upstream requests.
-const inFlight = new Map<string, Promise<Tour[]>>();
-
 async function scrapeToursUncached(
   year: string,
   typ: string,
@@ -192,20 +188,31 @@ async function scrapeToursUncached(
   return allTours;
 }
 
-const scrapeTours = unstable_cache(
-  (year: string, typ: string, anlasstyp: string, gruppe: string): Promise<Tour[]> => {
-    const key = `${year}:${typ}:${anlasstyp}:${gruppe}`;
-    const existing = inFlight.get(key);
-    if (existing) { return existing; }
-    const promise = scrapeToursUncached(year, typ, anlasstyp, gruppe).finally(() => {
-      inFlight.delete(key);
-    });
-    inFlight.set(key, promise);
-    return promise;
-  },
+const cachedScrapeToursUncached = unstable_cache(
+  scrapeToursUncached,
   ["scrape-tours"],
   { revalidate: CACHE_REVALIDATE_SECONDS },
 );
+
+// In-flight deduplication: if a scrape for the same params is already running,
+// return the same promise instead of issuing duplicate upstream requests.
+const inFlight = new Map<string, Promise<Tour[]>>();
+
+async function scrapeTours(
+  year: string,
+  typ: string,
+  anlasstyp: string,
+  gruppe: string,
+): Promise<Tour[]> {
+  const key = `${year}:${typ}:${anlasstyp}:${gruppe}`;
+  const existing = inFlight.get(key);
+  if (existing) { return existing; }
+  const promise = cachedScrapeToursUncached(year, typ, anlasstyp, gruppe).finally(() => {
+    inFlight.delete(key);
+  });
+  inFlight.set(key, promise);
+  return promise;
+}
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
@@ -229,7 +236,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const tours = await scrapeTours(rawYear, rawTyp, rawAnlasstyp, rawGruppe);
-    return NextResponse.json({
+    const response = NextResponse.json({
       source: "sac-uto.ch",
       year: rawYear,
       type_filter: rawTyp,
@@ -237,6 +244,8 @@ export async function GET(request: NextRequest) {
       total_scraped: tours.length,
       tours,
     });
+    response.headers.set("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+    return response;
   } catch (err) {
     if (err instanceof UpstreamError) {
       return NextResponse.json({ error: err.message }, { status: err.httpStatus });

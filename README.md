@@ -13,8 +13,10 @@ A web app for searching and browsing tours from [SAC-Sektion Uto](https://sac-ut
 - Toggle to hide full/cancelled tours
 - Status indicators (open, full/cancelled, not yet open)
 - Tour detail tooltips with links to the original listing
-- Download individual tours as `.ics` calendar files (includes a reminder at start of event)
+- Download individual tours as `.ics` calendar files
+- All search filters and view mode are persisted in the URL — shareable links auto-trigger the search
 - Results cached for 24 hours to avoid hammering the upstream site
+- Vercel Analytics and Speed Insights for performance monitoring
 
 ## Development
 
@@ -41,6 +43,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - [Tailwind CSS](https://tailwindcss.com) v4
 - [cheerio](https://cheerio.js.org) for HTML parsing
 - [Vitest](https://vitest.dev) for unit tests
+- [Vercel Analytics](https://vercel.com/docs/analytics) for usage analytics
 - [Vercel Speed Insights](https://vercel.com/docs/speed-insights) for performance monitoring
 
 ## Contributing

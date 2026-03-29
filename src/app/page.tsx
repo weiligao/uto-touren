@@ -3,21 +3,56 @@
 import { CalendarView } from "@/app/components/CalendarView";
 import { SearchForm } from "@/app/components/SearchForm";
 import { TableView } from "@/app/components/TableView";
+import { TOUR_TYPES, YEARS } from "@/lib/constants";
 import type { ScrapeResult } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 type ViewMode = "table" | "calendar";
 
-export default function Home() {
-  const [year, setYear] = useState(String(new Date().getFullYear()));
-  const [typ, setTyp] = useState("Ht");
-  const [eventType, setEventType] = useState("");
-  const [group, setGroup] = useState("");
+const DEFAULT_YEAR = String(new Date().getFullYear());
+const DEFAULT_TYP = "Ht";
+
+function HomeContent() {
+  const searchParams = useSearchParams();
+
+  const [year, setYear] = useState(() => {
+    const v = searchParams.get("year");
+    return v && YEARS.includes(v) ? v : DEFAULT_YEAR;
+  });
+  const [typ, setTyp] = useState(() => {
+    const v = searchParams.get("type");
+    return v && TOUR_TYPES.some((t) => t.value === v) ? v : DEFAULT_TYP;
+  });
+  const [eventType, setEventType] = useState(() => searchParams.get("event") ?? "");
+  const [group, setGroup] = useState(() => searchParams.get("group") ?? "");
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    searchParams.get("view") === "calendar" ? "calendar" : "table",
+  );
+
+  // True when the URL already reflects a search (has year or type param)
+  const [hasSearched, setHasSearched] = useState(() =>
+    searchParams.has("year") || searchParams.has("type"),
+  );
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Sync filter state → URL without triggering navigation.
+  // Before the first search the URL stays clean; after a search all params are
+  // always written so that the URL can be shared and will auto-trigger.
+  useEffect(() => {
+    if (!hasSearched) {return;}
+    const params = new URLSearchParams();
+    params.set("year", year);
+    params.set("type", typ);
+    if (eventType) {params.set("event", eventType);}
+    if (group) {params.set("group", group);}
+    if (viewMode !== "table") {params.set("view", viewMode);}
+    window.history.replaceState(null, "", `?${params.toString()}`);
+  }, [year, typ, eventType, group, viewMode, hasSearched]);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -38,12 +73,25 @@ export default function Home() {
         throw new Error(body.error ?? `Anfrage fehlgeschlagen: ${res.status}`);
       }
       setResult(await res.json());
+      setHasSearched(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler");
     } finally {
       setLoading(false);
     }
   }
+
+  // Auto-trigger search on initial load when URL already has params
+  const didAutoSearch = useRef(false);
+  useEffect(() => {
+    if (didAutoSearch.current) {return;}
+    didAutoSearch.current = true;
+    if (hasSearched) {
+      handleSearch();
+    }
+    // handleSearch is stable (defined outside hooks) — intentional one-time effect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="bg-gray-50 flex-1">
@@ -154,5 +202,13 @@ export default function Home() {
         </button>
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
   );
 }

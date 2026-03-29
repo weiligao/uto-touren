@@ -73,6 +73,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
     transform?: string;
   } | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   // Measure anchor position synchronously before paint to avoid a layout flash
   useLayoutEffect(() => {
@@ -110,7 +111,10 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
 
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
-      if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const insideAnchor = anchorRef.current?.contains(target) ?? false;
+      const insideDialog = dialogRef.current?.contains(target) ?? false;
+      if (!insideAnchor && !insideDialog) {
         onClose();
       }
     };
@@ -126,6 +130,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="tour-dialog-title"

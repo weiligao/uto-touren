@@ -29,4 +29,5 @@ const svg = `
 </svg>`;
 
 await sharp(Buffer.from(svg)).png().toFile(outPath);
+// eslint-disable-next-line no-console
 console.log(`Written: ${outPath}`);

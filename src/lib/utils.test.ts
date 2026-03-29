@@ -166,4 +166,29 @@ describe("generateIcs", () => {
     const ics = generateIcs({ ...baseTour, title: "Tour, with; special\\chars" });
     expect(ics).toContain("SUMMARY:Tour\\, with\\; special\\\\chars");
   });
+
+  it("folds lines longer than 75 octets", () => {
+    const longTitle = "A".repeat(80);
+    const ics = generateIcs({ ...baseTour, title: longTitle });
+    // Each physical line must be at most 75 octets
+    const lines = ics.split("\r\n");
+    for (const line of lines) {
+      expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
+    }
+  });
+
+  it("folded lines are reassembled to original value", () => {
+    const longTitle = "B".repeat(200);
+    const ics = generateIcs({ ...baseTour, title: longTitle });
+    // Unfold: remove CRLF followed by a single space
+    const unfolded = ics.replace(/\r\n /g, "");
+    expect(unfolded).toContain(`SUMMARY:${longTitle}`);
+  });
+
+  it("does not fold short lines", () => {
+    const ics = generateIcs(baseTour);
+    // "BEGIN:VCALENDAR" is 16 bytes — must appear as a single unbroken line
+    expect(ics).toContain("BEGIN:VCALENDAR");
+    expect(ics).not.toMatch(/BEGIN:\r\n/);
+  });
 });

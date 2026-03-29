@@ -79,6 +79,30 @@ function escapeIcs(s: string): string {
 }
 
 /**
+ * Fold an ICS content line per RFC 5545 §3.1.
+ * Lines longer than 75 octets are split; continuation lines begin with a single space.
+ */
+function foldIcsLine(line: string): string {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const bytes = encoder.encode(line);
+  if (bytes.length <= 75) {return line;}
+
+  const parts: string[] = [];
+  let pos = 0;
+  let limit = 75;
+  while (pos < bytes.length) {
+    let end = Math.min(pos + limit, bytes.length);
+    // Step back to avoid splitting a multi-byte UTF-8 sequence (continuation bytes are 10xxxxxx)
+    while (end > pos && (bytes[end] & 0xc0) === 0x80) {end--;}
+    parts.push(decoder.decode(bytes.subarray(pos, end)));
+    pos = end;
+    limit = 74; // continuation lines: 1 byte for leading space + 74 content bytes = 75
+  }
+  return parts.join("\r\n ");
+}
+
+/**
  * Trigger a browser download of an ICS file for the given tour.
  * Only call this when `tour.start_date` is non-null.
  */
@@ -89,7 +113,9 @@ export function downloadIcs(tour: Tour & { start_date: string }): void {
   const a = document.createElement("a");
   a.href = url;
   a.download = `${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 60)}.ics`;
+  document.body.appendChild(a);
   a.click();
+  a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
@@ -121,5 +147,5 @@ export function generateIcs(tour: Tour & { start_date: string }): string {
 
   lines.push("END:VEVENT", "END:VCALENDAR");
 
-  return lines.join("\r\n");
+  return lines.map(foldIcsLine).join("\r\n");
 }
