@@ -358,7 +358,7 @@ export function CalendarView({
               {row.map((day, colIdx) => {
                 const cellIdx = rowIdx * 7 + colIdx;
                 const key = day ? dateKey(yearNum, month, day) : `empty-${cellIdx}`;
-                const toursForDay = day ? tourMap.get(dateKey(yearNum, month, day)) ?? [] : [];
+                const toursForDay = day ? tourMap.get(key) ?? [] : [];
                 return (
                   <div
                     key={key}

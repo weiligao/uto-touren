@@ -147,5 +147,5 @@ export function generateIcs(tour: Tour & { start_date: string }): string {
 
   lines.push("END:VEVENT", "END:VCALENDAR");
 
-  return lines.map(foldIcsLine).join("\r\n");
+  return `${lines.map(foldIcsLine).join("\r\n")}\r\n`;
 }
