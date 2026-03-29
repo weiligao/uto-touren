@@ -220,11 +220,9 @@ const SWIPE_THRESHOLD = 50;
 
 export function CalendarView({
   tours,
-  totalScraped,
   year,
 }: {
   tours: Tour[];
-  totalScraped: number;
   year: string;
 }) {
   const yearNum = parseInt(year, 10);
@@ -242,7 +240,7 @@ export function CalendarView({
   );
 
   const [month, setMonth] = useState(() => detectInitialMonth(calendarTours));
-  const [showFull, setShowFull] = useState(true);
+  const [showFull, setShowFull] = useState(false);
 
   const visibleCalendarTours = useMemo(
     () => showFull ? calendarTours : calendarTours.filter((ct) => ct.tour.status !== "full_or_cancelled"),

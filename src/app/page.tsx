@@ -133,7 +133,6 @@ export default function Home() {
               ) : (
                 <CalendarView
                   tours={result.tours}
-                  totalScraped={result.total_scraped}
                   year={result.year}
                 />
               )}

@@ -3,7 +3,7 @@
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { formatDate, formatDuration, na } from "@/lib/utils";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
@@ -36,12 +36,14 @@ export function TableView({
   totalScraped: number;
 }) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [showFull, setShowFull] = useState(true);
+  const [lastTours, setLastTours] = useState(tours);
+  const [showFull, setShowFull] = useState(false);
 
-  // Clear expanded rows whenever the tours list changes (e.g. new search)
-  useEffect(() => {
+  // Reset expanded rows when the tours list changes (derived state pattern)
+  if (lastTours !== tours) {
+    setLastTours(tours);
     setExpandedRows(new Set());
-  }, [tours]);
+  }
 
   const toggleRow = (i: number) => setExpandedRows((prev) => {
     const next = new Set(prev);
