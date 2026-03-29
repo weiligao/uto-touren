@@ -99,7 +99,7 @@ export function downloadIcs(tour: Tour): void {
  */
 export function generateIcs(tour: Tour): string {
   // start_date is stored as YYYY-MM-DD — parse as local date to avoid UTC shifting.
-  const start = parseDateString(tour.start_date!);
+  const start = parseDateString(tour.start_date as string);
   const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + tour.duration_days);
   const uid = `${icsDate(start)}-${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40)}@uto-touren`;
 

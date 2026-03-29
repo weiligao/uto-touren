@@ -224,7 +224,7 @@ export function CalendarView({
         .filter((tour) => tour.start_date !== null)
         .map((tour) => ({
           tour,
-          startDate: parseDateString(tour.start_date!),
+          startDate: parseDateString(tour.start_date as string),
           days: Math.max(1, tour.duration_days),
         })),
     [tours],
