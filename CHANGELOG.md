@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/weiligao/uto-touren/compare/v1.0.1...v1.1.0) (2026-03-29)
+
+
+### Features
+
+* update og-image ([#12](https://github.com/weiligao/uto-touren/issues/12)) ([e1eca87](https://github.com/weiligao/uto-touren/commit/e1eca8770b7b67b5ad93d6fdc943104d7165016a))
+
 ## [1.0.1](https://github.com/weiligao/uto-touren/compare/v1.0.0...v1.0.1) (2026-03-29)
 
 
