@@ -290,7 +290,7 @@ export function CalendarView({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <ResultsHeader
-        totalScraped={totalScraped}
+        totalScraped={calendarTours.length}
         visibleCount={visibleCalendarTours.length}
         hideFull={hideFull}
         onHideFullChange={setHideFull}
@@ -361,8 +361,8 @@ export function CalendarView({
                       <>
                         <div className="text-xs text-gray-500 mb-0.5">{day}</div>
                         <div className="space-y-0.5 overflow-y-auto max-h-17.5">
-                          {toursForDay.map((ct) => (
-                            <TourPill key={`${ct.tour.title}-${ct.tour.start_date}`} ct={ct} />
+                          {toursForDay.map((ct, pillIdx) => (
+                            <TourPill key={`${ct.tour.title}-${ct.tour.start_date}-${pillIdx}`} ct={ct} />
                           ))}
                         </div>
                       </>

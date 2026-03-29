@@ -40,8 +40,7 @@ export function TableView({
 
   // Clear expanded rows whenever the tours list changes (e.g. new search)
   useEffect(() => {
-    function reset() { setExpandedRows(new Set()); }
-    reset();
+    setExpandedRows(new Set());
   }, [tours]);
 
   const toggleRow = (i: number) => setExpandedRows((prev) => {
