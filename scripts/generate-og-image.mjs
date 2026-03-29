@@ -1,4 +1,4 @@
-// Generates public/og-image.png (2400x1260 — 2x for HiDPI/Retina screens)
+// Generates public/og-image.png (1200x1200 — square for WhatsApp/social previews)
 // Run with: node scripts/generate-og-image.mjs
 // Requires: npm install -D sharp
 
@@ -9,9 +9,9 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outPath = resolve(__dirname, "../public/og-image.png");
 
-// Render at 2x so the image stays crisp on HiDPI phone screens
-const W = 2400;
-const H = 1260;
+// Square format: WhatsApp crops landscape images to square, causing blurry previews
+const W = 1200;
+const H = 1200;
 
 // Icon size and position centered in canvas
 const ICON = 640;
