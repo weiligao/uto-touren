@@ -2,6 +2,7 @@
 
 import type { Tour } from "@/lib/types";
 import { downloadIcs } from "@/lib/utils";
+import { useCallback } from "react";
 
 export function IcsButton({
   tour,
@@ -14,12 +15,12 @@ export function IcsButton({
   compact?: boolean;
   fullWidth?: boolean;
 }) {
-  if (!tour.start_date) { return null; }
-
-  function handleClick() {
+  const handleClick = useCallback(() => {
     downloadIcs(tour as Tour & { start_date: string });
     onAfterDownload?.();
-  }
+  }, [tour, onAfterDownload]);
+
+  if (!tour.start_date) { return null; }
 
   return (
     <button

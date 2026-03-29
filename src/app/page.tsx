@@ -10,15 +10,19 @@ import { Suspense, useEffect, useRef, useState } from "react";
 
 type ViewMode = "table" | "calendar";
 
-const DEFAULT_YEAR = String(new Date().getFullYear());
 const DEFAULT_TYP = "Ht";
+
+function getDefaultYear() {
+  return String(new Date().getFullYear());
+}
 
 function HomeContent() {
   const searchParams = useSearchParams();
 
   const [year, setYear] = useState(() => {
     const v = searchParams.get("year");
-    return v && YEARS.includes(v) ? v : DEFAULT_YEAR;
+    const defaultYear = getDefaultYear();
+    return v && YEARS.includes(v) ? v : defaultYear;
   });
   const [typ, setTyp] = useState(() => {
     const v = searchParams.get("type");
@@ -51,8 +55,7 @@ function HomeContent() {
     params.set("type", typ);
     if (eventType) {params.set("event", eventType);}
     if (group) {params.set("group", group);}
-    if (viewMode !== "table") {params.set("view", viewMode);}
-    window.history.replaceState(null, "", `?${params.toString()}`);
+    if (viewMode !== "table") {params.set("view", viewMode);}    window.history.replaceState(null, "", `?${params.toString()}`);
   }, [year, typ, eventType, group, viewMode, hasSearched]);
 
   useEffect(() => {

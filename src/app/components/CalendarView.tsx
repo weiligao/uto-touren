@@ -350,7 +350,7 @@ export function CalendarView({
           {Array.from({ length: Math.ceil(cells.length / 7) }, (_, rowIdx) =>
             cells.slice(rowIdx * 7, rowIdx * 7 + 7)
           ).map((row, rowIdx) => (
-            <div key={rowIdx} role="row" className="contents">
+            <div key={`row-${yearNum}-${month}-${rowIdx}`} role="row" className="contents">
               {row.map((day, colIdx) => {
                 const cellIdx = rowIdx * 7 + colIdx;
                 const key = day ? dateKey(yearNum, month, day) : `empty-${cellIdx}`;
