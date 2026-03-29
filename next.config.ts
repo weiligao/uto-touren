@@ -1,17 +1,12 @@
-import { execSync } from "child_process";
+import { createRequire } from "module";
 import type { NextConfig } from "next";
 
-function getGitTag(): string {
-  try {
-    return execSync("git describe --tags --abbrev=0", { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }).trim();
-  } catch {
-    return "dev";
-  }
-}
+const require = createRequire(import.meta.url);
+const { version } = require("./package.json") as { version: string };
 
 const nextConfig: NextConfig = {
   env: {
-    NEXT_PUBLIC_APP_VERSION: getGitTag(),
+    NEXT_PUBLIC_APP_VERSION: `v${version}`,
   },
 };
 
