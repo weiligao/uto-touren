@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/weiligao/uto-touren/compare/v1.2.0...v1.3.0) (2026-03-29)
+
+
+### Features
+
+* use square og-image ([#17](https://github.com/weiligao/uto-touren/issues/17)) ([5babc8a](https://github.com/weiligao/uto-touren/commit/5babc8acd3ad76ef93ab70587236a220f663656a))
+
 ## [1.2.0](https://github.com/weiligao/uto-touren/compare/v1.1.0...v1.2.0) (2026-03-29)
 
 
