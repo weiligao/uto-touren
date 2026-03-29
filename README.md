@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">UtoTouren</h1>
 
-A web app for searching and browsing tours from [SAC Sektion Uto](https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/). Scrapes the official tour listing, parses results server-side, and displays them in a filterable table or month calendar view.
+A web app for searching and browsing tours from [SAC-Sektion Uto](https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/). Scrapes the official tour listing, parses results server-side, and displays them in a filterable table or month calendar view.
 
 ## Features
 

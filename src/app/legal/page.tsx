@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Impressum",
-  description: "Impressum für UtoTouren. Diese App ist nicht mit der SAC Sektion Uto verbunden. Daten stammen von sac-uto.ch.",
+  description: "Impressum für UtoTouren. Diese App ist nicht mit der SAC-Sektion Uto verbunden. Daten stammen von sac-uto.ch.",
   robots: { index: false },
 };
 
@@ -23,7 +23,7 @@ export default function LegalPage() {
             <h2 className="text-base font-semibold text-gray-900 mb-2">Über diese Anwendung</h2>
             <p>
               UtoTouren ist eine kostenlose, quelloffene, nicht-kommerzielle Webanwendung, mit der Nutzer
-              Tourenlisten der SAC Sektion Uto suchen, filtern und als Kalenderdateien exportieren können.
+              Tourenlisten der SAC-Sektion Uto suchen, filtern und als Kalenderdateien exportieren können.
               Der Quellcode ist öffentlich verfügbar unter{" "}
               <a
                 href="https://github.com/weiligao/uto-touren"
@@ -38,9 +38,9 @@ export default function LegalPage() {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Keine Verbindung zur SAC Sektion Uto</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Keine Verbindung zur SAC-Sektion Uto</h2>
             <p>
-              UtoTouren ist ein unabhängiges Projekt. Es ist <strong>nicht</strong> mit der SAC Sektion Uto
+              UtoTouren ist ein unabhängiges Projekt. Es ist <strong>nicht</strong> mit der SAC-Sektion Uto
               oder dem Schweizer Alpen-Club (SAC/CAS) verbunden, von diesen unterstützt, gesponsert oder
               offiziell anerkannt. Der Name SAC Uto sowie allfällige Markenzeichen sind Eigentum ihrer
               jeweiligen Inhaber.
@@ -59,8 +59,8 @@ export default function LegalPage() {
               >
                 sac-uto.ch
               </a>
-              , der offiziellen Website der SAC Sektion Uto, abgerufen. Die angezeigten Daten sind
-              Eigentum der SAC Sektion Uto.
+              , der offiziellen Website der SAC-Sektion Uto, abgerufen. Die angezeigten Daten sind
+              Eigentum der SAC-Sektion Uto.
             </p>
             <p className="mt-2">
               UtoTouren übernimmt keine Gewähr für die Richtigkeit, Vollständigkeit, Aktualität oder
@@ -95,7 +95,7 @@ export default function LegalPage() {
                 von sac-uto.ch oder UtoTouren selbst zu nutzen
               </li>
               <li>
-                Über diese Anwendung erhaltene Daten ohne Genehmigung der SAC Sektion Uto weiterzuverbreiten,
+                Über diese Anwendung erhaltene Daten ohne Genehmigung der SAC-Sektion Uto weiterzuverbreiten,
                 weiterzuverkaufen oder neu zu veröffentlichen
               </li>
               <li>

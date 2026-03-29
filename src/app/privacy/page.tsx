@@ -129,7 +129,7 @@ export default function PrivacyPage() {
               >
                 sac-uto.ch
               </a>
-              , der Website der SAC Sektion Uto, abgerufen werden. Es werden keine personenbezogenen
+              , der Website der SAC-Sektion Uto, abgerufen werden. Es werden keine personenbezogenen
               Daten dieser Website erhoben oder gespeichert — es werden ausschliesslich öffentlich
               zugängliche Tourenlisten abgerufen und in Ihrem Browser angezeigt.
             </p>
