@@ -83,10 +83,17 @@ export default function Home() {
 
         {result && (
           <div>
-            <div className="inline-flex w-full sm:w-48 rounded-md border border-gray-300 overflow-hidden mb-4">
+            <div
+              role="tablist"
+              aria-label="Ansicht wählen"
+              className="inline-flex w-full sm:w-48 rounded-md border border-gray-300 overflow-hidden mb-4"
+            >
               <button
                 type="button"
-                aria-pressed={viewMode === "table"}
+                role="tab"
+                aria-selected={viewMode === "table"}
+                aria-controls="view-panel"
+                id="tab-table"
                 onClick={() => setViewMode("table")}
                 className={`flex-1 px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
                   viewMode === "table"
@@ -98,7 +105,10 @@ export default function Home() {
               </button>
               <button
                 type="button"
-                aria-pressed={viewMode === "calendar"}
+                role="tab"
+                aria-selected={viewMode === "calendar"}
+                aria-controls="view-panel"
+                id="tab-calendar"
                 onClick={() => setViewMode("calendar")}
                 className={`flex-1 px-4 py-1.5 text-sm font-medium border-l border-gray-300 transition-colors cursor-pointer ${
                   viewMode === "calendar"
@@ -110,18 +120,24 @@ export default function Home() {
               </button>
             </div>
 
-            {viewMode === "table" ? (
-              <TableView
-                tours={result.tours}
-                totalScraped={result.total_scraped}
-              />
-            ) : (
-              <CalendarView
-                tours={result.tours}
-                totalScraped={result.total_scraped}
-                year={result.year}
-              />
-            )}
+            <div
+              id="view-panel"
+              role="tabpanel"
+              aria-labelledby={viewMode === "table" ? "tab-table" : "tab-calendar"}
+            >
+              {viewMode === "table" ? (
+                <TableView
+                  tours={result.tours}
+                  totalScraped={result.total_scraped}
+                />
+              ) : (
+                <CalendarView
+                  tours={result.tours}
+                  totalScraped={result.total_scraped}
+                  year={result.year}
+                />
+              )}
+            </div>
           </div>
         )}
       </main>

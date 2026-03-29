@@ -3,7 +3,7 @@
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { formatDate, formatDuration, na } from "@/lib/utils";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
@@ -37,6 +37,13 @@ export function TableView({
 }) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [hideFull, setHideFull] = useState(false);
+
+  // Clear expanded rows whenever the tours list changes (e.g. new search)
+  useEffect(() => {
+    function reset() { setExpandedRows(new Set()); }
+    reset();
+  }, [tours]);
+
   const toggleRow = (i: number) => setExpandedRows((prev) => {
     const next = new Set(prev);
     if (next.has(i)) { next.delete(i); } else { next.add(i); }
@@ -72,8 +79,8 @@ export function TableView({
                   {col.label}
                 </th>
               ))}
-              <th scope="col" className="hidden sm:table-cell px-2 py-3 w-8" aria-label="Add to calendar" />
-              <th scope="col" className="sm:hidden px-2 pr-4 py-3 w-8" aria-label="Expand row" />
+              <th scope="col" className="hidden sm:table-cell px-2 py-3 w-8" aria-label="Zum Kalender hinzufügen" />
+              <th scope="col" className="sm:hidden px-2 pr-4 py-3 w-8" aria-label="Zeile aufklappen" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

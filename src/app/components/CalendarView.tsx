@@ -128,12 +128,12 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={tour.title}
+      aria-labelledby="tour-dialog-title"
       className="fixed z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
       style={dialogStyle}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <p className="font-semibold text-sm text-gray-900">
+        <p id="tour-dialog-title" className="font-semibold text-sm text-gray-900">
           <TourTitle title={tour.title} url={tour.detail_url} />
         </p>
         <button
@@ -255,12 +255,20 @@ export function CalendarView({
     return { minMonth: Math.min(...months), maxMonth: Math.max(...months) };
   }, [calendarTours]);
 
+  // Skip the initial run — useState already set the correct month via the lazy initializer.
+  // Only reset when calendarTours changes after mount (e.g. new search).
+  const isFirstRender = useRef(true);
   useEffect(() => {
-    setMonth(detectInitialMonth(calendarTours));
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    function reset() { setMonth(detectInitialMonth(calendarTours)); }
+    reset();
   }, [calendarTours]);
 
-  const cells = getCalendarDays(yearNum, month);
-  const tourMap = buildTourMap(visibleCalendarTours, yearNum, month);
+  const cells = useMemo(() => getCalendarDays(yearNum, month), [yearNum, month]);
+  const tourMap = useMemo(
+    () => buildTourMap(visibleCalendarTours, yearNum, month),
+    [visibleCalendarTours, yearNum, month],
+  );
 
   const prevMonth = useCallback(() => setMonth((m) => Math.max(m - 1, minMonth)), [minMonth]);
   const nextMonth = useCallback(() => setMonth((m) => Math.min(m + 1, maxMonth)), [maxMonth]);
