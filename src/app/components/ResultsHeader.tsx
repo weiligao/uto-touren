@@ -3,13 +3,13 @@
 export function ResultsHeader({
   totalScraped,
   visibleCount,
-  hideFull,
-  onHideFullChange,
+  showFull,
+  onShowFullChange,
 }: {
   totalScraped: number;
   visibleCount: number;
-  hideFull: boolean;
-  onHideFullChange: (value: boolean) => void;
+  showFull: boolean;
+  onShowFullChange: (value: boolean) => void;
 }) {
   return (
     <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -18,14 +18,16 @@ export function ResultsHeader({
         <label className="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer select-none">
           <input
             type="checkbox"
-            checked={hideFull}
-            onChange={(e) => onHideFullChange(e.target.checked)}
+            checked={showFull}
+            onChange={(e) => onShowFullChange(e.target.checked)}
             className="rounded border-gray-300 text-blue-600 cursor-pointer"
           />
-          Ausgebucht/Abgesagt ausblenden
+          <span className="sm:hidden">Ausgebucht/Abgesagt</span>
+          <span className="hidden sm:inline">Ausgebucht/Abgesagt anzeigen</span>
         </label>
-        <span className="text-sm text-gray-500 tabular-nums">
-          {visibleCount} von {totalScraped} Touren angezeigt
+        <span title={`${visibleCount} von ${totalScraped} Touren angezeigt`} className="text-sm text-gray-500 tabular-nums">
+          <span className="sm:hidden">{visibleCount} / {totalScraped} Touren</span>
+          <span className="hidden sm:inline">{visibleCount} von {totalScraped} Touren angezeigt</span>
         </span>
       </div>
     </div>

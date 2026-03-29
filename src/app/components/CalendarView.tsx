@@ -242,11 +242,11 @@ export function CalendarView({
   );
 
   const [month, setMonth] = useState(() => detectInitialMonth(calendarTours));
-  const [hideFull, setHideFull] = useState(false);
+  const [showFull, setShowFull] = useState(true);
 
   const visibleCalendarTours = useMemo(
-    () => hideFull ? calendarTours.filter((ct) => ct.tour.status !== "full_or_cancelled") : calendarTours,
-    [calendarTours, hideFull],
+    () => showFull ? calendarTours : calendarTours.filter((ct) => ct.tour.status !== "full_or_cancelled"),
+    [calendarTours, showFull],
   );
 
   const { minMonth, maxMonth } = useMemo(() => {
@@ -292,8 +292,8 @@ export function CalendarView({
       <ResultsHeader
         totalScraped={calendarTours.length}
         visibleCount={visibleCalendarTours.length}
-        hideFull={hideFull}
-        onHideFullChange={setHideFull}
+        showFull={showFull}
+        onShowFullChange={setShowFull}
       />
 
       {/* Month navigation */}

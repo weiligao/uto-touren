@@ -36,7 +36,7 @@ export function TableView({
   totalScraped: number;
 }) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [hideFull, setHideFull] = useState(false);
+  const [showFull, setShowFull] = useState(true);
 
   // Clear expanded rows whenever the tours list changes (e.g. new search)
   useEffect(() => {
@@ -51,15 +51,15 @@ export function TableView({
 
   const visibleTours = tours
     .map((tour, i) => ({ tour, i }))
-    .filter(({ tour }) => !hideFull || tour.status !== "full_or_cancelled");
+    .filter(({ tour }) => showFull || tour.status !== "full_or_cancelled");
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <ResultsHeader
         totalScraped={totalScraped}
         visibleCount={visibleTours.length}
-        hideFull={hideFull}
-        onHideFullChange={setHideFull}
+        showFull={showFull}
+        onShowFullChange={setShowFull}
       />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
