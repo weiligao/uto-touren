@@ -34,6 +34,15 @@ const CELL = {
   MIN_LENGTH: 11,
 } as const;
 
+/** Format a local Date as YYYY-MM-DD. */
+function toIsoDate(date: Date): string {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 function buildUrl(
   year: string,
   typ: string,
@@ -98,9 +107,7 @@ function parseTourRows(html: string, year: number): Tour[] {
 
     tours.push({
       date: dateStr,
-      start_date: startDate
-        ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`
-        : null,
+      start_date: startDate ? toIsoDate(startDate) : null,
       duration_days: parseDuration(durationStr),
       tour_type: text[CELL.TOUR_TYPE],
       difficulty: text[CELL.DIFFICULTY],
@@ -191,7 +198,7 @@ async function scrapeToursUncached(
   return allTours;
 }
 
-const cachedScrapeToursUncached = unstable_cache(
+const cachedFetchTours = unstable_cache(
   scrapeToursUncached,
   ["scrape-tours"],
   { revalidate: CACHE_REVALIDATE_SECONDS },
@@ -210,7 +217,7 @@ async function scrapeTours(
   const key = `${year}:${typ}:${anlasstyp}:${gruppe}`;
   const existing = inFlight.get(key);
   if (existing) { return existing; }
-  const promise = cachedScrapeToursUncached(year, typ, anlasstyp, gruppe).finally(() => {
+  const promise = cachedFetchTours(year, typ, anlasstyp, gruppe).finally(() => {
     inFlight.delete(key);
   });
   inFlight.set(key, promise);

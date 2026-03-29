@@ -22,12 +22,9 @@ interface CalendarTour {
 }
 
 function getCalendarDays(year: number, month: number) {
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
   // Monday = 0 ... Sunday = 6
-  const startDow = (firstDay.getDay() + 6) % 7;
-  const daysInMonth = lastDay.getDate();
+  const startDow = (new Date(year, month, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const cells: (number | null)[] = [];
   for (let i = 0; i < startDow; i++) {cells.push(null);}
@@ -46,13 +43,15 @@ function buildTourMap(tours: CalendarTour[], year: number, month: number) {
 
   for (const ct of tours) {
     for (let d = 0; d < ct.days; d++) {
-      const date = new Date(ct.startDate);
-      date.setDate(date.getDate() + d);
+      const date = new Date(
+        ct.startDate.getFullYear(),
+        ct.startDate.getMonth(),
+        ct.startDate.getDate() + d,
+      );
       if (date.getFullYear() === year && date.getMonth() === month) {
         const key = dateKey(year, month, date.getDate());
-        const list = map.get(key) ?? [];
-        list.push(ct);
-        map.set(key, list);
+        const list = map.get(key);
+        if (list) { list.push(ct); } else { map.set(key, [ct]); }
       }
     }
   }
@@ -218,8 +217,8 @@ function TourPill({
 }
 
 function detectInitialMonth(tours: CalendarTour[]): number {
-  if (tours.length === 0) {return new Date().getMonth();}
-  return tours.reduce((min, ct) => Math.min(min, ct.startDate.getMonth()), 11);
+  if (tours.length === 0) { return new Date().getMonth(); }
+  return Math.min(...tours.map((ct) => ct.startDate.getMonth()));
 }
 
 const SWIPE_THRESHOLD = 50;
@@ -255,8 +254,13 @@ export function CalendarView({
 
   const { minMonth, maxMonth } = useMemo(() => {
     if (calendarTours.length === 0) { return { minMonth: 0, maxMonth: 11 }; }
-    const months = calendarTours.map((ct) => ct.startDate.getMonth());
-    return { minMonth: Math.min(...months), maxMonth: Math.max(...months) };
+    return calendarTours.reduce(
+      (acc, ct) => {
+        const m = ct.startDate.getMonth();
+        return { minMonth: Math.min(acc.minMonth, m), maxMonth: Math.max(acc.maxMonth, m) };
+      },
+      { minMonth: 11, maxMonth: 0 },
+    );
   }, [calendarTours]);
 
   // Skip the initial run — useState already set the correct month via the lazy initializer.

@@ -12,17 +12,12 @@ type ViewMode = "table" | "calendar";
 
 const DEFAULT_TYP = "Ht";
 
-function getDefaultYear() {
-  return String(new Date().getFullYear());
-}
-
 function HomeContent() {
   const searchParams = useSearchParams();
 
   const [year, setYear] = useState(() => {
     const v = searchParams.get("year");
-    const defaultYear = getDefaultYear();
-    return v && YEARS.includes(v) ? v : defaultYear;
+    return v && YEARS.includes(v) ? v : String(new Date().getFullYear());
   });
   const [typ, setTyp] = useState(() => {
     const v = searchParams.get("type");
@@ -34,12 +29,10 @@ function HomeContent() {
     searchParams.get("view") === "calendar" ? "calendar" : "table",
   );
 
-  // True when URL params indicate a previous search — used to decide whether to
-  // auto-trigger on load and whether to start writing params to the URL.
-  // Stored in a ref because it only matters at mount; changes to it must not re-render.
-  const initialFromUrl = useRef(searchParams.has("year") || searchParams.has("type"));
-
-  const [hasSearched, setHasSearched] = useState(() => initialFromUrl.current);
+  // Written to true after the first successful search; drives URL sync and shareable links.
+  const [hasSearched, setHasSearched] = useState(() =>
+    searchParams.has("year") || searchParams.has("type"),
+  );
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +48,8 @@ function HomeContent() {
     params.set("type", typ);
     if (eventType) {params.set("event", eventType);}
     if (group) {params.set("group", group);}
-    if (viewMode !== "table") {params.set("view", viewMode);}    window.history.replaceState(null, "", `?${params.toString()}`);
+    if (viewMode !== "table") {params.set("view", viewMode);}
+    window.history.replaceState(null, "", `?${params.toString()}`);
   }, [year, typ, eventType, group, viewMode, hasSearched]);
 
   useEffect(() => {
@@ -90,7 +84,7 @@ function HomeContent() {
   useEffect(() => {
     if (didAutoSearch.current) {return;}
     didAutoSearch.current = true;
-    if (initialFromUrl.current) {
+    if (hasSearched) {
       handleSearch();
     }
     // One-time effect: handleSearch closes over state but we intentionally only
