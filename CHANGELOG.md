@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/weiligao/uto-touren/compare/v1.3.0...v1.4.0) (2026-03-29)
+
+
+### Features
+
+* add vercel analytics ([#19](https://github.com/weiligao/uto-touren/issues/19)) ([ea89bec](https://github.com/weiligao/uto-touren/commit/ea89bec81bd76709c91b27667ec360554c21177f))
+
 ## [1.3.0](https://github.com/weiligao/uto-touren/compare/v1.2.0...v1.3.0) (2026-03-29)
 
 
