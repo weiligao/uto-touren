@@ -34,8 +34,7 @@ export const GROUPS = [
   { value: "Senior/innen", label: "Senior/innen" },
 ] as const;
 
-const currentYear = new Date().getFullYear();
-export const YEARS = [String(currentYear), String(currentYear + 1)];
+export const YEARS = [String(new Date().getFullYear()), String(new Date().getFullYear() + 1)];
 
 export const STATUS_COLORS: Record<TourStatus, string> = {
   open: "bg-green-500",
@@ -45,8 +44,8 @@ export const STATUS_COLORS: Record<TourStatus, string> = {
 };
 
 export const STATUS_LABELS: Record<TourStatus, string> = {
-  open: "Open",
-  full_or_cancelled: "Full/Cancelled",
-  not_yet_open: "Not yet open",
-  unknown: "Unknown",
+  open: "Offen",
+  full_or_cancelled: "Ausgebucht/Abgesagt",
+  not_yet_open: "Noch nicht offen",
+  unknown: "Unbekannt",
 };

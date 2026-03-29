@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="public/logo.svg" alt="UtoMate" width="96" height="96">
+  <img src="public/logo.svg" alt="UtoTouren" width="96" height="96">
 </p>
-<h1 align="center">UtoMate</h1>
+<h1 align="center">UtoTouren</h1>
 
-A web app for searching and browsing tours from [SAC Uto](https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/). Scrapes the official tour listing, parses results server-side, and displays them in a filterable table or month calendar view.
+A web app for searching and browsing tours from [SAC-Sektion Uto](https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/). Scrapes the official tour listing, parses results server-side, and displays them in a filterable table or month calendar view.
 
 ## Features
 
@@ -41,3 +41,8 @@ Open [http://localhost:3000](http://localhost:3000).
 - [Tailwind CSS](https://tailwindcss.com) v4
 - [cheerio](https://cheerio.js.org) for HTML parsing
 - [Vitest](https://vitest.dev) for unit tests
+- [Vercel Speed Insights](https://vercel.com/docs/speed-insights) for performance monitoring
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on reporting bugs, suggesting features, and submitting pull requests.

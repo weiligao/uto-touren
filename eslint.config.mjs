@@ -24,13 +24,32 @@ const eslintConfig = defineConfig([
       "no-lonely-if": "error",
       "no-param-reassign": "error",
 
-      // TypeScript
+      // TypeScript (syntactic — no type info required)
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/no-non-null-assertion": "warn",
+
+      // React
+      "react/jsx-no-useless-fragment": "error",
+      "react/self-closing-comp": "error",
+    },
+  },
+  {
+    // Type-aware rules — scoped to TS/TSX only
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      "@typescript-eslint/prefer-optional-chain": "error",
+      "@typescript-eslint/prefer-nullish-coalescing": "error",
     },
   },
   // Override default ignores of eslint-config-next.

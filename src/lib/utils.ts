@@ -44,16 +44,8 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-CH", {
   month: "short",
 });
 
-/** Parse a YYYY-MM-DD date string as a local-time Date, avoiding UTC midnight shifting.
- *  Also handles legacy ISO strings from old cache entries (e.g. "2026-06-12T22:00:00.000Z")
- *  by using local-time getters — callers are all client components running in the user's browser.
- */
+/** Parse a YYYY-MM-DD date string as a local-time Date, avoiding UTC midnight shifting. */
 export function parseDateString(s: string): Date {
-  if (s.includes("T")) {
-    // Legacy ISO: new Date gives the correct local Date object in the user's timezone.
-    const dt = new Date(s);
-    return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-  }
   const [y, m, d] = s.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
@@ -64,11 +56,11 @@ export function formatDate(startDate: string | null, fallback: string): string {
 }
 
 export function formatDuration(days: number): string {
-  return days === 1 ? "1 day" : `${days} days`;
+  return days === 1 ? "1 Tag" : `${days} Tage`;
 }
 
 export function na(value: string): string {
-  return value || "N/A";
+  return value || "-";
 }
 
 function icsDate(dt: Date): string {
@@ -90,7 +82,7 @@ function escapeIcs(s: string): string {
  * Trigger a browser download of an ICS file for the given tour.
  * Only call this when `tour.start_date` is non-null.
  */
-export function downloadIcs(tour: Tour): void {
+export function downloadIcs(tour: Tour & { start_date: string }): void {
   const content = generateIcs(tour);
   const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -105,18 +97,19 @@ export function downloadIcs(tour: Tour): void {
  * Generate an ICS (iCalendar) string for a tour as a full-day event.
  * Only call this when `tour.start_date` is non-null.
  */
-export function generateIcs(tour: Tour): string {
+export function generateIcs(tour: Tour & { start_date: string }): string {
   // start_date is stored as YYYY-MM-DD — parse as local date to avoid UTC shifting.
-  const start = parseDateString(tour.start_date!);
+  const start = parseDateString(tour.start_date);
   const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + tour.duration_days);
-  const uid = `${icsDate(start)}-${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40)}@utomate`;
+  const uid = `${icsDate(start)}-${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40)}@uto-touren`;
 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//UtoMate//EN",
+    "PRODID:-//UtoTouren//EN",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
+    `UID:${uid}`,
     `DTSTART;VALUE=DATE:${icsDate(start)}`,
     `DTEND;VALUE=DATE:${icsDate(end)}`,
     `SUMMARY:${escapeIcs(tour.title)}`,
@@ -126,15 +119,7 @@ export function generateIcs(tour: Tour): string {
     lines.push(`URL:${tour.detail_url}`);
   }
 
-  lines.push(
-    "BEGIN:VALARM",
-    "TRIGGER:PT0S",
-    "ACTION:DISPLAY",
-    `DESCRIPTION:${escapeIcs(tour.title)}`,
-    "END:VALARM",
-  );
-
-  lines.push(`UID:${uid}`, "END:VEVENT", "END:VCALENDAR");
+  lines.push("END:VEVENT", "END:VCALENDAR");
 
   return lines.join("\r\n");
 }

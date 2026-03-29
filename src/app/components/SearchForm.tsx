@@ -4,6 +4,7 @@ import { useState } from "react";
 function Spinner() {
   return (
     <svg
+      aria-hidden="true"
       className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
       fill="none"
       viewBox="0 0 24 24"
@@ -57,11 +58,14 @@ export function SearchForm({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
       <button
         type="button"
+        aria-expanded={expanded}
+        aria-controls="search-form-fields"
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between px-6 py-4 cursor-pointer"
       >
-        <h2 className="text-base font-semibold text-gray-800">Search Tours</h2>
+        <span className="text-base font-semibold text-gray-800">Touren suchen</span>
         <svg
+          aria-hidden="true"
           className={`h-5 w-5 text-gray-500 transition-transform ${expanded ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
@@ -73,89 +77,95 @@ export function SearchForm({
       </button>
 
       {expanded && (
-        <div className="px-6 pb-6">
+        <div id="search-form-fields" className="px-6 pb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Year
-          </label>
-          <select
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            className={selectClass}
-          >
-            {YEARS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Tour Type
-          </label>
-          <select
-            value={typ}
-            onChange={(e) => setTyp(e.target.value)}
-            className={selectClass}
-          >
-            {TOUR_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Event Type
-          </label>
-          <select
-            value={eventType}
-            onChange={(e) => setEventType(e.target.value)}
-            className={selectClass}
-          >
-            {EVENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Group
-          </label>
-          <select
-            value={group}
-            onChange={(e) => setGroup(e.target.value)}
-            className={selectClass}
-          >
-            <option value="">All</option>
-            {GROUPS.map((g) => (
-              <option key={g.value} value={g.value}>
-                {g.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-end">
-          <button
-            onClick={onSearch}
-            disabled={loading}
-            className="w-full justify-center inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          >
-            {loading ? (
-              <>
-                <Spinner />
-                Searching...
-              </>
-            ) : (
-              "Search"
-            )}
-          </button>
-        </div>
+            <div>
+              <label htmlFor="filter-year" className="block text-sm font-medium text-gray-700 mb-1">
+                Jahr
+              </label>
+              <select
+                id="filter-year"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className={selectClass}
+              >
+                {YEARS.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="filter-tour-type" className="block text-sm font-medium text-gray-700 mb-1">
+                Tourtyp
+              </label>
+              <select
+                id="filter-tour-type"
+                value={typ}
+                onChange={(e) => setTyp(e.target.value)}
+                className={selectClass}
+              >
+                {TOUR_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="filter-event-type" className="block text-sm font-medium text-gray-700 mb-1">
+                Anlasstyp
+              </label>
+              <select
+                id="filter-event-type"
+                value={eventType}
+                onChange={(e) => setEventType(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">Alle</option>
+                {EVENT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="filter-group" className="block text-sm font-medium text-gray-700 mb-1">
+                Gruppe
+              </label>
+              <select
+                id="filter-group"
+                value={group}
+                onChange={(e) => setGroup(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">Alle</option>
+                {GROUPS.map((g) => (
+                  <option key={g.value} value={g.value}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end mt-2 sm:mt-0">
+              <button
+                type="button"
+                onClick={onSearch}
+                disabled={loading}
+                className="w-full justify-center inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              >
+                {loading ? (
+                  <>
+                    <Spinner />
+                    Suchen…
+                  </>
+                ) : (
+                  "Suchen"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
