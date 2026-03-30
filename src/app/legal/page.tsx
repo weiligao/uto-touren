@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 export default function LegalPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 py-10">
+      <main id="main-content" className="max-w-3xl mx-auto px-4 py-10">
         <Link href="/" className="text-sm text-blue-600 hover:underline mb-6 inline-block">
-          ← Zurück zu UtoTouren
+          <span aria-hidden="true">←</span> Zurück zu UtoTouren
         </Link>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Impressum</h1>
@@ -32,6 +32,7 @@ export default function LegalPage() {
                 className="text-blue-600 hover:underline"
               >
                 github.com/weiligao/uto-touren
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               .
             </p>
@@ -58,6 +59,7 @@ export default function LegalPage() {
                 className="text-blue-600 hover:underline"
               >
                 sac-uto.ch
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               , der offiziellen Website der SAC-Sektion Uto, abgerufen. Die angezeigten Daten sind
               Eigentum der SAC-Sektion Uto.
@@ -72,6 +74,7 @@ export default function LegalPage() {
                 className="text-blue-600 hover:underline"
               >
                 offiziellen SAC-Uto-Website
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>{" "}
               bevor Sie Planungen vornehmen.
             </p>
@@ -130,6 +133,7 @@ export default function LegalPage() {
                 className="text-blue-600 hover:underline"
               >
                 MIT-Lizenz
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               .
             </p>
@@ -155,12 +159,13 @@ export default function LegalPage() {
                 className="text-blue-600 hover:underline"
               >
                 GitHub-Repository
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               .
             </p>
           </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

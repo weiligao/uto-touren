@@ -19,12 +19,15 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL ?? "https://uto-touren.vercel.app",
   ),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default: "UtoTouren",
     template: "%s — UtoTouren",
   },
   description:
-    "Touren und Kurse der SAC-Sektion Uto suchen, filtern und herunterladen. Nach Jahr, Typ und Gruppe filtern. Einzelne Touren als .ics-Kalenderdatei exportieren.",
+    "Touren und Kurse der SAC-Sektion Uto suchen, filtern und in Google Kalender oder als .ics-Datei exportieren. Nach Jahr, Typ und Gruppe filtern.",
   keywords: [
     "SAC Uto",
     "SAC-Sektion Uto",
@@ -36,21 +39,24 @@ export const metadata: Metadata = {
     "Wandern",
     "Alpen",
     "Kalender",
+    "Google Kalender",
     "ics",
   ],
   openGraph: {
     type: "website",
+    url: "/",
+    locale: "de_CH",
     siteName: "UtoTouren",
     title: "UtoTouren",
     description:
-      "Touren und Kurse der SAC-Sektion Uto suchen, filtern und herunterladen.",
+      "Touren und Kurse der SAC-Sektion Uto suchen, filtern und in Google Kalender oder als .ics exportieren.",
     images: [{ url: "/og-image.png", width: 1200, height: 1200, alt: "UtoTouren logo" }],
   },
   twitter: {
     card: "summary",
     title: "UtoTouren",
     description:
-      "Touren und Kurse der SAC-Sektion Uto suchen, filtern und herunterladen.",
+      "Touren und Kurse der SAC-Sektion Uto suchen, filtern und in Google Kalender oder als .ics exportieren.",
     images: ["/og-image.png"],
   },
   robots: { index: true, follow: true },
@@ -67,6 +73,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded focus:bg-white focus:text-blue-700 focus:font-semibold focus:shadow-lg focus:outline-2 focus:outline-blue-600"
+        >
+          Zum Hauptinhalt springen
+        </a>
         {children}
         <Footer />
         <Analytics />

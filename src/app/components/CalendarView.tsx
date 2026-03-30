@@ -3,8 +3,8 @@
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
 import { formatDuration, na, parseDateString } from "@/lib/utils";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { IcsButton } from "./IcsButton";
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
 import { useFilterState } from "./useFilterState";
@@ -76,8 +76,9 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Measure anchor position after paint. The `if (!dialogStyle) return null` guard
-  // below prevents a visible flash, so useLayoutEffect is not needed here.
+  // Keep position current as the user scrolls or resizes the viewport.
+  // Throttled to one update per animation frame to avoid forcing layout
+  // on every scroll event (which triggers getBoundingClientRect + setState).
   useEffect(() => {
     function updatePosition() {
       if (!anchorRef.current) { return; }
@@ -95,21 +96,28 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         setDialogStyle({ top, left: clampedLeft, width: TOOLTIP_WIDTH, transform: `translate(-50%, ${above ? "-100%" : "0"})` });
       }
     }
-    updatePosition();
+    let rafId: number | null = null;
+    function onScrollOrResize() {
+      if (rafId !== null) { return; }
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        updatePosition();
+      });
+    }
+    updatePosition(); // set position synchronously on open
+    window.addEventListener("resize", onScrollOrResize);
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    return () => {
+      if (rafId !== null) { cancelAnimationFrame(rafId); }
+      window.removeEventListener("resize", onScrollOrResize);
+      window.removeEventListener("scroll", onScrollOrResize);
+    };
   }, [anchorRef]);
 
   // Move focus to the close button when the dialog opens
   useEffect(() => {
     closeButtonRef.current?.focus();
   }, []);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose]);
 
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
@@ -136,6 +144,22 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") { onClose(); return; }
+        if (e.key === "Tab" && dialogRef.current) {
+          const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
+            'a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])',
+          ));
+          if (focusable.length === 0) { return; }
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault(); last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault(); first.focus();
+          }
+        }
+      }}
       className="fixed z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
       style={dialogStyle}
     >
@@ -180,12 +204,12 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
           </dd>
         </div>
       </dl>
-      <IcsButton tour={tour} onAfterDownload={onClose} fullWidth />
+      <CalendarExportButtons tour={tour} onAfterDownload={onClose} fullWidth />
     </div>
   );
 }
 
-function TourPill({
+const TourPill = memo(function TourPill({
   ct,
 }: {
   ct: CalendarTour;
@@ -216,11 +240,11 @@ function TourPill({
       {open && <TourTooltip tour={ct.tour} anchorRef={ref} onClose={handleClose} />}
     </div>
   );
-}
+});
 
 function detectInitialMonth(tours: CalendarTour[]): number {
   if (tours.length === 0) { return new Date().getMonth(); }
-  return Math.min(...tours.map((ct) => ct.startDate.getMonth()));
+  return tours.reduce((min, ct) => Math.min(min, ct.startDate.getMonth()), 11);
 }
 
 const SWIPE_THRESHOLD = 50;
@@ -336,7 +360,7 @@ export function CalendarView({
       />
 
       {/* Month navigation */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
+      <nav aria-label="Monat wählen" className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
         <button
           type="button"
           onClick={prevMonth}
@@ -344,11 +368,11 @@ export function CalendarView({
           aria-label={month <= minMonth ? `Keine Touren vor ${MONTH_NAMES[minMonth]}` : `Zu ${MONTH_NAMES[month - 1]}`}
           className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="text-sm font-semibold text-gray-800">
+        <span aria-live="polite" aria-atomic="true" className="text-sm font-semibold text-gray-800">
           {MONTH_NAMES[month]} {yearNum}
         </span>
         <button
@@ -358,13 +382,11 @@ export function CalendarView({
           aria-label={month >= maxMonth ? `Keine Touren nach ${MONTH_NAMES[maxMonth]}` : `Zu ${MONTH_NAMES[month + 1]}`}
           className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
-      </div>
-
-      {/* Calendar grid */}
+      </nav>
       <div className="p-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div role="grid" aria-label={`${MONTH_NAMES[month]} ${yearNum} Kalender`} className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
           {/* Header row */}
@@ -394,14 +416,20 @@ export function CalendarView({
                   <div
                     key={key}
                     role="gridcell"
+                    aria-hidden={day === null ? "true" : undefined}
                     className={`min-h-22.5 p-1 ${day ? "bg-white" : "bg-gray-50"}`}
                   >
                     {day && (
                       <>
-                        <div className="text-xs text-gray-500 mb-0.5">{day}</div>
+                        <time
+                          dateTime={`${yearNum}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`}
+                          className="text-xs text-gray-500 mb-0.5 block"
+                        >
+                          {day}
+                        </time>
                         <div className="space-y-0.5 overflow-y-auto max-h-17.5">
-                          {toursForDay.map((ct, pillIdx) => (
-                            <TourPill key={`${ct.tour.title}-${ct.tour.start_date}-${pillIdx}`} ct={ct} />
+                          {toursForDay.map((ct) => (
+                            <TourPill key={ct.tour.detail_url ?? `${ct.tour.title}-${ct.tour.start_date}`} ct={ct} />
                           ))}
                         </div>
                       </>

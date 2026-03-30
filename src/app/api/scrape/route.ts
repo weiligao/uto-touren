@@ -6,6 +6,7 @@ import type { Element } from "domhandler";
 import { unstable_cache } from "next/cache";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { CACHE_REVALIDATE_SECONDS, FETCH_TIMEOUT_MS, SAC_FETCH_HEADERS } from "../_shared";
 
 export const maxDuration = 60;
 
@@ -13,9 +14,6 @@ const BASE_URL = "https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/";
 const PAGE_SIZE = 50;
 const MAX_OFFSET = 2000;
 const DELAY_BETWEEN_PAGES_MS = 1000;
-const FETCH_TIMEOUT_MS = 10_000;
-
-const CACHE_REVALIDATE_SECONDS = 86_400; // 24 hours
 
 const VALID_YEARS = new Set<string>(YEARS);
 const VALID_TYPES = new Set<string>(TOUR_TYPES.map((t) => t.value));
@@ -82,6 +80,7 @@ function parseDetailUrl($cell: cheerio.Cheerio<Element>): string | null {
   const url = href.startsWith("/") ? `https://sac-uto.ch${href}` : href;
   try {
     const parsed = new URL(url);
+    if (parsed.protocol !== "https:") { return null; }
     if (parsed.hostname !== "sac-uto.ch" && !parsed.hostname.endsWith(".sac-uto.ch")) {
       return null;
     }
@@ -157,12 +156,7 @@ async function scrapeToursUncached(
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     const resp = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "de-CH,de;q=0.9,en;q=0.8",
-      },
+      headers: SAC_FETCH_HEADERS,
     }).catch(() => null);
     clearTimeout(timeoutId);
 

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import type { Tour } from "./types";
 import {
+  buildGoogleCalendarRegistrationUrl,
+  buildGoogleCalendarUrl,
   compareDifficulties,
   formatDate,
   formatDuration,
@@ -9,7 +11,7 @@ import {
   na,
   parseDateString,
   parseDuration,
-  parseGermanDate,
+  parseGermanDate
 } from "./utils";
 
 
@@ -281,5 +283,75 @@ describe("generateIcs", () => {
       const descOccurrences = (ics.match(/DESCRIPTION:/g) ?? []).length;
       expect(descOccurrences).toBe(3);
     });
+  });
+});
+
+describe("buildGoogleCalendarUrl", () => {
+  const tour = {
+    date: "Fr 12. Jun.",
+    start_date: "2026-06-12",
+    duration_days: 3,
+    tour_type: "Ht",
+    difficulty: "L",
+    group: "Alpinist/innen",
+    title: "Matterhorn",
+    leader: "Max Muster",
+    status: "open" as const,
+    detail_url: "https://sac-uto.ch/de/touren/123",
+  };
+
+  it("includes action=TEMPLATE, title, and date range", () => {
+    const url = buildGoogleCalendarUrl(tour);
+    expect(url).toContain("action=TEMPLATE");
+    expect(url).toContain("text=Matterhorn");
+    expect(url).toContain("dates=20260612%2F20260615");
+  });
+
+  it("puts detail_url before description in details param", () => {
+    const url = buildGoogleCalendarUrl(tour, "Beschreibung");
+    const params = new URL(url).searchParams.get("details") ?? "";
+    expect(params.indexOf("Details:")).toBeLessThan(params.indexOf("Beschreibung"));
+  });
+
+  it("includes detail_url even without description", () => {
+    const url = buildGoogleCalendarUrl(tour);
+    const details = new URL(url).searchParams.get("details") ?? "";
+    expect(details).toContain("Details: https://sac-uto.ch/de/touren/123");
+  });
+
+  it("omits details param when no detail_url and no description", () => {
+    const url = buildGoogleCalendarUrl({ ...tour, detail_url: null });
+    expect(url).not.toContain("details=");
+  });
+});
+
+describe("buildGoogleCalendarRegistrationUrl", () => {
+  const tour = {
+    date: "Fr 12. Jun.",
+    start_date: "2026-06-12",
+    duration_days: 3,
+    tour_type: "Ht",
+    difficulty: "L",
+    group: "Alpinist/innen",
+    title: "Matterhorn",
+    leader: "Max Muster",
+    status: "open" as const,
+    detail_url: "https://sac-uto.ch/de/touren/123",
+  };
+
+  it("prefixes title with Anmeldung:", () => {
+    const url = buildGoogleCalendarRegistrationUrl(tour, "2026-03-30");
+    expect(url).toContain("text=Anmeldung%3A+Matterhorn");
+  });
+
+  it("uses registration date as a 1-day event", () => {
+    const url = buildGoogleCalendarRegistrationUrl(tour, "2026-03-30");
+    expect(url).toContain("dates=20260330%2F20260331");
+  });
+
+  it("includes detail_url in details param", () => {
+    const url = buildGoogleCalendarRegistrationUrl(tour, "2026-03-30");
+    const details = new URL(url).searchParams.get("details") ?? "";
+    expect(details).toContain("Details: https://sac-uto.ch/de/touren/123");
   });
 });

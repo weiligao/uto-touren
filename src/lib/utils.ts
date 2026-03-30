@@ -3,7 +3,7 @@ import type { Tour } from "@/lib/types";
 
 const DIFFICULTY_RANK = new Map(DIFFICULTY_ORDER.map((d, i) => [d, i]));
 
-/** Sort comparator for difficulty chip chips: known values in scale order, unknowns alphabetically at the end. */
+/** Sort comparator for difficulty filter chips: known values in scale order, unknowns alphabetically at the end. */
 export function compareDifficulties(a: string, b: string): number {
   const ra = DIFFICULTY_RANK.get(a) ?? Number.MAX_SAFE_INTEGER;
   const rb = DIFFICULTY_RANK.get(b) ?? Number.MAX_SAFE_INTEGER;
@@ -119,14 +119,16 @@ function zurichMidnightUtcIcs(dateStr: string): string {
   return `${dy}${dm}${dd}T${dh}0000Z`;
 }
 
+// Module-level singletons — avoids allocating a new encoder/decoder per line fold.
+const _icsEncoder = new TextEncoder();
+const _icsDecoder = new TextDecoder();
+
 /**
  * Fold an ICS content line per RFC 5545 §3.1.
  * Lines longer than 75 octets are split; continuation lines begin with a single space.
  */
 function foldIcsLine(line: string): string {
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-  const bytes = encoder.encode(line);
+  const bytes = _icsEncoder.encode(line);
   if (bytes.length <= 75) {return line;}
 
   const parts: string[] = [];
@@ -136,11 +138,57 @@ function foldIcsLine(line: string): string {
     let end = Math.min(pos + limit, bytes.length);
     // Step back to avoid splitting a multi-byte UTF-8 sequence (continuation bytes are 10xxxxxx)
     while (end > pos && (bytes[end] & 0xc0) === 0x80) {end--;}
-    parts.push(decoder.decode(bytes.subarray(pos, end)));
+    parts.push(_icsDecoder.decode(bytes.subarray(pos, end)));
     pos = end;
     limit = 74; // continuation lines: 1 byte for leading space + 74 content bytes = 75
   }
   return parts.join("\r\n ");
+}
+
+/** Builds the `details` string for Google Calendar events (detail URL first, then description). */
+function buildDetailsParam(detailUrl: string | null, description?: string): string {
+  return [detailUrl ? `Details: ${detailUrl}` : null, description].filter(Boolean).join("\n\n");
+}
+
+/**
+ * Build a Google Calendar "Add event" URL for the tour's main event.
+ * Only call this when `tour.start_date` is non-null.
+ */
+export function buildGoogleCalendarUrl(
+  tour: Tour & { start_date: string },
+  description?: string,
+): string {
+  const start = parseDateString(tour.start_date);
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + tour.duration_days);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: tour.title,
+    dates: `${icsDate(start)}/${icsDate(end)}`,
+  });
+  const details = buildDetailsParam(tour.detail_url, description);
+  if (details) { params.set("details", details); }
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+/**
+ * Build a Google Calendar "Add event" URL for the registration reminder.
+ * Only call this when `tour.start_date` is non-null.
+ */
+export function buildGoogleCalendarRegistrationUrl(
+  tour: Tour & { start_date: string },
+  registrationDate: string,
+  description?: string,
+): string {
+  const regStart = parseDateString(registrationDate);
+  const regEnd = new Date(regStart.getFullYear(), regStart.getMonth(), regStart.getDate() + 1);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `Anmeldung: ${tour.title}`,
+    dates: `${icsDate(regStart)}/${icsDate(regEnd)}`,
+  });
+  const details = buildDetailsParam(tour.detail_url, description);
+  if (details) { params.set("details", details); }
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 /**

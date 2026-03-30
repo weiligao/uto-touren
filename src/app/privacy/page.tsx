@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 py-10">
+      <main id="main-content" className="max-w-3xl mx-auto px-4 py-10">
         <Link href="/" className="text-sm text-blue-600 hover:underline mb-6 inline-block">
-          ← Zurück zu UtoTouren
+          <span aria-hidden="true">←</span> Zurück zu UtoTouren
         </Link>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Datenschutzerklärung</h1>
@@ -41,6 +41,7 @@ export default function PrivacyPage() {
                 className="text-blue-600 hover:underline"
               >
                 github.com/weiligao
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               {" "}betreibt. Für alle datenschutzrelevanten Anfragen verwenden Sie bitte den{" "}
               <a
@@ -50,6 +51,7 @@ export default function PrivacyPage() {
                 className="text-blue-600 hover:underline"
               >
                 GitHub Issue Tracker
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               .
             </p>
@@ -76,6 +78,7 @@ export default function PrivacyPage() {
                 className="text-blue-600 hover:underline"
               >
                 Vercel Inc.
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>{" "}
               (650 California Street, San Francisco, CA 94108, USA) gehostet. Wie jeder Webhoster erfasst Vercel
               beim Abruf einer Seite automatisch Standard-Server-Logdaten. Dazu gehören IP-Adresse, Browsertyp,
@@ -89,12 +92,16 @@ export default function PrivacyPage() {
                 className="text-blue-600 hover:underline"
               >
                 Datenschutzerklärung von Vercel
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               .
             </p>
             <p className="mt-2">
-              Vercel kann darüber hinaus anonymisierte, aggregierte Analysen erheben (z.&nbsp;B. Seitenaufrufe
-              und allgemeine geografische Regionen), die keine Rückschlüsse auf einzelne Nutzer erlauben.
+              UtoTouren verwendet ausserdem <strong>Vercel Analytics</strong> und <strong>Vercel Speed Insights</strong>,
+              um aggregierte, anonymisierte Nutzungsdaten zu erheben — darunter Seitenaufrufe, allgemeine
+              geografische Regionen sowie Core-Web-Vitals-Metriken zur Leistungsüberwachung. Diese Dienste
+              verwenden keine Cookies, erheben keine personenbezogenen Daten und ermöglichen keine
+              Identifizierung einzelner Nutzer.
             </p>
           </section>
 
@@ -112,6 +119,7 @@ export default function PrivacyPage() {
                 className="text-blue-600 hover:underline"
               >
                 Datenschutzerklärung von Vercel
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               .
             </p>
@@ -128,6 +136,7 @@ export default function PrivacyPage() {
                 className="text-blue-600 hover:underline"
               >
                 sac-uto.ch
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               , der Website der SAC-Sektion Uto, abgerufen werden. Es werden keine personenbezogenen
               Daten dieser Website erhoben oder gespeichert — es werden ausschliesslich öffentlich
@@ -159,6 +168,7 @@ export default function PrivacyPage() {
                 className="text-blue-600 hover:underline"
               >
                 GitHub Issue Tracker
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               . Sie haben ausserdem das Recht, beim{" "}
               <a
@@ -168,12 +178,13 @@ export default function PrivacyPage() {
                 className="text-blue-600 hover:underline"
               >
                 Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten (EDÖB)
+                <span className="sr-only"> (öffnet neuen Tab)</span>
               </a>
               {" "}Beschwerde einzureichen.
             </p>
           </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
