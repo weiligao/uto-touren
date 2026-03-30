@@ -12,6 +12,11 @@ const STATUS_ORDER: readonly TourStatus[] = [
 
 const GROUP_ORDER: string[] = GROUPS.map((g) => g.value);
 
+function groupRank(g: string): number {
+  const i = GROUP_ORDER.indexOf(g);
+  return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+}
+
 export interface FilterState {
   statuses: TourStatus[];
   selectedStatuses: Set<TourStatus>;
@@ -56,13 +61,10 @@ export function useFilterState(tours: Tour[]): FilterState {
     [tours],
   );
 
-  const groups = useMemo(() => {
-    const rank = (g: string) => {
-      const i = GROUP_ORDER.indexOf(g);
-      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
-    };
-    return [...new Set(tours.map((t) => t.group))].sort((a, b) => rank(a) - rank(b));
-  }, [tours]);
+  const groups = useMemo(
+    () => [...new Set(tours.map((t) => t.group))].sort((a, b) => groupRank(a) - groupRank(b)),
+    [tours],
+  );
 
   const resetFilters = useCallback(() => {
     setSelectedStatuses(new Set());

@@ -54,16 +54,18 @@ export function CalendarExportButtons({
     firstItem?.focus();
   }, [open, detailLoading]);
 
-  // Close on outside click; Escape is handled on the menu div directly (with
+  // Close on outside click / tap; Escape is handled on the menu div directly (with
   // stopPropagation so it doesn't also close an enclosing dialog).
   useEffect(() => {
     if (!open) { return; }
-    function onOutside(e: MouseEvent) {
+    function onOutside(e: MouseEvent | TouchEvent) {
       if (!containerRef.current?.contains(e.target as Node)) { setOpen(false); }
     }
     document.addEventListener("mousedown", onOutside);
+    document.addEventListener("touchstart", onOutside);
     return () => {
       document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("touchstart", onOutside);
     };
   }, [open]);
 

@@ -3,7 +3,7 @@ import type { Tour } from "@/lib/types";
 
 const DIFFICULTY_RANK = new Map(DIFFICULTY_ORDER.map((d, i) => [d, i]));
 
-/** Sort comparator for difficulty chip chips: known values in scale order, unknowns alphabetically at the end. */
+/** Sort comparator for difficulty filter chips: known values in scale order, unknowns alphabetically at the end. */
 export function compareDifficulties(a: string, b: string): number {
   const ra = DIFFICULTY_RANK.get(a) ?? Number.MAX_SAFE_INTEGER;
   const rb = DIFFICULTY_RANK.get(b) ?? Number.MAX_SAFE_INTEGER;
@@ -119,14 +119,16 @@ function zurichMidnightUtcIcs(dateStr: string): string {
   return `${dy}${dm}${dd}T${dh}0000Z`;
 }
 
+// Module-level singletons — avoids allocating a new encoder/decoder per line fold.
+const _icsEncoder = new TextEncoder();
+const _icsDecoder = new TextDecoder();
+
 /**
  * Fold an ICS content line per RFC 5545 §3.1.
  * Lines longer than 75 octets are split; continuation lines begin with a single space.
  */
 function foldIcsLine(line: string): string {
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-  const bytes = encoder.encode(line);
+  const bytes = _icsEncoder.encode(line);
   if (bytes.length <= 75) {return line;}
 
   const parts: string[] = [];
@@ -136,7 +138,7 @@ function foldIcsLine(line: string): string {
     let end = Math.min(pos + limit, bytes.length);
     // Step back to avoid splitting a multi-byte UTF-8 sequence (continuation bytes are 10xxxxxx)
     while (end > pos && (bytes[end] & 0xc0) === 0x80) {end--;}
-    parts.push(decoder.decode(bytes.subarray(pos, end)));
+    parts.push(_icsDecoder.decode(bytes.subarray(pos, end)));
     pos = end;
     limit = 74; // continuation lines: 1 byte for leading space + 74 content bytes = 75
   }
