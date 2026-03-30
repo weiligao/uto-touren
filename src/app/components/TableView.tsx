@@ -217,6 +217,31 @@ export function TableView({
                 </Fragment>
               );
             })}
+            {visibleTours.length === 0 && (
+              <tr>
+                <td colSpan={TABLE_COLUMNS.length + 2} className="px-6 py-16 text-center text-sm text-gray-500">
+                  {tours.length === 0 ? (
+                    "Keine Touren gefunden."
+                  ) : (
+                    <>
+                      <p className="mb-3">Keine Touren für diese Filter.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedStatuses(new Set());
+                          setSelectedDurations(new Set());
+                          setSelectedDifficulties(new Set());
+                          setSelectedGroups(new Set());
+                        }}
+                        className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        Filter zurücksetzen
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
