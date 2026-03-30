@@ -36,7 +36,7 @@ function SelectWrapper({ children }: { children: React.ReactNode }) {
       {children}
       <svg
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-2.5 m-auto h-4 w-4 text-gray-400"
+        className="pointer-events-none absolute inset-y-0 right-2.5 m-auto h-4 w-4 text-gray-500"
         fill="none"
         viewBox="0 0 20 20"
       >
