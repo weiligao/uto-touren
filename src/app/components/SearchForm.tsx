@@ -1,5 +1,5 @@
 import { EVENT_TYPES, GROUPS, TOUR_TYPES, YEARS } from "@/lib/constants";
-import { useState } from "react";
+import type React from "react";
 
 function Spinner() {
   return (
@@ -40,6 +40,8 @@ export function SearchForm({
   setGroup,
   loading,
   onSearch,
+  expanded,
+  setExpanded,
 }: {
   year: string;
   setYear: (v: string) => void;
@@ -51,8 +53,9 @@ export function SearchForm({
   setGroup: (v: string) => void;
   loading: boolean;
   onSearch: () => void;
+  expanded: boolean;
+  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const [expanded, setExpanded] = useState(true);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">

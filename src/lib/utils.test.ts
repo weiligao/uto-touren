@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Tour } from "./types";
 import {
+  compareDifficulties,
   formatDate,
   formatDuration,
   generateIcs,
@@ -10,6 +11,36 @@ import {
   parseDuration,
   parseGermanDate,
 } from "./utils";
+
+
+describe("compareDifficulties", () => {
+  it("orders known values by scale", () => {
+    const input = ["ZS", "L", "WS", "S"];
+    expect([...input].sort(compareDifficulties)).toEqual(["L", "WS", "ZS", "S"]);
+  });
+
+  it("puts unknown values after all known ones", () => {
+    const result = ["Unbekannt", "L", "T3"].sort(compareDifficulties);
+    expect(result[0]).toBe("L");
+    expect(result[1]).toBe("T3");
+    expect(result[2]).toBe("Unbekannt");
+  });
+
+  it("sorts multiple unknowns alphabetically among themselves", () => {
+    const result = ["ZZZ", "AAA", "T1"].sort(compareDifficulties);
+    expect(result).toEqual(["T1", "AAA", "ZZZ"]);
+  });
+
+  it("returns 0 for equal values", () => {
+    expect(compareDifficulties("T3", "T3")).toBe(0);
+  });
+
+  it("handles empty string as unknown (after known values)", () => {
+    const result = ["", "L"].sort(compareDifficulties);
+    expect(result[0]).toBe("L");
+    expect(result[1]).toBe("");
+  });
+});
 
 describe("parseDateString", () => {
   it("parses a YYYY-MM-DD string as local date", () => {
@@ -117,8 +148,8 @@ describe("na", () => {
     expect(na("hello")).toBe("hello");
   });
 
-  it("returns - for empty string", () => {
-    expect(na("")).toBe("-");
+  it("returns Unbekannt for empty string", () => {
+    expect(na("")).toBe("Unbekannt");
   });
 });
 

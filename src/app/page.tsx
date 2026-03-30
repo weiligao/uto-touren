@@ -6,6 +6,7 @@ import { TableView } from "@/app/components/TableView";
 import { TOUR_TYPES, YEARS } from "@/lib/constants";
 import type { ScrapeResult } from "@/lib/types";
 import { useSearchParams } from "next/navigation";
+import type { KeyboardEvent } from "react";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 type ViewMode = "table" | "calendar";
@@ -37,6 +38,9 @@ function HomeContent() {
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [searchFormExpanded, setSearchFormExpanded] = useState(true);
+  const tableTabRef = useRef<HTMLButtonElement>(null);
+  const calendarTabRef = useRef<HTMLButtonElement>(null);
 
   // Sync filter state → URL without triggering navigation.
   // Before the first search the URL stays clean; after a search all params are
@@ -120,11 +124,23 @@ function HomeContent() {
           setGroup={setGroup}
           loading={loading}
           onSearch={handleSearch}
+          expanded={searchFormExpanded}
+          setExpanded={setSearchFormExpanded}
         />
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div role="alert" className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-800 text-sm font-medium">Fehler: {error}</p>
+          </div>
+        )}
+
+        {loading && (
+          <div role="status" className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6 flex items-center justify-center gap-3 text-gray-500 text-sm">
+            <svg aria-hidden="true" className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Touren werden geladen…
           </div>
         )}
 
@@ -136,12 +152,17 @@ function HomeContent() {
               className="inline-flex w-full sm:w-48 rounded-md border border-gray-300 overflow-hidden mb-4"
             >
               <button
+                ref={tableTabRef}
                 type="button"
                 role="tab"
                 aria-selected={viewMode === "table"}
                 aria-controls="view-panel"
                 id="tab-table"
+                tabIndex={viewMode === "table" ? 0 : -1}
                 onClick={() => setViewMode("table")}
+                onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
+                  if (e.key === "ArrowRight") { setViewMode("calendar"); calendarTabRef.current?.focus(); }
+                }}
                 className={`flex-1 px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
                   viewMode === "table"
                     ? "bg-blue-600 text-white"
@@ -151,12 +172,17 @@ function HomeContent() {
                 Tabelle
               </button>
               <button
+                ref={calendarTabRef}
                 type="button"
                 role="tab"
                 aria-selected={viewMode === "calendar"}
                 aria-controls="view-panel"
                 id="tab-calendar"
+                tabIndex={viewMode === "calendar" ? 0 : -1}
                 onClick={() => setViewMode("calendar")}
+                onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
+                  if (e.key === "ArrowLeft") { setViewMode("table"); tableTabRef.current?.focus(); }
+                }}
                 className={`flex-1 px-4 py-1.5 text-sm font-medium border-l border-gray-300 transition-colors cursor-pointer ${
                   viewMode === "calendar"
                     ? "bg-blue-600 text-white"

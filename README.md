@@ -7,14 +7,14 @@ A web app for searching and browsing tours from [SAC-Sektion Uto](https://sac-ut
 
 ## Features
 
-- Filter by year, tour type, event type, and group
+- Search by year, tour type, event type, and group
+- Post-search multi-select chip filters for status, duration, difficulty, and group — collapsible panel with active-filter count badge
 - Table view with expandable rows on mobile
 - Calendar view with multi-day tour spanning and swipe navigation on mobile
-- Toggle to hide full/cancelled tours
 - Status indicators (open, full/cancelled, not yet open)
 - Tour detail tooltips with links to the original listing
 - Download individual tours as `.ics` calendar files
-- All search filters and view mode are persisted in the URL — shareable links auto-trigger the search
+- All search parameters and view mode are persisted in the URL — shareable links auto-trigger the search
 - Results cached for 24 hours to avoid hammering the upstream site
 - Vercel Analytics and Speed Insights for performance monitoring
 

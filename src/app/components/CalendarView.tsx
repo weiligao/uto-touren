@@ -3,10 +3,11 @@
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
 import { formatDuration, na, parseDateString } from "@/lib/utils";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
+import { useFilterState } from "./useFilterState";
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const WEEKDAY_FULL_NAMES = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
@@ -64,6 +65,7 @@ const TOOLTIP_APPROX_HEIGHT = 300;
 const VIEWPORT_MARGIN = 8;
 
 function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: React.RefObject<HTMLDivElement | null>; onClose: () => void }) {
+  const titleId = useId();
   const [dialogStyle, setDialogStyle] = useState<{
     top: number;
     left?: number;
@@ -133,12 +135,12 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="tour-dialog-title"
+      aria-labelledby={titleId}
       className="fixed z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
       style={dialogStyle}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <p id="tour-dialog-title" className="font-semibold text-sm text-gray-900">
+        <p id={titleId} className="font-semibold text-sm text-gray-900">
           <TourTitle title={tour.title} url={tour.detail_url} />
         </p>
         <button
@@ -173,7 +175,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         <div>
           <dt className="font-medium text-gray-500">Status</dt>
           <dd className="flex items-center gap-1.5 text-gray-800">
-            <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
+            <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
             {STATUS_LABELS[tour.status]}
           </dd>
         </div>
@@ -245,11 +247,27 @@ export function CalendarView({
   );
 
   const [month, setMonth] = useState(() => detectInitialMonth(calendarTours));
-  const [showFull, setShowFull] = useState(false);
+  const toursList = useMemo(() => calendarTours.map((ct) => ct.tour), [calendarTours]);
+  const {
+    statuses,
+    selectedStatuses,
+    setSelectedStatuses,
+    durations,
+    selectedDurations,
+    setSelectedDurations,
+    difficulties,
+    selectedDifficulties,
+    setSelectedDifficulties,
+    groups,
+    selectedGroups,
+    setSelectedGroups,
+    resetFilters,
+    matchesTour,
+  } = useFilterState(toursList);
 
   const visibleCalendarTours = useMemo(
-    () => showFull ? calendarTours : calendarTours.filter((ct) => ct.tour.status !== "full_or_cancelled"),
-    [calendarTours, showFull],
+    () => calendarTours.filter((ct) => matchesTour(ct.tour)),
+    [calendarTours, matchesTour],
   );
 
   const { minMonth, maxMonth } = useMemo(() => {
@@ -268,9 +286,12 @@ export function CalendarView({
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    function reset() { setMonth(detectInitialMonth(calendarTours)); }
+    function reset() {
+      setMonth(detectInitialMonth(calendarTours));
+      resetFilters();
+    }
     reset();
-  }, [calendarTours]);
+  }, [calendarTours, resetFilters]);
 
   const cells = useMemo(() => getCalendarDays(yearNum, month), [yearNum, month]);
   const tourMap = useMemo(
@@ -300,8 +321,18 @@ export function CalendarView({
       <ResultsHeader
         totalScraped={calendarTours.length}
         visibleCount={visibleCalendarTours.length}
-        showFull={showFull}
-        onShowFullChange={setShowFull}
+        statuses={statuses}
+        selectedStatuses={selectedStatuses}
+        onStatusesChange={setSelectedStatuses}
+        durations={durations}
+        selectedDurations={selectedDurations}
+        onDurationsChange={setSelectedDurations}
+        difficulties={difficulties}
+        selectedDifficulties={selectedDifficulties}
+        onDifficultiesChange={setSelectedDifficulties}
+        groups={groups}
+        selectedGroups={selectedGroups}
+        onGroupsChange={setSelectedGroups}
       />
 
       {/* Month navigation */}
@@ -335,7 +366,7 @@ export function CalendarView({
 
       {/* Calendar grid */}
       <div className="p-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        <div role="grid" aria-label={`${MONTH_NAMES[month]} ${yearNum} calendar`} className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
+        <div role="grid" aria-label={`${MONTH_NAMES[month]} ${yearNum} Kalender`} className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
           {/* Header row */}
           <div role="row" className="contents">
             {WEEKDAYS.map((d, idx) => (

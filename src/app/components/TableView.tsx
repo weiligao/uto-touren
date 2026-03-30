@@ -3,19 +3,20 @@
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { formatDate, formatDuration, na } from "@/lib/utils";
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
+import { useFilterState } from "./useFilterState";
 
 const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
+  { label: "Status", center: true, mobileHidden: true },
   { label: "Datum" },
   { label: "Dauer", mobileHidden: true },
   { label: "Schwierigkeit", mobileHidden: true },
   { label: "Gruppe", mobileHidden: true },
   { label: "Titel" },
   { label: "Leiter/in", mobileHidden: true },
-  { label: "Status", center: true, mobileHidden: true },
 ];
 
 function StatusDot({ status }: { status: TourStatus }) {
@@ -37,12 +38,28 @@ export function TableView({
 }) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [lastTours, setLastTours] = useState(tours);
-  const [showFull, setShowFull] = useState(false);
+  const {
+    statuses,
+    selectedStatuses,
+    setSelectedStatuses,
+    durations,
+    selectedDurations,
+    setSelectedDurations,
+    difficulties,
+    selectedDifficulties,
+    setSelectedDifficulties,
+    groups,
+    selectedGroups,
+    setSelectedGroups,
+    resetFilters,
+    matchesTour,
+  } = useFilterState(tours);
 
-  // Reset expanded rows when the tours list changes (derived state pattern)
+  // Reset expanded rows and filters when the tours list changes (derived state pattern)
   if (lastTours !== tours) {
     setLastTours(tours);
     setExpandedRows(new Set());
+    resetFilters();
   }
 
   const toggleRow = (i: number) => setExpandedRows((prev) => {
@@ -51,17 +68,28 @@ export function TableView({
     return next;
   });
 
-  const visibleTours = tours
-    .map((tour, i) => ({ tour, i }))
-    .filter(({ tour }) => showFull || tour.status !== "full_or_cancelled");
+  const visibleTours = useMemo(
+    () => tours.map((tour, i) => ({ tour, i })).filter(({ tour }) => matchesTour(tour)),
+    [tours, matchesTour],
+  );
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <ResultsHeader
         totalScraped={totalScraped}
         visibleCount={visibleTours.length}
-        showFull={showFull}
-        onShowFullChange={setShowFull}
+        statuses={statuses}
+        selectedStatuses={selectedStatuses}
+        onStatusesChange={setSelectedStatuses}
+        durations={durations}
+        selectedDurations={selectedDurations}
+        onDurationsChange={setSelectedDurations}
+        difficulties={difficulties}
+        selectedDifficulties={selectedDifficulties}
+        onDifficultiesChange={setSelectedDifficulties}
+        groups={groups}
+        selectedGroups={selectedGroups}
+        onGroupsChange={setSelectedGroups}
       />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -92,6 +120,9 @@ export function TableView({
                   <tr
                     className="hover:bg-gray-50 transition-colors"
                   >
+                    <td className="hidden sm:table-cell px-4 py-3 text-center">
+                      <StatusDot status={tour.status} />
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-900">
                       <span className="inline-flex items-center gap-1.5">
                         <span aria-hidden="true" className={`sm:hidden inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
@@ -112,9 +143,6 @@ export function TableView({
                       <TourTitle title={tour.title} url={tour.detail_url} />
                     </td>
                     <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{na(tour.leader)}</td>
-                    <td className="hidden sm:table-cell px-4 py-3 text-center">
-                      <StatusDot status={tour.status} />
-                    </td>
                     <td className="hidden sm:table-cell px-3 py-3 text-center">
                       <IcsButton tour={tour} compact />
                     </td>
@@ -123,6 +151,7 @@ export function TableView({
                         type="button"
                         onClick={() => toggleRow(i)}
                         className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-pointer"
+                        aria-expanded={expanded}
                         aria-label={expanded ? "Zuklappen" : "Aufklappen"}
                       >
                         <svg
@@ -171,6 +200,26 @@ export function TableView({
                 </Fragment>
               );
             })}
+            {visibleTours.length === 0 && (
+              <tr>
+                <td colSpan={TABLE_COLUMNS.length + 2} className="px-6 py-16 text-center text-sm text-gray-500">
+                  {tours.length === 0 ? (
+                    "Keine Touren gefunden."
+                  ) : (
+                    <>
+                      <p className="mb-3">Keine Touren für diese Filter.</p>
+                      <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        Filter zurücksetzen
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
