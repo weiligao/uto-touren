@@ -13,7 +13,7 @@ A web app for searching and browsing tours from [SAC-Sektion Uto](https://sac-ut
 - Calendar view with multi-day tour spanning and swipe navigation on mobile
 - Status indicators (open, full/cancelled, not yet open)
 - Tour detail tooltips with links to the original listing
-- Download individual tours as `.ics` calendar files
+- Download individual tours as `.ics` calendar files enriched with route details, equipment, accommodation, and cost info fetched from the tour detail page
 - All search parameters and view mode are persisted in the URL — shareable links auto-trigger the search
 - Results cached for 24 hours to avoid hammering the upstream site
 - Vercel Analytics and Speed Insights for performance monitoring

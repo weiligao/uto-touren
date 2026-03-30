@@ -222,4 +222,21 @@ describe("generateIcs", () => {
     expect(ics).toContain("BEGIN:VCALENDAR");
     expect(ics).not.toMatch(/BEGIN:\r\n/);
   });
+
+  it("includes DESCRIPTION when provided", () => {
+    const ics = generateIcs(baseTour, "Route / Details:\nCoole Tour\n\nZusatzinfo:\nMehr Infos");
+    expect(ics).toContain("DESCRIPTION:Route / Details:\\nCoole Tour\\n\\nZusatzinfo:\\nMehr Infos");
+  });
+
+  it("omits DESCRIPTION when not provided", () => {
+    expect(generateIcs(baseTour)).not.toContain("DESCRIPTION:");
+  });
+
+  it("DESCRIPTION appears before URL", () => {
+    const ics = generateIcs(baseTour, "Details");
+    const descPos = ics.indexOf("DESCRIPTION:");
+    const urlPos = ics.indexOf("URL:");
+    expect(descPos).toBeGreaterThan(-1);
+    expect(descPos).toBeLessThan(urlPos);
+  });
 });

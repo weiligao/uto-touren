@@ -117,8 +117,8 @@ function foldIcsLine(line: string): string {
  * Trigger a browser download of an ICS file for the given tour.
  * Only call this when `tour.start_date` is non-null.
  */
-export function downloadIcs(tour: Tour & { start_date: string }): void {
-  const content = generateIcs(tour);
+export function downloadIcs(tour: Tour & { start_date: string }, description?: string): void {
+  const content = generateIcs(tour, description);
   const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -134,7 +134,7 @@ export function downloadIcs(tour: Tour & { start_date: string }): void {
  * Generate an ICS (iCalendar) string for a tour as a full-day event.
  * Only call this when `tour.start_date` is non-null.
  */
-export function generateIcs(tour: Tour & { start_date: string }): string {
+export function generateIcs(tour: Tour & { start_date: string }, description?: string): string {
   // start_date is stored as YYYY-MM-DD — parse as local date to avoid UTC shifting.
   const start = parseDateString(tour.start_date);
   const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + tour.duration_days);
@@ -151,6 +151,10 @@ export function generateIcs(tour: Tour & { start_date: string }): string {
     `DTEND;VALUE=DATE:${icsDate(end)}`,
     `SUMMARY:${escapeIcs(tour.title)}`,
   ];
+
+  if (description) {
+    lines.push(`DESCRIPTION:${escapeIcs(description)}`);
+  }
 
   if (tour.detail_url) {
     lines.push(`URL:${tour.detail_url}`);
