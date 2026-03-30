@@ -97,8 +97,11 @@ export default function PrivacyPage() {
               .
             </p>
             <p className="mt-2">
-              Vercel kann darüber hinaus anonymisierte, aggregierte Analysen erheben (z.&nbsp;B. Seitenaufrufe
-              und allgemeine geografische Regionen), die keine Rückschlüsse auf einzelne Nutzer erlauben.
+              UtoTouren verwendet ausserdem <strong>Vercel Analytics</strong> und <strong>Vercel Speed Insights</strong>,
+              um aggregierte, anonymisierte Nutzungsdaten zu erheben — darunter Seitenaufrufe, allgemeine
+              geografische Regionen sowie Core-Web-Vitals-Metriken zur Leistungsüberwachung. Diese Dienste
+              verwenden keine Cookies, erheben keine personenbezogenen Daten und ermöglichen keine
+              Identifizierung einzelner Nutzer.
             </p>
           </section>
 
