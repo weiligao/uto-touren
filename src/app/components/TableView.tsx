@@ -169,6 +169,7 @@ export function TableView({
                         type="button"
                         onClick={() => toggleRow(i)}
                         className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-pointer"
+                        aria-expanded={expanded}
                         aria-label={expanded ? "Zuklappen" : "Aufklappen"}
                       >
                         <svg

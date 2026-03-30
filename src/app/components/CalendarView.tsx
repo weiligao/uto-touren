@@ -173,7 +173,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         <div>
           <dt className="font-medium text-gray-500">Status</dt>
           <dd className="flex items-center gap-1.5 text-gray-800">
-            <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
+            <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
             {STATUS_LABELS[tour.status]}
           </dd>
         </div>
@@ -389,7 +389,7 @@ export function CalendarView({
 
       {/* Calendar grid */}
       <div className="p-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        <div role="grid" aria-label={`${MONTH_NAMES[month]} ${yearNum} calendar`} className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
+        <div role="grid" aria-label={`${MONTH_NAMES[month]} ${yearNum} Kalender`} className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
           {/* Header row */}
           <div role="row" className="contents">
             {WEEKDAYS.map((d, idx) => (
