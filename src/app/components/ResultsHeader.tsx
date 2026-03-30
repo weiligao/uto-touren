@@ -17,6 +17,9 @@ export function ResultsHeader({
   difficulties,
   selectedDifficulties,
   onDifficultiesChange,
+  groups,
+  selectedGroups,
+  onGroupsChange,
 }: {
   totalScraped: number;
   visibleCount: number;
@@ -29,12 +32,16 @@ export function ResultsHeader({
   difficulties?: string[];
   selectedDifficulties?: Set<string>;
   onDifficultiesChange?: (v: Set<string>) => void;
+  groups?: string[];
+  selectedGroups?: Set<string>;
+  onGroupsChange?: (v: Set<string>) => void;
 }) {
   const hasFilterRows =
     (statuses && statuses.length > 1) ??
     (durations && durations.length > 1) ??
-    (difficulties && difficulties.length > 1);
-  const activeFilterCount = (selectedStatuses?.size ?? 0) + (selectedDurations?.size ?? 0) + (selectedDifficulties?.size ?? 0);
+    (difficulties && difficulties.length > 1) ??
+    (groups && groups.length > 1);
+  const activeFilterCount = (selectedStatuses?.size ?? 0) + (selectedDurations?.size ?? 0) + (selectedDifficulties?.size ?? 0) + (selectedGroups?.size ?? 0);
   const [filtersOpen, setFiltersOpen] = useState(true);
 
   return (
@@ -196,6 +203,50 @@ export function ResultsHeader({
                     }`}
                   >
                     {d || "Unbekannt"}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {groups && groups.length > 1 && (
+            <div
+              role="group"
+              aria-labelledby="group-filter-label"
+              className="px-6 py-3 border-t border-gray-100 flex flex-wrap gap-2 items-center"
+            >
+              <span id="group-filter-label" className="text-xs font-medium text-gray-500 shrink-0">Gruppe:</span>
+              <button
+                type="button"
+                aria-pressed={!selectedGroups?.size}
+                onClick={() => onGroupsChange?.(new Set())}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  !selectedGroups?.size
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Alle
+              </button>
+              {groups.map((g) => {
+                const active = selectedGroups?.has(g) ?? false;
+                return (
+                  <button
+                    key={g !== "" ? g : "__empty__"}
+                    type="button"
+                    aria-pressed={active}
+                    aria-label={g !== "" ? g : "Unbekannt"}
+                    onClick={() => {
+                      const next = new Set(selectedGroups);
+                      if (active) { next.delete(g); } else { next.add(g); }
+                      onGroupsChange?.(next);
+                    }}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      active
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {g !== "" ? g : "Unbekannt"}
                   </button>
                 );
               })}

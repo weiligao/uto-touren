@@ -1,6 +1,6 @@
 "use client";
 
-import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { GROUPS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { compareDifficulties, formatDate, formatDuration, na } from "@/lib/utils";
 import { Fragment, useMemo, useState } from "react";
@@ -9,13 +9,13 @@ import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
 
 const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
+  { label: "Status", center: true, mobileHidden: true },
   { label: "Datum" },
   { label: "Dauer", mobileHidden: true },
   { label: "Schwierigkeit", mobileHidden: true },
   { label: "Gruppe", mobileHidden: true },
   { label: "Titel" },
   { label: "Leiter/in", mobileHidden: true },
-  { label: "Status", center: true, mobileHidden: true },
 ];
 
 function StatusDot({ status }: { status: TourStatus }) {
@@ -40,6 +40,7 @@ export function TableView({
   const [selectedStatuses, setSelectedStatuses] = useState<Set<TourStatus>>(new Set());
   const [selectedDurations, setSelectedDurations] = useState<Set<number>>(new Set());
   const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set());
+  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
 
   // Reset expanded rows and filters when the tours list changes (derived state pattern)
   if (lastTours !== tours) {
@@ -48,6 +49,7 @@ export function TableView({
     setSelectedStatuses(new Set());
     setSelectedDurations(new Set());
     setSelectedDifficulties(new Set());
+    setSelectedGroups(new Set());
   }
 
   const statuses = useMemo(
@@ -67,6 +69,13 @@ export function TableView({
     [tours],
   );
 
+  const groups = useMemo(() => {
+    const order = GROUPS.map((g) => g.value);
+    return [...new Set(tours.map((t) => t.group))].sort(
+      (a, b) => (order.indexOf(a) + 1 || Number.MAX_SAFE_INTEGER) - (order.indexOf(b) + 1 || Number.MAX_SAFE_INTEGER),
+    );
+  }, [tours]);
+
   const toggleRow = (i: number) => setExpandedRows((prev) => {
     const next = new Set(prev);
     if (next.has(i)) { next.delete(i); } else { next.add(i); }
@@ -78,7 +87,8 @@ export function TableView({
     .filter(({ tour }) =>
       (selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
       (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
-      (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)),
+      (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)) &&
+      (selectedGroups.size === 0 || selectedGroups.has(tour.group)),
     );
 
   return (
@@ -95,6 +105,9 @@ export function TableView({
         difficulties={difficulties}
         selectedDifficulties={selectedDifficulties}
         onDifficultiesChange={setSelectedDifficulties}
+        groups={groups}
+        selectedGroups={selectedGroups}
+        onGroupsChange={setSelectedGroups}
       />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -125,6 +138,9 @@ export function TableView({
                   <tr
                     className="hover:bg-gray-50 transition-colors"
                   >
+                    <td className="hidden sm:table-cell px-4 py-3 text-center">
+                      <StatusDot status={tour.status} />
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-900">
                       <span className="inline-flex items-center gap-1.5">
                         <span aria-hidden="true" className={`sm:hidden inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
@@ -145,9 +161,6 @@ export function TableView({
                       <TourTitle title={tour.title} url={tour.detail_url} />
                     </td>
                     <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{na(tour.leader)}</td>
-                    <td className="hidden sm:table-cell px-4 py-3 text-center">
-                      <StatusDot status={tour.status} />
-                    </td>
                     <td className="hidden sm:table-cell px-3 py-3 text-center">
                       <IcsButton tour={tour} compact />
                     </td>
