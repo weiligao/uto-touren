@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.0](https://github.com/weiligao/uto-touren/compare/v1.4.0...v1.5.0) (2026-03-30)
+
+
+### Features
+
+* add Google Calendar integration ([#25](https://github.com/weiligao/uto-touren/issues/25)) ([041fe21](https://github.com/weiligao/uto-touren/commit/041fe2128b4002aeb59fe56e5a071d99caf8f9b7))
+* add tour details and registration reminder to .ics ([#24](https://github.com/weiligao/uto-touren/issues/24)) ([3b7fda6](https://github.com/weiligao/uto-touren/commit/3b7fda644a5237ea86b51fe08f8dc3eb3b73ca08))
+* persist filters in URL ([#21](https://github.com/weiligao/uto-touren/issues/21)) ([cab7413](https://github.com/weiligao/uto-touren/commit/cab7413e8c2a0b85712ccbe077edc59283751b2f))
+* persist filters in URL, add post-search multi-select chip filters ([#23](https://github.com/weiligao/uto-touren/issues/23)) ([9f30fec](https://github.com/weiligao/uto-touren/commit/9f30fecb1ae0de616b06c2cb8ccda3cfccafe1f8))
+
 ## [1.4.0](https://github.com/weiligao/uto-touren/compare/v1.3.0...v1.4.0) (2026-03-29)
 
 
