@@ -239,4 +239,47 @@ describe("generateIcs", () => {
     expect(descPos).toBeGreaterThan(-1);
     expect(descPos).toBeLessThan(urlPos);
   });
+
+  describe("registration event", () => {
+    const regDate = "2026-03-30";
+
+    it("produces a second VEVENT when registrationDate is provided", () => {
+      const ics = generateIcs(baseTour, undefined, regDate);
+      const count = (ics.match(/BEGIN:VEVENT/g) ?? []).length;
+      expect(count).toBe(2);
+    });
+
+    it("registration VEVENT has correct DTSTART and SUMMARY", () => {
+      const ics = generateIcs(baseTour, undefined, regDate);
+      expect(ics).toContain("DTSTART;VALUE=DATE:20260330");
+      expect(ics).toContain("SUMMARY:Anmeldung: Matterhorn");
+    });
+
+    it("registration event is linked to tour event via RELATED-TO", () => {
+      const ics = generateIcs(baseTour, undefined, regDate);
+      expect(ics).toContain("RELATED-TO;RELTYPE=CHILD:");
+      expect(ics).toContain("RELATED-TO;RELTYPE=PARENT:");
+    });
+
+    it("registration event includes a VALARM", () => {
+      const ics = generateIcs(baseTour, undefined, regDate);
+      expect(ics).toContain("BEGIN:VALARM");
+      expect(ics).toContain("ACTION:DISPLAY");
+      expect(ics).toContain("TRIGGER;VALUE=DATE-TIME:");
+    });
+
+    it("no second VEVENT when registrationDate is omitted", () => {
+      const ics = generateIcs(baseTour);
+      const count = (ics.match(/BEGIN:VEVENT/g) ?? []).length;
+      expect(count).toBe(1);
+    });
+
+    it("registration event shares the same DESCRIPTION as the tour event", () => {
+      const desc = "Route / Details:\nCoole Tour";
+      const ics = generateIcs(baseTour, desc, regDate);
+      // 2× content DESCRIPTION (tour + registration) + 1× VALARM DESCRIPTION = 3
+      const descOccurrences = (ics.match(/DESCRIPTION:/g) ?? []).length;
+      expect(descOccurrences).toBe(3);
+    });
+  });
 });

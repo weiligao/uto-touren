@@ -20,6 +20,7 @@ export function IcsButton({
   const handleClick = useCallback(async () => {
     setLoading(true);
     let description: string | undefined;
+    let registrationDate: string | undefined;
     if (tour.detail_url) {
       try {
         const res = await fetch(`/api/tour-detail?url=${encodeURIComponent(tour.detail_url)}`);
@@ -31,6 +32,7 @@ export function IcsButton({
             travel_route?: string | null;
             accommodation?: string | null;
             costs?: string | null;
+            registration_start?: string | null;
           };
           const parts: string[] = [];
           if (data.route_details) { parts.push(`Route / Details:\n${data.route_details}`); }
@@ -40,24 +42,34 @@ export function IcsButton({
           if (data.accommodation) { parts.push(`Unterkunft / Verpflegung:\n${data.accommodation}`); }
           if (data.costs) { parts.push(`Kosten:\n${data.costs}`); }
           if (parts.length > 0) { description = parts.join("\n\n"); }
+          registrationDate = data.registration_start ?? undefined;
         }
       } catch {
         // ignore — download without description
       }
     }
-    downloadIcs(tour as Tour & { start_date: string }, description);
+    downloadIcs(tour as Tour & { start_date: string }, description, registrationDate);
     setLoading(false);
     onAfterDownload?.();
   }, [tour, onAfterDownload]);
 
   if (!tour.start_date) { return null; }
 
+  const tooltip = "Als .ics exportieren – enthält Tour-Termin und Anmeldungs-Erinnerung";
+
   return (
     <button
       type="button"
       onClick={handleClick}
       disabled={loading}
-      aria-label={compact ? "Als .ics herunterladen und zum Kalender hinzufügen" : undefined}
+      title={loading ? "Wird geladen…" : tooltip}
+      aria-label={
+        loading
+          ? "Kalender-Datei wird vorbereitet…"
+          : compact
+            ? tooltip
+            : undefined
+      }
       className={[
         "inline-flex items-center rounded-md text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait",
         compact ? "gap-1 px-2 py-1" : "gap-1.5 px-2 py-1.5",

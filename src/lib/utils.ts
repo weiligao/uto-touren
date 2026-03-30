@@ -90,6 +90,31 @@ function escapeIcs(s: string): string {
 }
 
 /**
+ * Returns the UTC ICS datetime string (YYYYMMDDTHHmmssZ) for midnight
+ * Europe/Zurich on the given YYYY-MM-DD date, correctly accounting for DST.
+ */
+function zurichMidnightUtcIcs(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  // Probe at noon UTC to determine the Zurich UTC offset on this calendar day.
+  const probe = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const zurichNoonHour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Zurich",
+      hour: "numeric",
+      hour12: false,
+    }).format(probe),
+  );
+  // offset = zurichNoonHour - 12 (e.g. UTC+1 → 13, UTC+2 → 14)
+  const offsetHours = zurichNoonHour - 12;
+  const midnight = new Date(Date.UTC(y, m - 1, d, -offsetHours, 0, 0));
+  const dy = midnight.getUTCFullYear();
+  const dm = String(midnight.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(midnight.getUTCDate()).padStart(2, "0");
+  const dh = String(midnight.getUTCHours()).padStart(2, "0");
+  return `${dy}${dm}${dd}T${dh}0000Z`;
+}
+
+/**
  * Fold an ICS content line per RFC 5545 §3.1.
  * Lines longer than 75 octets are split; continuation lines begin with a single space.
  */
@@ -117,8 +142,12 @@ function foldIcsLine(line: string): string {
  * Trigger a browser download of an ICS file for the given tour.
  * Only call this when `tour.start_date` is non-null.
  */
-export function downloadIcs(tour: Tour & { start_date: string }, description?: string): void {
-  const content = generateIcs(tour, description);
+export function downloadIcs(
+  tour: Tour & { start_date: string },
+  description?: string,
+  registrationDate?: string,
+): void {
+  const content = generateIcs(tour, description, registrationDate);
   const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -134,7 +163,11 @@ export function downloadIcs(tour: Tour & { start_date: string }, description?: s
  * Generate an ICS (iCalendar) string for a tour as a full-day event.
  * Only call this when `tour.start_date` is non-null.
  */
-export function generateIcs(tour: Tour & { start_date: string }, description?: string): string {
+export function generateIcs(
+  tour: Tour & { start_date: string },
+  description?: string,
+  registrationDate?: string,
+): string {
   // start_date is stored as YYYY-MM-DD — parse as local date to avoid UTC shifting.
   const start = parseDateString(tour.start_date);
   const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + tour.duration_days);
@@ -160,7 +193,42 @@ export function generateIcs(tour: Tour & { start_date: string }, description?: s
     lines.push(`URL:${tour.detail_url}`);
   }
 
-  lines.push("END:VEVENT", "END:VCALENDAR");
+  lines.push("END:VEVENT");
+
+  if (registrationDate) {
+    const regStart = parseDateString(registrationDate);
+    const regEnd = new Date(regStart.getFullYear(), regStart.getMonth(), regStart.getDate() + 1);
+    const regUid = `anmeldung-${icsDate(regStart)}-${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40)}@uto-touren`;
+
+    // Link tour event → registration event (child)
+    lines.splice(lines.indexOf("END:VEVENT"), 0, `RELATED-TO;RELTYPE=CHILD:${regUid}`);
+
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${regUid}`,
+      `DTSTART;VALUE=DATE:${icsDate(regStart)}`,
+      `DTEND;VALUE=DATE:${icsDate(regEnd)}`,
+      `SUMMARY:Anmeldung: ${escapeIcs(tour.title)}`,
+      // Link registration event → tour event (parent)
+      `RELATED-TO;RELTYPE=PARENT:${uid}`,
+    );
+    if (description) {
+      lines.push(`DESCRIPTION:${escapeIcs(description)}`);
+    }
+    if (tour.detail_url) {
+      lines.push(`URL:${tour.detail_url}`);
+    }
+    lines.push(
+      "BEGIN:VALARM",
+      "ACTION:DISPLAY",
+      "DESCRIPTION:Anmeldung öffnet",
+      `TRIGGER;VALUE=DATE-TIME:${zurichMidnightUtcIcs(registrationDate)}`,
+      "END:VALARM",
+      "END:VEVENT",
+    );
+  }
+
+  lines.push("END:VCALENDAR");
 
   return `${lines.map(foldIcsLine).join("\r\n")}\r\n`;
 }
