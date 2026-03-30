@@ -37,7 +37,7 @@ export function TableView({
 }) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [lastTours, setLastTours] = useState(tours);
-  const [showFull, setShowFull] = useState(false);
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<TourStatus>>(new Set());
   const [selectedDurations, setSelectedDurations] = useState<Set<number>>(new Set());
   const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set());
 
@@ -45,9 +45,17 @@ export function TableView({
   if (lastTours !== tours) {
     setLastTours(tours);
     setExpandedRows(new Set());
+    setSelectedStatuses(new Set());
     setSelectedDurations(new Set());
     setSelectedDifficulties(new Set());
   }
+
+  const statuses = useMemo(
+    () => (["open", "not_yet_open", "full_or_cancelled", "unknown"] as TourStatus[]).filter(
+      (s) => tours.some((t) => t.status === s),
+    ),
+    [tours],
+  );
 
   const durations = useMemo(
     () => [...new Set(tours.map((t) => t.duration_days))].sort((a, b) => a - b),
@@ -68,7 +76,7 @@ export function TableView({
   const visibleTours = tours
     .map((tour, i) => ({ tour, i }))
     .filter(({ tour }) =>
-      (showFull || tour.status !== "full_or_cancelled") &&
+      (selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
       (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
       (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)),
     );
@@ -78,8 +86,9 @@ export function TableView({
       <ResultsHeader
         totalScraped={totalScraped}
         visibleCount={visibleTours.length}
-        showFull={showFull}
-        onShowFullChange={setShowFull}
+        statuses={statuses}
+        selectedStatuses={selectedStatuses}
+        onStatusesChange={setSelectedStatuses}
         durations={durations}
         selectedDurations={selectedDurations}
         onDurationsChange={setSelectedDurations}

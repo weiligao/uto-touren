@@ -1,7 +1,7 @@
 "use client";
 
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
-import type { Tour } from "@/lib/types";
+import type { Tour, TourStatus } from "@/lib/types";
 import { compareDifficulties, formatDuration, na, parseDateString } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IcsButton } from "./IcsButton";
@@ -245,9 +245,16 @@ export function CalendarView({
   );
 
   const [month, setMonth] = useState(() => detectInitialMonth(calendarTours));
-  const [showFull, setShowFull] = useState(false);
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<TourStatus>>(new Set());
   const [selectedDurations, setSelectedDurations] = useState<Set<number>>(new Set());
   const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set());
+
+  const statuses = useMemo(
+    () => (["open", "not_yet_open", "full_or_cancelled", "unknown"] as TourStatus[]).filter(
+      (s) => calendarTours.some((ct) => ct.tour.status === s),
+    ),
+    [calendarTours],
+  );
 
   const durations = useMemo(
     () => [...new Set(calendarTours.map((ct) => ct.tour.duration_days))].sort((a, b) => a - b),
@@ -260,7 +267,9 @@ export function CalendarView({
   );
 
   const visibleCalendarTours = useMemo(() => {
-    let result = showFull ? calendarTours : calendarTours.filter((ct) => ct.tour.status !== "full_or_cancelled");
+    let result = selectedStatuses.size > 0
+      ? calendarTours.filter((ct) => selectedStatuses.has(ct.tour.status))
+      : calendarTours;
     if (selectedDurations.size > 0) {
       result = result.filter((ct) => selectedDurations.has(ct.tour.duration_days));
     }
@@ -268,7 +277,7 @@ export function CalendarView({
       result = result.filter((ct) => selectedDifficulties.has(ct.tour.difficulty));
     }
     return result;
-  }, [calendarTours, showFull, selectedDurations, selectedDifficulties]);
+  }, [calendarTours, selectedStatuses, selectedDurations, selectedDifficulties]);
 
   const { minMonth, maxMonth } = useMemo(() => {
     if (calendarTours.length === 0) { return { minMonth: 0, maxMonth: 11 }; }
@@ -288,6 +297,7 @@ export function CalendarView({
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     function reset() {
       setMonth(detectInitialMonth(calendarTours));
+      setSelectedStatuses(new Set());
       setSelectedDurations(new Set());
       setSelectedDifficulties(new Set());
     }
@@ -322,8 +332,9 @@ export function CalendarView({
       <ResultsHeader
         totalScraped={calendarTours.length}
         visibleCount={visibleCalendarTours.length}
-        showFull={showFull}
-        onShowFullChange={setShowFull}
+        statuses={statuses}
+        selectedStatuses={selectedStatuses}
+        onStatusesChange={setSelectedStatuses}
         durations={durations}
         selectedDurations={selectedDurations}
         onDurationsChange={setSelectedDurations}
