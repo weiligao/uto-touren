@@ -1,3 +1,4 @@
+import type { TourDetail } from "@/lib/types";
 import * as cheerio from "cheerio";
 import { unstable_cache } from "next/cache";
 import type { NextRequest } from "next/server";
@@ -64,15 +65,15 @@ function extractLabelValue($: cheerio.CheerioAPI, label: string): string | null 
   return result;
 }
 
-interface TourDetail {
-  route_details: string | null;
-  additional_info: string | null;
-  equipment: string | null;
-  travel_route: string | null;
-  accommodation: string | null;
-  costs: string | null;
-  registration_start: string | null;
-}
+const EMPTY_DETAIL: TourDetail = {
+  route_details: null,
+  additional_info: null,
+  equipment: null,
+  travel_route: null,
+  accommodation: null,
+  costs: null,
+  registration_start: null,
+};
 
 async function fetchDetailUncached(url: string): Promise<TourDetail> {
   const controller = new AbortController();
@@ -87,7 +88,7 @@ async function fetchDetailUncached(url: string): Promise<TourDetail> {
   }).catch(() => null);
   clearTimeout(timeoutId);
 
-  if (!resp?.ok) { return { route_details: null, additional_info: null, equipment: null, travel_route: null, accommodation: null, costs: null, registration_start: null }; }
+  if (!resp?.ok) { return EMPTY_DETAIL; }
 
   const html = await resp.text();
   const $ = cheerio.load(html);
@@ -116,15 +117,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
 
-  const result = await cachedFetchDetail(url.href).catch((): TourDetail => ({
-    route_details: null,
-    additional_info: null,
-    equipment: null,
-    travel_route: null,
-    accommodation: null,
-    costs: null,
-    registration_start: null,
-  }));
+  const result = await cachedFetchDetail(url.href).catch(() => EMPTY_DETAIL);
 
   return NextResponse.json(result);
 }

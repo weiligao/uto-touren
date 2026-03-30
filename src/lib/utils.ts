@@ -81,6 +81,11 @@ function icsDate(dt: Date): string {
   return `${y}${mo}${d}`;
 }
 
+/** Slugify a tour title for use in UIDs and filenames. */
+function tourSlug(title: string, maxLen: number): string {
+  return title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, maxLen);
+}
+
 function escapeIcs(s: string): string {
   return s
     .replace(/\\/g, "\\\\")
@@ -152,7 +157,7 @@ export function downloadIcs(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 60)}.ics`;
+  a.download = `${tourSlug(tour.title, 60)}.ics`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -171,7 +176,12 @@ export function generateIcs(
   // start_date is stored as YYYY-MM-DD — parse as local date to avoid UTC shifting.
   const start = parseDateString(tour.start_date);
   const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + tour.duration_days);
-  const uid = `${icsDate(start)}-${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40)}@uto-touren`;
+  const slug = tourSlug(tour.title, 40);
+  const uid = `${icsDate(start)}-${slug}@uto-touren`;
+
+  // Compute registration event identifiers upfront so they can be cross-referenced.
+  const regStart = registrationDate ? parseDateString(registrationDate) : null;
+  const regUid = regStart ? `anmeldung-${icsDate(regStart)}-${slug}@uto-touren` : null;
 
   const lines = [
     "BEGIN:VCALENDAR",
@@ -185,43 +195,28 @@ export function generateIcs(
     `SUMMARY:${escapeIcs(tour.title)}`,
   ];
 
-  if (description) {
-    lines.push(`DESCRIPTION:${escapeIcs(description)}`);
-  }
-
-  if (tour.detail_url) {
-    lines.push(`URL:${tour.detail_url}`);
-  }
-
+  if (description) { lines.push(`DESCRIPTION:${escapeIcs(description)}`); }
+  if (tour.detail_url) { lines.push(`URL:${tour.detail_url}`); }
+  if (regUid) { lines.push(`RELATED-TO;RELTYPE=CHILD:${regUid}`); }
   lines.push("END:VEVENT");
 
-  if (registrationDate) {
-    const regStart = parseDateString(registrationDate);
+  if (registrationDate && regStart && regUid) {
     const regEnd = new Date(regStart.getFullYear(), regStart.getMonth(), regStart.getDate() + 1);
-    const regUid = `anmeldung-${icsDate(regStart)}-${tour.title.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40)}@uto-touren`;
-
-    // Link tour event → registration event (child)
-    lines.splice(lines.indexOf("END:VEVENT"), 0, `RELATED-TO;RELTYPE=CHILD:${regUid}`);
-
     lines.push(
       "BEGIN:VEVENT",
       `UID:${regUid}`,
       `DTSTART;VALUE=DATE:${icsDate(regStart)}`,
       `DTEND;VALUE=DATE:${icsDate(regEnd)}`,
       `SUMMARY:Anmeldung: ${escapeIcs(tour.title)}`,
-      // Link registration event → tour event (parent)
       `RELATED-TO;RELTYPE=PARENT:${uid}`,
     );
-    if (description) {
-      lines.push(`DESCRIPTION:${escapeIcs(description)}`);
-    }
-    if (tour.detail_url) {
-      lines.push(`URL:${tour.detail_url}`);
-    }
+    if (description) { lines.push(`DESCRIPTION:${escapeIcs(description)}`); }
+    if (tour.detail_url) { lines.push(`URL:${tour.detail_url}`); }
     lines.push(
       "BEGIN:VALARM",
       "ACTION:DISPLAY",
       "DESCRIPTION:Anmeldung öffnet",
+      // Absolute UTC trigger: midnight Europe/Zurich on the registration date.
       `TRIGGER;VALUE=DATE-TIME:${zurichMidnightUtcIcs(registrationDate)}`,
       "END:VALARM",
       "END:VEVENT",
@@ -229,6 +224,5 @@ export function generateIcs(
   }
 
   lines.push("END:VCALENDAR");
-
   return `${lines.map(foldIcsLine).join("\r\n")}\r\n`;
 }

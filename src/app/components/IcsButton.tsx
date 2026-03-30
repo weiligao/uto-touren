@@ -1,8 +1,18 @@
 "use client";
 
-import type { Tour } from "@/lib/types";
+import type { Tour, TourDetail } from "@/lib/types";
 import { downloadIcs } from "@/lib/utils";
 import { useCallback, useState } from "react";
+
+// Ordered list of detail fields and their German display labels.
+const DETAIL_LABELS: [keyof TourDetail, string][] = [
+  ["route_details", "Route / Details"],
+  ["additional_info", "Zusatzinfo"],
+  ["equipment", "Ausrüstung"],
+  ["travel_route", "Reiseroute"],
+  ["accommodation", "Unterkunft / Verpflegung"],
+  ["costs", "Kosten"],
+];
 
 export function IcsButton({
   tour,
@@ -25,22 +35,11 @@ export function IcsButton({
       try {
         const res = await fetch(`/api/tour-detail?url=${encodeURIComponent(tour.detail_url)}`);
         if (res.ok) {
-          const data = await res.json() as {
-            route_details?: string | null;
-            additional_info?: string | null;
-            equipment?: string | null;
-            travel_route?: string | null;
-            accommodation?: string | null;
-            costs?: string | null;
-            registration_start?: string | null;
-          };
-          const parts: string[] = [];
-          if (data.route_details) { parts.push(`Route / Details:\n${data.route_details}`); }
-          if (data.additional_info) { parts.push(`Zusatzinfo:\n${data.additional_info}`); }
-          if (data.equipment) { parts.push(`Ausrüstung:\n${data.equipment}`); }
-          if (data.travel_route) { parts.push(`Reiseroute:\n${data.travel_route}`); }
-          if (data.accommodation) { parts.push(`Unterkunft / Verpflegung:\n${data.accommodation}`); }
-          if (data.costs) { parts.push(`Kosten:\n${data.costs}`); }
+          const data = await res.json() as TourDetail;
+          const parts = DETAIL_LABELS.flatMap(([key, label]) => {
+            const val = data[key];
+            return val ? [`${label}:\n${val}`] : [];
+          });
           if (parts.length > 0) { description = parts.join("\n\n"); }
           registrationDate = data.registration_start ?? undefined;
         }
@@ -56,6 +55,9 @@ export function IcsButton({
   if (!tour.start_date) { return null; }
 
   const tooltip = "Als .ics exportieren – enthält Tour-Termin und Anmeldungs-Erinnerung";
+  let ariaLabel: string | undefined;
+  if (loading) { ariaLabel = "Kalender-Datei wird vorbereitet…"; }
+  else if (compact) { ariaLabel = tooltip; }
 
   return (
     <button
@@ -63,13 +65,7 @@ export function IcsButton({
       onClick={handleClick}
       disabled={loading}
       title={loading ? "Wird geladen…" : tooltip}
-      aria-label={
-        loading
-          ? "Kalender-Datei wird vorbereitet…"
-          : compact
-            ? tooltip
-            : undefined
-      }
+      aria-label={ariaLabel}
       className={[
         "inline-flex items-center rounded-md text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait",
         compact ? "gap-1 px-2 py-1" : "gap-1.5 px-2 py-1.5",

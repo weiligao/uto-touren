@@ -25,3 +25,14 @@ export interface ScrapeResult {
   total_scraped: number;
   tours: Tour[];
 }
+
+/** Shape of the /api/tour-detail response. */
+export interface TourDetail {
+  route_details: string | null;
+  additional_info: string | null;
+  equipment: string | null;
+  travel_route: string | null;
+  accommodation: string | null;
+  costs: string | null;
+  registration_start: string | null;
+}
