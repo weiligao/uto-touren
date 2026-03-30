@@ -23,7 +23,7 @@ const CSP = [
   "font-src 'self'",
   "img-src 'self' data: blob:",
   `connect-src 'self' ${VERCEL_HOSTS}${!isProduction ? ` ${VERCEL_PREVIEW_HOSTS}` : ""}`,
-  `frame-src 'none'${!isProduction ? " https://vercel.live" : ""}`,
+  `frame-src ${!isProduction ? "https://vercel.live" : "'none'"}`,
   "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
