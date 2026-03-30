@@ -2,7 +2,7 @@
 
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
-import { formatDuration, na, parseDateString } from "@/lib/utils";
+import { compareDifficulties, formatDuration, na, parseDateString } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
@@ -246,11 +246,29 @@ export function CalendarView({
 
   const [month, setMonth] = useState(() => detectInitialMonth(calendarTours));
   const [showFull, setShowFull] = useState(false);
+  const [selectedDurations, setSelectedDurations] = useState<Set<number>>(new Set());
+  const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set());
 
-  const visibleCalendarTours = useMemo(
-    () => showFull ? calendarTours : calendarTours.filter((ct) => ct.tour.status !== "full_or_cancelled"),
-    [calendarTours, showFull],
+  const durations = useMemo(
+    () => [...new Set(calendarTours.map((ct) => ct.tour.duration_days))].sort((a, b) => a - b),
+    [calendarTours],
   );
+
+  const difficulties = useMemo(
+    () => [...new Set(calendarTours.map((ct) => ct.tour.difficulty))].sort(compareDifficulties),
+    [calendarTours],
+  );
+
+  const visibleCalendarTours = useMemo(() => {
+    let result = showFull ? calendarTours : calendarTours.filter((ct) => ct.tour.status !== "full_or_cancelled");
+    if (selectedDurations.size > 0) {
+      result = result.filter((ct) => selectedDurations.has(ct.tour.duration_days));
+    }
+    if (selectedDifficulties.size > 0) {
+      result = result.filter((ct) => selectedDifficulties.has(ct.tour.difficulty));
+    }
+    return result;
+  }, [calendarTours, showFull, selectedDurations, selectedDifficulties]);
 
   const { minMonth, maxMonth } = useMemo(() => {
     if (calendarTours.length === 0) { return { minMonth: 0, maxMonth: 11 }; }
@@ -268,7 +286,11 @@ export function CalendarView({
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    function reset() { setMonth(detectInitialMonth(calendarTours)); }
+    function reset() {
+      setMonth(detectInitialMonth(calendarTours));
+      setSelectedDurations(new Set());
+      setSelectedDifficulties(new Set());
+    }
     reset();
   }, [calendarTours]);
 
@@ -302,6 +324,12 @@ export function CalendarView({
         visibleCount={visibleCalendarTours.length}
         showFull={showFull}
         onShowFullChange={setShowFull}
+        durations={durations}
+        selectedDurations={selectedDurations}
+        onDurationsChange={setSelectedDurations}
+        difficulties={difficulties}
+        selectedDifficulties={selectedDifficulties}
+        onDifficultiesChange={setSelectedDifficulties}
       />
 
       {/* Month navigation */}

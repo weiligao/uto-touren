@@ -2,8 +2,8 @@
 
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { formatDate, formatDuration, na } from "@/lib/utils";
-import { Fragment, useState } from "react";
+import { compareDifficulties, formatDate, formatDuration, na } from "@/lib/utils";
+import { Fragment, useMemo, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
@@ -38,12 +38,26 @@ export function TableView({
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [lastTours, setLastTours] = useState(tours);
   const [showFull, setShowFull] = useState(false);
+  const [selectedDurations, setSelectedDurations] = useState<Set<number>>(new Set());
+  const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set());
 
-  // Reset expanded rows when the tours list changes (derived state pattern)
+  // Reset expanded rows and filters when the tours list changes (derived state pattern)
   if (lastTours !== tours) {
     setLastTours(tours);
     setExpandedRows(new Set());
+    setSelectedDurations(new Set());
+    setSelectedDifficulties(new Set());
   }
+
+  const durations = useMemo(
+    () => [...new Set(tours.map((t) => t.duration_days))].sort((a, b) => a - b),
+    [tours],
+  );
+
+  const difficulties = useMemo(
+    () => [...new Set(tours.map((t) => t.difficulty))].sort(compareDifficulties),
+    [tours],
+  );
 
   const toggleRow = (i: number) => setExpandedRows((prev) => {
     const next = new Set(prev);
@@ -53,7 +67,11 @@ export function TableView({
 
   const visibleTours = tours
     .map((tour, i) => ({ tour, i }))
-    .filter(({ tour }) => showFull || tour.status !== "full_or_cancelled");
+    .filter(({ tour }) =>
+      (showFull || tour.status !== "full_or_cancelled") &&
+      (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
+      (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)),
+    );
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -62,6 +80,12 @@ export function TableView({
         visibleCount={visibleTours.length}
         showFull={showFull}
         onShowFullChange={setShowFull}
+        durations={durations}
+        selectedDurations={selectedDurations}
+        onDurationsChange={setSelectedDurations}
+        difficulties={difficulties}
+        selectedDifficulties={selectedDifficulties}
+        onDifficultiesChange={setSelectedDifficulties}
       />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

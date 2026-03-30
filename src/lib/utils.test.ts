@@ -117,8 +117,8 @@ describe("na", () => {
     expect(na("hello")).toBe("hello");
   });
 
-  it("returns - for empty string", () => {
-    expect(na("")).toBe("-");
+  it("returns Unbekannt for empty string", () => {
+    expect(na("")).toBe("Unbekannt");
   });
 });
 

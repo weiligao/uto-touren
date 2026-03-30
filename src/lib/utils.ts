@@ -1,4 +1,15 @@
+import { DIFFICULTY_ORDER } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
+
+const DIFFICULTY_RANK = new Map(DIFFICULTY_ORDER.map((d, i) => [d, i]));
+
+/** Sort comparator for difficulty chip chips: known values in scale order, unknowns alphabetically at the end. */
+export function compareDifficulties(a: string, b: string): number {
+  const ra = DIFFICULTY_RANK.get(a) ?? Number.MAX_SAFE_INTEGER;
+  const rb = DIFFICULTY_RANK.get(b) ?? Number.MAX_SAFE_INTEGER;
+  if (ra !== rb) { return ra - rb; }
+  return a.localeCompare(b);
+}
 
 const GERMAN_MONTHS: Record<string, number> = {
   Jan: 0,
@@ -60,7 +71,7 @@ export function formatDuration(days: number): string {
 }
 
 export function na(value: string): string {
-  return value || "-";
+  return value || "Unbekannt";
 }
 
 function icsDate(dt: Date): string {
