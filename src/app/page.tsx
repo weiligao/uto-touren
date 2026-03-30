@@ -107,7 +107,7 @@ function HomeContent() {
             UtoTouren
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Touren von sac-uto.ch suchen, filtern und herunterladen
+            Touren von sac-uto.ch suchen, filtern und in Google Kalender oder als .ics exportieren
           </p>
         </div>
       </header>
@@ -221,7 +221,7 @@ function HomeContent() {
           className="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
           aria-label="Nach oben"
         >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
           </svg>
         </button>

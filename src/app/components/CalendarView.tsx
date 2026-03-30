@@ -4,7 +4,7 @@ import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
 import { formatDuration, na, parseDateString } from "@/lib/utils";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { IcsButton } from "./IcsButton";
+import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
 import { useFilterState } from "./useFilterState";
@@ -76,8 +76,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Measure anchor position after paint. The `if (!dialogStyle) return null` guard
-  // below prevents a visible flash, so useLayoutEffect is not needed here.
+  // Keep position current as the user scrolls or resizes the viewport.
   useEffect(() => {
     function updatePosition() {
       if (!anchorRef.current) { return; }
@@ -96,20 +95,18 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
       }
     }
     updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, { passive: true });
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition);
+    };
   }, [anchorRef]);
 
   // Move focus to the close button when the dialog opens
   useEffect(() => {
     closeButtonRef.current?.focus();
   }, []);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose]);
 
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
@@ -136,6 +133,22 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") { onClose(); return; }
+        if (e.key === "Tab" && dialogRef.current) {
+          const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ));
+          if (focusable.length === 0) { return; }
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault(); last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault(); first.focus();
+          }
+        }
+      }}
       className="fixed z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
       style={dialogStyle}
     >
@@ -180,7 +193,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
           </dd>
         </div>
       </dl>
-      <IcsButton tour={tour} onAfterDownload={onClose} fullWidth />
+      <CalendarExportButtons tour={tour} onAfterDownload={onClose} fullWidth />
     </div>
   );
 }
@@ -344,7 +357,7 @@ export function CalendarView({
           aria-label={month <= minMonth ? `Keine Touren vor ${MONTH_NAMES[minMonth]}` : `Zu ${MONTH_NAMES[month - 1]}`}
           className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
@@ -358,7 +371,7 @@ export function CalendarView({
           aria-label={month >= maxMonth ? `Keine Touren nach ${MONTH_NAMES[maxMonth]}` : `Zu ${MONTH_NAMES[month + 1]}`}
           className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
         >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>

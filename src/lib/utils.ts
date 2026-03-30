@@ -143,6 +143,52 @@ function foldIcsLine(line: string): string {
   return parts.join("\r\n ");
 }
 
+/** Builds the `details` string for Google Calendar events (detail URL first, then description). */
+function buildDetailsParam(detailUrl: string | null, description?: string): string {
+  return [detailUrl ? `Details: ${detailUrl}` : null, description].filter(Boolean).join("\n\n");
+}
+
+/**
+ * Build a Google Calendar "Add event" URL for the tour's main event.
+ * Only call this when `tour.start_date` is non-null.
+ */
+export function buildGoogleCalendarUrl(
+  tour: Tour & { start_date: string },
+  description?: string,
+): string {
+  const start = parseDateString(tour.start_date);
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + tour.duration_days);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: tour.title,
+    dates: `${icsDate(start)}/${icsDate(end)}`,
+  });
+  const details = buildDetailsParam(tour.detail_url, description);
+  if (details) { params.set("details", details); }
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+/**
+ * Build a Google Calendar "Add event" URL for the registration reminder.
+ * Only call this when `tour.start_date` is non-null.
+ */
+export function buildGoogleCalendarRegistrationUrl(
+  tour: Tour & { start_date: string },
+  registrationDate: string,
+  description?: string,
+): string {
+  const regStart = parseDateString(registrationDate);
+  const regEnd = new Date(regStart.getFullYear(), regStart.getMonth(), regStart.getDate() + 1);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `Anmeldung: ${tour.title}`,
+    dates: `${icsDate(regStart)}/${icsDate(regEnd)}`,
+  });
+  const details = buildDetailsParam(tour.detail_url, description);
+  if (details) { params.set("details", details); }
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 /**
  * Trigger a browser download of an ICS file for the given tour.
  * Only call this when `tour.start_date` is non-null.

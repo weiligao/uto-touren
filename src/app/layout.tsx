@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s — UtoTouren",
   },
   description:
-    "Touren und Kurse der SAC-Sektion Uto suchen, filtern und herunterladen. Nach Jahr, Typ und Gruppe filtern. Einzelne Touren als .ics-Kalenderdatei exportieren.",
+    "Touren und Kurse der SAC-Sektion Uto suchen, filtern und in Google Kalender oder als .ics-Datei exportieren. Nach Jahr, Typ und Gruppe filtern.",
   keywords: [
     "SAC Uto",
     "SAC-Sektion Uto",
@@ -36,6 +36,7 @@ export const metadata: Metadata = {
     "Wandern",
     "Alpen",
     "Kalender",
+    "Google Kalender",
     "ics",
   ],
   openGraph: {
@@ -43,14 +44,14 @@ export const metadata: Metadata = {
     siteName: "UtoTouren",
     title: "UtoTouren",
     description:
-      "Touren und Kurse der SAC-Sektion Uto suchen, filtern und herunterladen.",
+      "Touren und Kurse der SAC-Sektion Uto suchen, filtern und in Google Kalender oder als .ics exportieren.",
     images: [{ url: "/og-image.png", width: 1200, height: 1200, alt: "UtoTouren logo" }],
   },
   twitter: {
     card: "summary",
     title: "UtoTouren",
     description:
-      "Touren und Kurse der SAC-Sektion Uto suchen, filtern und herunterladen.",
+      "Touren und Kurse der SAC-Sektion Uto suchen, filtern und in Google Kalender oder als .ics exportieren.",
     images: ["/og-image.png"],
   },
   robots: { index: true, follow: true },

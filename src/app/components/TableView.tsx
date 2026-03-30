@@ -4,7 +4,7 @@ import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { formatDate, formatDuration, na } from "@/lib/utils";
 import { Fragment, useMemo, useState } from "react";
-import { IcsButton } from "./IcsButton";
+import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
 import { useFilterState } from "./useFilterState";
@@ -144,7 +144,7 @@ export function TableView({
                     </td>
                     <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{na(tour.leader)}</td>
                     <td className="hidden sm:table-cell px-3 py-3 text-center">
-                      <IcsButton tour={tour} compact />
+                      <CalendarExportButtons tour={tour} compact />
                     </td>
                     <td className="sm:hidden px-2 pr-4 py-3 text-center">
                       <button
@@ -155,6 +155,7 @@ export function TableView({
                         aria-label={expanded ? "Zuklappen" : "Aufklappen"}
                       >
                         <svg
+                          aria-hidden="true"
                           className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
                           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                         >
@@ -191,7 +192,7 @@ export function TableView({
                             </dd>
                           </div>
                           <div className="flex items-end">
-                            <IcsButton tour={tour} />
+                            <CalendarExportButtons tour={tour} />
                           </div>
                         </dl>
                       </td>

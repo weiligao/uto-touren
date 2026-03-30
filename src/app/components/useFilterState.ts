@@ -56,15 +56,13 @@ export function useFilterState(tours: Tour[]): FilterState {
     [tours],
   );
 
-  const groups = useMemo(
-    () =>
-      [...new Set(tours.map((t) => t.group))].sort(
-        (a, b) =>
-          (GROUP_ORDER.indexOf(a) + 1 || Number.MAX_SAFE_INTEGER) -
-          (GROUP_ORDER.indexOf(b) + 1 || Number.MAX_SAFE_INTEGER),
-      ),
-    [tours],
-  );
+  const groups = useMemo(() => {
+    const rank = (g: string) => {
+      const i = GROUP_ORDER.indexOf(g);
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    return [...new Set(tours.map((t) => t.group))].sort((a, b) => rank(a) - rank(b));
+  }, [tours]);
 
   const resetFilters = useCallback(() => {
     setSelectedStatuses(new Set());

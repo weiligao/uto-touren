@@ -3,7 +3,7 @@
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { TourStatus } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 const chipBase =
   "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer";
@@ -97,6 +97,11 @@ export function ResultsHeader({
     (selectedDifficulties?.size ?? 0) +
     (selectedGroups?.size ?? 0);
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const filterPanelId = useId();
+  const statusLabelId = useId();
+  const durationLabelId = useId();
+  const difficultyLabelId = useId();
+  const groupLabelId = useId();
 
   return (
     <div className="border-b border-gray-200">
@@ -108,7 +113,7 @@ export function ResultsHeader({
             <button
               type="button"
               aria-expanded={filtersOpen}
-              aria-controls="results-filters"
+              aria-controls={filterPanelId}
               onClick={() => setFiltersOpen((v) => !v)}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
             >
@@ -151,12 +156,12 @@ export function ResultsHeader({
       {/* Filter panel */}
       {hasFilterRows && filtersOpen && (
         <div
-          id="results-filters"
+          id={filterPanelId}
           className="border-t border-gray-100 bg-gray-50/60 px-6 py-4 flex flex-col gap-4"
         >
           {statuses && statuses.length > 1 && (
             <FilterRow
-              labelId="status-filter-label"
+              labelId={statusLabelId}
               label="Status"
               hasActive={!!selectedStatuses?.size}
               onReset={() => onStatusesChange?.(new Set())}
@@ -192,7 +197,7 @@ export function ResultsHeader({
 
           {durations && durations.length > 1 && (
             <FilterRow
-              labelId="duration-filter-label"
+              labelId={durationLabelId}
               label="Dauer (Tage)"
               hasActive={!!selectedDurations?.size}
               onReset={() => onDurationsChange?.(new Set())}
@@ -225,7 +230,7 @@ export function ResultsHeader({
 
           {difficulties && difficulties.length > 1 && (
             <FilterRow
-              labelId="difficulty-filter-label"
+              labelId={difficultyLabelId}
               label="Schwierigkeit"
               hasActive={!!selectedDifficulties?.size}
               onReset={() => onDifficultiesChange?.(new Set())}
@@ -258,7 +263,7 @@ export function ResultsHeader({
 
           {groups && groups.length > 1 && (
             <FilterRow
-              labelId="group-filter-label"
+              labelId={groupLabelId}
               label="Gruppe"
               hasActive={!!selectedGroups?.size}
               onReset={() => onGroupsChange?.(new Set())}
