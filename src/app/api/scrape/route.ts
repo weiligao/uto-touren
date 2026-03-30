@@ -80,6 +80,7 @@ function parseDetailUrl($cell: cheerio.Cheerio<Element>): string | null {
   const url = href.startsWith("/") ? `https://sac-uto.ch${href}` : href;
   try {
     const parsed = new URL(url);
+    if (parsed.protocol !== "https:") { return null; }
     if (parsed.hostname !== "sac-uto.ch" && !parsed.hostname.endsWith(".sac-uto.ch")) {
       return null;
     }

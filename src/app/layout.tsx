@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL ?? "https://uto-touren.vercel.app",
   ),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default: "UtoTouren",
     template: "%s — UtoTouren",
@@ -41,6 +44,8 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     type: "website",
+    url: "/",
+    locale: "de_CH",
     siteName: "UtoTouren",
     title: "UtoTouren",
     description:
@@ -68,6 +73,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded focus:bg-white focus:text-blue-700 focus:font-semibold focus:shadow-lg focus:outline-2 focus:outline-blue-600"
+        >
+          Zum Hauptinhalt springen
+        </a>
         {children}
         <Footer />
         <Analytics />

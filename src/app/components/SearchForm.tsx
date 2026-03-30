@@ -1,5 +1,6 @@
 import { EVENT_TYPES, GROUPS, TOUR_TYPES, YEARS } from "@/lib/constants";
 import type React from "react";
+import { useId } from "react";
 
 function Spinner() {
   return (
@@ -56,13 +57,14 @@ export function SearchForm({
   expanded: boolean;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  const formId = useId();
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
       <button
         type="button"
         aria-expanded={expanded}
-        aria-controls="search-form-fields"
+        aria-controls={formId}
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between px-6 py-4 cursor-pointer"
       >
@@ -79,12 +81,12 @@ export function SearchForm({
         </svg>
       </button>
 
-      {expanded && (
-        <form
-          id="search-form-fields"
-          className="px-6 pb-6"
-          onSubmit={(e) => { e.preventDefault(); onSearch(); }}
-        >
+      <form
+        id={formId}
+        hidden={!expanded}
+        className="px-6 pb-6"
+        onSubmit={(e) => { e.preventDefault(); onSearch(); }}
+      >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label htmlFor="filter-year" className="block text-sm font-medium text-gray-700 mb-1">
@@ -173,8 +175,7 @@ export function SearchForm({
               </button>
             </div>
           </div>
-        </form>
-      )}
+      </form>
     </div>
   );
 }

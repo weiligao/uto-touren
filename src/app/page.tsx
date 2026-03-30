@@ -7,7 +7,7 @@ import { TOUR_TYPES, YEARS } from "@/lib/constants";
 import type { ScrapeResult } from "@/lib/types";
 import { useSearchParams } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useId, useRef, useState } from "react";
 
 type ViewMode = "table" | "calendar";
 
@@ -41,6 +41,9 @@ function HomeContent() {
   const [searchFormExpanded, setSearchFormExpanded] = useState(true);
   const tableTabRef = useRef<HTMLButtonElement>(null);
   const calendarTabRef = useRef<HTMLButtonElement>(null);
+  const tableTabId = useId();
+  const calendarTabId = useId();
+  const viewPanelId = useId();
 
   // Sync filter state → URL without triggering navigation.
   // Before the first search the URL stays clean; after a search all params are
@@ -112,7 +115,7 @@ function HomeContent() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 py-6">
         <SearchForm
           year={year}
           setYear={setYear}
@@ -156,8 +159,8 @@ function HomeContent() {
                 type="button"
                 role="tab"
                 aria-selected={viewMode === "table"}
-                aria-controls="view-panel"
-                id="tab-table"
+                aria-controls={viewPanelId}
+                id={tableTabId}
                 tabIndex={viewMode === "table" ? 0 : -1}
                 onClick={() => setViewMode("table")}
                 onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
@@ -176,8 +179,8 @@ function HomeContent() {
                 type="button"
                 role="tab"
                 aria-selected={viewMode === "calendar"}
-                aria-controls="view-panel"
-                id="tab-calendar"
+                aria-controls={viewPanelId}
+                id={calendarTabId}
                 tabIndex={viewMode === "calendar" ? 0 : -1}
                 onClick={() => setViewMode("calendar")}
                 onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
@@ -194,9 +197,10 @@ function HomeContent() {
             </div>
 
             <div
-              id="view-panel"
+              id={viewPanelId}
               role="tabpanel"
-              aria-labelledby={viewMode === "table" ? "tab-table" : "tab-calendar"}
+              tabIndex={0}
+              aria-labelledby={viewMode === "table" ? tableTabId : calendarTabId}
             >
               {viewMode === "table" ? (
                 <TableView
@@ -217,7 +221,7 @@ function HomeContent() {
       {showScrollTop && (
         <button
           type="button"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })}
           className="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
           aria-label="Nach oben"
         >

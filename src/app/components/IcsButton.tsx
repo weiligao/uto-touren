@@ -129,7 +129,8 @@ export function CalendarExportButtons({
         disabled={icsLoading}
         aria-haspopup="menu"
         aria-expanded={open}
-        title={icsLoading ? "Wird geladen…" : "Kalender-Export"}
+        aria-label={icsLoading ? "Wird geladen\u2026" : `Kalender-Export f\u00fcr ${tour.title}`}
+        title={icsLoading ? "Wird geladen\u2026" : "Kalender-Export"}
         className={[
           BTN_BASE,
           sizeClass,
@@ -164,11 +165,33 @@ export function CalendarExportButtons({
           ref={menuRef}
           role="menu"
           aria-labelledby={buttonId}
+          aria-busy={detailLoading}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               e.stopPropagation();
               setOpen(false);
               triggerRef.current?.focus();
+              return;
+            }
+            if (e.key === "Tab") {
+              setOpen(false);
+              // Don't preventDefault — let Tab/Shift+Tab move focus naturally
+              // (the enclosing dialog's trap, if any, will still intercept it)
+              return;
+            }
+            if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Home" || e.key === "End") {
+              e.preventDefault();
+              const items = Array.from(
+                menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
+              );
+              if (items.length === 0) { return; }
+              const currentIdx = items.indexOf(document.activeElement as HTMLElement);
+              let nextIdx: number;
+              if (e.key === "Home") { nextIdx = 0; }
+              else if (e.key === "End") { nextIdx = items.length - 1; }
+              else if (e.key === "ArrowDown") { nextIdx = (currentIdx + 1) % items.length; }
+              else { nextIdx = (currentIdx - 1 + items.length) % items.length; }
+              items[nextIdx]?.focus();
             }
           }}
           className="absolute right-0 top-full mt-1 z-50 min-w-56 rounded-md border border-gray-200 bg-white shadow-lg py-1 text-xs"
@@ -185,6 +208,7 @@ export function CalendarExportButtons({
             <>
               <a
                 role="menuitem"
+                tabIndex={-1}
                 href={googleTourUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -200,6 +224,7 @@ export function CalendarExportButtons({
               {googleRegUrl && (
                 <a
                   role="menuitem"
+                  tabIndex={-1}
                   href={googleRegUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -213,9 +238,10 @@ export function CalendarExportButtons({
                   <span className="sr-only"> (öffnet neuen Tab)</span>
                 </a>
               )}
-              <div className="border-t border-gray-100 my-1" />
+              <div role="separator" className="border-t border-gray-100 my-1" />
               <button
                 role="menuitem"
+                tabIndex={-1}
                 type="button"
                 onClick={handleIcsDownload}
                 className="w-full flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-50"

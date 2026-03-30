@@ -10,6 +10,7 @@ const ALLOWED_HOSTNAME = "sac-uto.ch";
 function validateDetailUrl(raw: string): URL | null {
   try {
     const url = new URL(raw);
+    if (url.protocol !== "https:") { return null; }
     if (url.hostname !== ALLOWED_HOSTNAME && !url.hostname.endsWith(`.${ALLOWED_HOSTNAME}`)) {
       return null;
     }

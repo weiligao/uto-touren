@@ -3,7 +3,7 @@
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { TourStatus } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
-import { useId, useState } from "react";
+import { memo, useId, useState } from "react";
 
 const chipBase =
   "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer";
@@ -11,17 +11,26 @@ const chipActive = "border-blue-600 bg-blue-600 text-white";
 const chipInactive =
   "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50";
 
+/** Toggle an item in a Set, returning a new Set. Treats undefined as an empty Set. */
+function toggleSet<T>(set: Set<T> | undefined, item: T): Set<T> {
+  const next = new Set(set);
+  if (next.has(item)) { next.delete(item); } else { next.add(item); }
+  return next;
+}
+
 function FilterRow({
   labelId,
   label,
   hasActive,
   onReset,
+  resetLabel,
   children,
 }: {
   labelId: string;
   label: string;
   hasActive: boolean;
   onReset: () => void;
+  resetLabel: string;
   children: React.ReactNode;
 }) {
   return (
@@ -40,7 +49,7 @@ function FilterRow({
         {hasActive && (
           <button
             type="button"
-            aria-label="Filter zurücksetzen"
+            aria-label={resetLabel}
             onClick={onReset}
             className={`${chipBase} border-gray-200 bg-white text-gray-400 hover:border-red-200 hover:bg-red-50 hover:text-red-500`}
           >
@@ -55,7 +64,7 @@ function FilterRow({
   );
 }
 
-export function ResultsHeader({
+export const ResultsHeader = memo(function ResultsHeader({
   totalScraped,
   visibleCount,
   statuses,
@@ -129,12 +138,15 @@ export function ResultsHeader({
               </svg>
               <span>Filter</span>
               {activeFilterCount > 0 && (
-                <span
-                  aria-label={`${activeFilterCount} Filter aktiv`}
-                  className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none"
-                >
-                  {activeFilterCount}
-                </span>
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none"
+                  >
+                    {activeFilterCount}
+                  </span>
+                  <span className="sr-only">({activeFilterCount} aktiv)</span>
+                </>
               )}
             </button>
           )}
@@ -143,10 +155,13 @@ export function ResultsHeader({
             title={`${visibleCount} von ${totalScraped} Touren angezeigt`}
             className="text-sm text-gray-500 tabular-nums"
           >
-            <span className="sm:hidden">
+            <span aria-hidden="true" className="sm:hidden">
               {visibleCount} / {totalScraped} Touren
             </span>
-            <span className="hidden sm:inline">
+            <span aria-hidden="true" className="hidden sm:inline">
+              {visibleCount} von {totalScraped} Touren angezeigt
+            </span>
+            <span className="sr-only">
               {visibleCount} von {totalScraped} Touren angezeigt
             </span>
           </span>
@@ -154,9 +169,10 @@ export function ResultsHeader({
       </div>
 
       {/* Filter panel */}
-      {hasFilterRows && filtersOpen && (
+      {hasFilterRows && (
         <div
           id={filterPanelId}
+          hidden={!filtersOpen}
           className="border-t border-gray-100 bg-gray-50/60 px-6 py-4 flex flex-col gap-4"
         >
           {statuses && statuses.length > 1 && (
@@ -165,6 +181,7 @@ export function ResultsHeader({
               label="Status"
               hasActive={!!selectedStatuses?.size}
               onReset={() => onStatusesChange?.(new Set())}
+              resetLabel="Status-Filter zurücksetzen"
             >
               {statuses.map((s) => {
                 const active = selectedStatuses?.has(s) ?? false;
@@ -173,15 +190,7 @@ export function ResultsHeader({
                     key={s}
                     type="button"
                     aria-pressed={active}
-                    onClick={() => {
-                      const next = new Set(selectedStatuses);
-                      if (active) {
-                        next.delete(s);
-                      } else {
-                        next.add(s);
-                      }
-                      onStatusesChange?.(next);
-                    }}
+                    onClick={() => onStatusesChange?.(toggleSet(selectedStatuses, s))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
                     <span
@@ -201,6 +210,7 @@ export function ResultsHeader({
               label="Dauer (Tage)"
               hasActive={!!selectedDurations?.size}
               onReset={() => onDurationsChange?.(new Set())}
+              resetLabel="Dauer-Filter zurücksetzen"
             >
               {durations.map((d) => {
                 const active = selectedDurations?.has(d) ?? false;
@@ -210,15 +220,7 @@ export function ResultsHeader({
                     type="button"
                     aria-pressed={active}
                     aria-label={formatDuration(d)}
-                    onClick={() => {
-                      const next = new Set(selectedDurations);
-                      if (active) {
-                        next.delete(d);
-                      } else {
-                        next.add(d);
-                      }
-                      onDurationsChange?.(next);
-                    }}
+                    onClick={() => onDurationsChange?.(toggleSet(selectedDurations, d))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
                     {d}
@@ -234,6 +236,7 @@ export function ResultsHeader({
               label="Schwierigkeit"
               hasActive={!!selectedDifficulties?.size}
               onReset={() => onDifficultiesChange?.(new Set())}
+              resetLabel="Schwierigkeits-Filter zurücksetzen"
             >
               {difficulties.map((d) => {
                 const active = selectedDifficulties?.has(d) ?? false;
@@ -243,15 +246,7 @@ export function ResultsHeader({
                     type="button"
                     aria-pressed={active}
                     aria-label={d || "Unbekannt"}
-                    onClick={() => {
-                      const next = new Set(selectedDifficulties);
-                      if (active) {
-                        next.delete(d);
-                      } else {
-                        next.add(d);
-                      }
-                      onDifficultiesChange?.(next);
-                    }}
+                    onClick={() => onDifficultiesChange?.(toggleSet(selectedDifficulties, d))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
                     {d || "Unbekannt"}
@@ -267,6 +262,7 @@ export function ResultsHeader({
               label="Gruppe"
               hasActive={!!selectedGroups?.size}
               onReset={() => onGroupsChange?.(new Set())}
+              resetLabel="Gruppen-Filter zurücksetzen"
             >
               {groups.map((g) => {
                 const active = selectedGroups?.has(g) ?? false;
@@ -276,15 +272,7 @@ export function ResultsHeader({
                     type="button"
                     aria-pressed={active}
                     aria-label={g !== "" ? g : "Unbekannt"}
-                    onClick={() => {
-                      const next = new Set(selectedGroups);
-                      if (active) {
-                        next.delete(g);
-                      } else {
-                        next.add(g);
-                      }
-                      onGroupsChange?.(next);
-                    }}
+                    onClick={() => onGroupsChange?.(toggleSet(selectedGroups, g))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
                     {g !== "" ? g : "Unbekannt"}
@@ -297,6 +285,6 @@ export function ResultsHeader({
       )}
     </div>
   );
-}
+});
 
 
