@@ -79,6 +79,7 @@ function HomeContent() {
       }
       setResult(await res.json());
       setHasSearched(true);
+      setSearchFormExpanded(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler");
     } finally {
