@@ -12,14 +12,17 @@ const isDev = process.env.NODE_ENV === "development";
 // 'unsafe-eval' is added in development only — React needs it for stack
 // reconstruction and hot-module replacement; it is never present in production.
 // connect-src covers fetch/XHR beacons; script-src covers the injected <script> tags.
+// VERCEL_PREVIEW_HOSTS are only needed in non-production deployments (preview toolbar).
 const VERCEL_HOSTS = "https://vitals.vercel-insights.com https://va.vercel-scripts.com";
+const VERCEL_PREVIEW_HOSTS = "https://vercel.live https://vercel.com";
+const isProduction = process.env.VERCEL_ENV === "production";
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} ${VERCEL_HOSTS}`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} ${VERCEL_HOSTS}${!isProduction ? ` ${VERCEL_PREVIEW_HOSTS}` : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
   "img-src 'self' data: blob:",
-  `connect-src 'self' ${VERCEL_HOSTS}`,
+  `connect-src 'self' ${VERCEL_HOSTS}${!isProduction ? ` ${VERCEL_PREVIEW_HOSTS}` : ""}`,
   "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
