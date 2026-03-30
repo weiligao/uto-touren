@@ -1,4 +1,5 @@
 import { EVENT_TYPES, GROUPS, TOUR_TYPES, YEARS } from "@/lib/constants";
+import type React from "react";
 
 function Spinner() {
   return (
@@ -53,7 +54,7 @@ export function SearchForm({
   loading: boolean;
   onSearch: () => void;
   expanded: boolean;
-  setExpanded: (v: boolean) => void;
+  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
 
   return (

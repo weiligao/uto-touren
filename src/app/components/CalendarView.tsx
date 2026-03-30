@@ -1,12 +1,13 @@
 "use client";
 
-import { GROUPS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
-import type { Tour, TourStatus } from "@/lib/types";
-import { compareDifficulties, formatDuration, na, parseDateString } from "@/lib/utils";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import type { Tour } from "@/lib/types";
+import { formatDuration, na, parseDateString } from "@/lib/utils";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
+import { useFilterState } from "./useFilterState";
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const WEEKDAY_FULL_NAMES = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
@@ -64,6 +65,7 @@ const TOOLTIP_APPROX_HEIGHT = 300;
 const VIEWPORT_MARGIN = 8;
 
 function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: React.RefObject<HTMLDivElement | null>; onClose: () => void }) {
+  const titleId = useId();
   const [dialogStyle, setDialogStyle] = useState<{
     top: number;
     left?: number;
@@ -133,12 +135,12 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="tour-dialog-title"
+      aria-labelledby={titleId}
       className="fixed z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg"
       style={dialogStyle}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <p id="tour-dialog-title" className="font-semibold text-sm text-gray-900">
+        <p id={titleId} className="font-semibold text-sm text-gray-900">
           <TourTitle title={tour.title} url={tour.detail_url} />
         </p>
         <button
@@ -245,50 +247,28 @@ export function CalendarView({
   );
 
   const [month, setMonth] = useState(() => detectInitialMonth(calendarTours));
-  const [selectedStatuses, setSelectedStatuses] = useState<Set<TourStatus>>(new Set());
-  const [selectedDurations, setSelectedDurations] = useState<Set<number>>(new Set());
-  const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set());
-  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
+  const toursList = useMemo(() => calendarTours.map((ct) => ct.tour), [calendarTours]);
+  const {
+    statuses,
+    selectedStatuses,
+    setSelectedStatuses,
+    durations,
+    selectedDurations,
+    setSelectedDurations,
+    difficulties,
+    selectedDifficulties,
+    setSelectedDifficulties,
+    groups,
+    selectedGroups,
+    setSelectedGroups,
+    resetFilters,
+    matchesTour,
+  } = useFilterState(toursList);
 
-  const statuses = useMemo(
-    () => (["open", "not_yet_open", "full_or_cancelled", "unknown"] as TourStatus[]).filter(
-      (s) => calendarTours.some((ct) => ct.tour.status === s),
-    ),
-    [calendarTours],
+  const visibleCalendarTours = useMemo(
+    () => calendarTours.filter((ct) => matchesTour(ct.tour)),
+    [calendarTours, matchesTour],
   );
-
-  const durations = useMemo(
-    () => [...new Set(calendarTours.map((ct) => ct.tour.duration_days))].sort((a, b) => a - b),
-    [calendarTours],
-  );
-
-  const difficulties = useMemo(
-    () => [...new Set(calendarTours.map((ct) => ct.tour.difficulty))].sort(compareDifficulties),
-    [calendarTours],
-  );
-
-  const groups = useMemo(() => {
-    const order = GROUPS.map((g) => g.value);
-    return [...new Set(calendarTours.map((ct) => ct.tour.group))].sort(
-      (a, b) => (order.indexOf(a) + 1 || Number.MAX_SAFE_INTEGER) - (order.indexOf(b) + 1 || Number.MAX_SAFE_INTEGER),
-    );
-  }, [calendarTours]);
-
-  const visibleCalendarTours = useMemo(() => {
-    let result = selectedStatuses.size > 0
-      ? calendarTours.filter((ct) => selectedStatuses.has(ct.tour.status))
-      : calendarTours;
-    if (selectedDurations.size > 0) {
-      result = result.filter((ct) => selectedDurations.has(ct.tour.duration_days));
-    }
-    if (selectedDifficulties.size > 0) {
-      result = result.filter((ct) => selectedDifficulties.has(ct.tour.difficulty));
-    }
-    if (selectedGroups.size > 0) {
-      result = result.filter((ct) => selectedGroups.has(ct.tour.group));
-    }
-    return result;
-  }, [calendarTours, selectedStatuses, selectedDurations, selectedDifficulties, selectedGroups]);
 
   const { minMonth, maxMonth } = useMemo(() => {
     if (calendarTours.length === 0) { return { minMonth: 0, maxMonth: 11 }; }
@@ -308,13 +288,10 @@ export function CalendarView({
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     function reset() {
       setMonth(detectInitialMonth(calendarTours));
-      setSelectedStatuses(new Set());
-      setSelectedDurations(new Set());
-      setSelectedDifficulties(new Set());
-      setSelectedGroups(new Set());
+      resetFilters();
     }
     reset();
-  }, [calendarTours]);
+  }, [calendarTours, resetFilters]);
 
   const cells = useMemo(() => getCalendarDays(yearNum, month), [yearNum, month]);
   const tourMap = useMemo(

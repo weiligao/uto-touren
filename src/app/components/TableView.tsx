@@ -1,12 +1,13 @@
 "use client";
 
-import { GROUPS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { compareDifficulties, formatDate, formatDuration, na } from "@/lib/utils";
+import { formatDate, formatDuration, na } from "@/lib/utils";
 import { Fragment, useMemo, useState } from "react";
 import { IcsButton } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
+import { useFilterState } from "./useFilterState";
 
 const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
   { label: "Status", center: true, mobileHidden: true },
@@ -37,44 +38,29 @@ export function TableView({
 }) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [lastTours, setLastTours] = useState(tours);
-  const [selectedStatuses, setSelectedStatuses] = useState<Set<TourStatus>>(new Set());
-  const [selectedDurations, setSelectedDurations] = useState<Set<number>>(new Set());
-  const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set());
-  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
+  const {
+    statuses,
+    selectedStatuses,
+    setSelectedStatuses,
+    durations,
+    selectedDurations,
+    setSelectedDurations,
+    difficulties,
+    selectedDifficulties,
+    setSelectedDifficulties,
+    groups,
+    selectedGroups,
+    setSelectedGroups,
+    resetFilters,
+    matchesTour,
+  } = useFilterState(tours);
 
   // Reset expanded rows and filters when the tours list changes (derived state pattern)
   if (lastTours !== tours) {
     setLastTours(tours);
     setExpandedRows(new Set());
-    setSelectedStatuses(new Set());
-    setSelectedDurations(new Set());
-    setSelectedDifficulties(new Set());
-    setSelectedGroups(new Set());
+    resetFilters();
   }
-
-  const statuses = useMemo(
-    () => (["open", "not_yet_open", "full_or_cancelled", "unknown"] as TourStatus[]).filter(
-      (s) => tours.some((t) => t.status === s),
-    ),
-    [tours],
-  );
-
-  const durations = useMemo(
-    () => [...new Set(tours.map((t) => t.duration_days))].sort((a, b) => a - b),
-    [tours],
-  );
-
-  const difficulties = useMemo(
-    () => [...new Set(tours.map((t) => t.difficulty))].sort(compareDifficulties),
-    [tours],
-  );
-
-  const groups = useMemo(() => {
-    const order = GROUPS.map((g) => g.value);
-    return [...new Set(tours.map((t) => t.group))].sort(
-      (a, b) => (order.indexOf(a) + 1 || Number.MAX_SAFE_INTEGER) - (order.indexOf(b) + 1 || Number.MAX_SAFE_INTEGER),
-    );
-  }, [tours]);
 
   const toggleRow = (i: number) => setExpandedRows((prev) => {
     const next = new Set(prev);
@@ -82,14 +68,10 @@ export function TableView({
     return next;
   });
 
-  const visibleTours = tours
-    .map((tour, i) => ({ tour, i }))
-    .filter(({ tour }) =>
-      (selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
-      (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
-      (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)) &&
-      (selectedGroups.size === 0 || selectedGroups.has(tour.group)),
-    );
+  const visibleTours = useMemo(
+    () => tours.map((tour, i) => ({ tour, i })).filter(({ tour }) => matchesTour(tour)),
+    [tours, matchesTour],
+  );
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -228,12 +210,7 @@ export function TableView({
                       <p className="mb-3">Keine Touren für diese Filter.</p>
                       <button
                         type="button"
-                        onClick={() => {
-                          setSelectedStatuses(new Set());
-                          setSelectedDurations(new Set());
-                          setSelectedDifficulties(new Set());
-                          setSelectedGroups(new Set());
-                        }}
+                        onClick={resetFilters}
                         className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                       >
                         Filter zurücksetzen
