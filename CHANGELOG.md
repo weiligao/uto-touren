@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/weiligao/uto-touren/compare/v1.6.1...v1.6.2) (2026-03-31)
+
+
+### Bug Fixes
+
+* update workflows ([#34](https://github.com/weiligao/uto-touren/issues/34)) ([be3c52e](https://github.com/weiligao/uto-touren/commit/be3c52efeb574c70469668c185ed14392eb202f3))
+
 ## [1.6.1](https://github.com/weiligao/uto-touren/compare/v1.6.0...v1.6.1) (2026-03-31)
 
 
