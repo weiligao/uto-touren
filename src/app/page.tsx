@@ -13,6 +13,45 @@ type ViewMode = "table" | "calendar";
 
 const DEFAULT_TYP = "Ht";
 
+const RING_R = 10;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_R;
+
+function ProgressRing({ loaded, total }: { loaded: number; total: number | null }) {
+  if (total === null || total === 0) {
+    return (
+      <svg aria-hidden="true" className="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r={RING_R} stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+    );
+  }
+  const fraction = Math.min(loaded / total, 1);
+  const dashoffset = RING_CIRCUMFERENCE * (1 - fraction);
+  return (
+    <svg aria-hidden="true" className="h-8 w-8 -rotate-90" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r={RING_R} fill="none" stroke="#E5E7EB" strokeWidth="3" />
+      <circle
+        cx="12"
+        cy="12"
+        r={RING_R}
+        fill="none"
+        stroke="#3B82F6"
+        strokeWidth="3"
+        strokeDasharray={RING_CIRCUMFERENCE}
+        strokeDashoffset={dashoffset}
+        strokeLinecap="round"
+        className="transition-[stroke-dashoffset] duration-[400ms] ease-in-out motion-reduce:transition-none"
+      />
+    </svg>
+  );
+}
+
+function loadingLabel(progress: { loaded: number; total: number | null } | null): string {
+  if (!progress) { return "Touren werden geladen…"; }
+  if (progress.total) { return `Seite ${progress.loaded} von ${progress.total} geladen…`; }
+  return `Seite ${progress.loaded} geladen…`;
+}
+
 function HomeContent() {
   const searchParams = useSearchParams();
 
@@ -35,6 +74,7 @@ function HomeContent() {
     searchParams.has("year") || searchParams.has("type"),
   );
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<{ loaded: number; total: number | null } | null>(null);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -67,23 +107,67 @@ function HomeContent() {
 
   async function handleSearch() {
     setLoading(true);
+    setProgress(null);
     setError(null);
     setResult(null);
 
-    const params = new URLSearchParams({ year, typ, anlasstyp: eventType, gruppe: group });
+    const params = new URLSearchParams({ year, typ, anlasstyp: eventType, gruppe: group, stream: "1" });
+    let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
     try {
       const res = await fetch(`/api/scrape?${params.toString()}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? `Anfrage fehlgeschlagen: ${res.status}`);
       }
-      setResult(await res.json());
-      setHasSearched(true);
-      setSearchFormExpanded(false);
+      if (!res.body) { throw new Error("Keine Antwort vom Server"); }
+      reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let receivedDone = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          if (!receivedDone) { throw new Error("Verbindung unterbrochen"); }
+          break;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+        for (const event of events) {
+          const dataLine = event.split("\n").find((l) => l.startsWith("data: "));
+          if (!dataLine) { continue; }
+          let payload: Record<string, unknown>;
+          try {
+            payload = JSON.parse(dataLine.slice(6));
+          } catch {
+            throw new Error("Ungültige Antwort vom Server");
+          }
+          if (payload.type === "progress") {
+            setProgress({ loaded: payload.loaded as number, total: payload.total as number | null });
+          } else if (payload.type === "done") {
+            receivedDone = true;
+            setResult({
+              source: payload.source as string,
+              year: payload.year as string,
+              type_filter: payload.type_filter as string,
+              event_type: payload.event_type as string,
+              total_scraped: payload.total_scraped as number,
+              tours: payload.tours as ScrapeResult["tours"],
+            });
+            setHasSearched(true);
+            setSearchFormExpanded(false);
+            break;
+          } else if (payload.type === "error") {
+            throw new Error(payload.error as string);
+          }
+        }
+      }
     } catch (err) {
+      reader?.cancel().catch(() => {});
       setError(err instanceof Error ? err.message : "Unbekannter Fehler");
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   }
 
@@ -138,13 +222,15 @@ function HomeContent() {
           </div>
         )}
 
+        {/* Persistent live region: always in the DOM so screen readers reliably announce updates */}
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          {loading ? loadingLabel(progress) : ""}
+        </div>
+
         {loading && (
-          <div role="status" className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6 flex items-center justify-center gap-3 text-gray-500 text-sm">
-            <svg aria-hidden="true" className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Touren werden geladen…
+          <div aria-hidden="true" className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6 flex flex-col items-center justify-center gap-3 text-gray-500 text-sm">
+            <ProgressRing loaded={progress?.loaded ?? 0} total={progress?.total ?? null} />
+            <span>{loadingLabel(progress)}</span>
           </div>
         )}
 
