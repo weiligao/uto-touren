@@ -46,6 +46,12 @@ function ProgressRing({ loaded, total }: { loaded: number; total: number | null 
   );
 }
 
+function loadingLabel(progress: { loaded: number; total: number | null } | null): string {
+  if (!progress) { return "Touren werden geladen…"; }
+  if (progress.total) { return `Seite ${progress.loaded} von ${progress.total} geladen…`; }
+  return `Seite ${progress.loaded} geladen…`;
+}
+
 function HomeContent() {
   const searchParams = useSearchParams();
 
@@ -218,25 +224,13 @@ function HomeContent() {
 
         {/* Persistent live region: always in the DOM so screen readers reliably announce updates */}
         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-          {loading
-            ? progress
-              ? progress.total
-                ? `Seite ${progress.loaded} von ${progress.total} geladen…`
-                : `Seite ${progress.loaded} geladen…`
-              : "Touren werden geladen…"
-            : ""}
+          {loading ? loadingLabel(progress) : ""}
         </div>
 
         {loading && (
           <div aria-hidden="true" className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6 flex flex-col items-center justify-center gap-3 text-gray-500 text-sm">
             <ProgressRing loaded={progress?.loaded ?? 0} total={progress?.total ?? null} />
-            <span>
-              {progress
-                ? progress.total
-                  ? `Seite ${progress.loaded} von ${progress.total} geladen…`
-                  : `Seite ${progress.loaded} geladen…`
-                : "Touren werden geladen…"}
-            </span>
+            <span>{loadingLabel(progress)}</span>
           </div>
         )}
 

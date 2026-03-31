@@ -56,6 +56,7 @@ Run checks before committing:
 ```bash
 npm run lint         # ESLint
 npm test             # Vitest
+npm run test:coverage  # Vitest + coverage report
 npm run build        # Ensure the production build passes
 ```
 
@@ -110,11 +111,12 @@ Use the imperative mood in the summary: **"add calendar swipe"**, not ~~"added c
 
 ## Testing
 
-Unit tests live in `src/lib/utils.test.ts` and use [Vitest](https://vitest.dev).
+Unit tests use [Vitest](https://vitest.dev). Test files live alongside the code they cover and follow the `*.test.ts` naming convention (e.g. `src/lib/utils.test.ts`, `src/app/api/scrape/route.test.ts`).
 
 - Add a test for every new utility function or non-trivial logic change.
 - Tests must be deterministic — avoid `Date.now()` or `Math.random()` without mocking.
 - All existing tests must continue to pass: `npm test`.
+- Run `npm run test:coverage` to generate a coverage report (`coverage/lcov.info`) that is uploaded to Codecov in CI.
 
 ## Security Vulnerabilities
 
