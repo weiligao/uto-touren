@@ -3,6 +3,13 @@ import type { Tour } from "@/lib/types";
 
 const DIFFICULTY_RANK = new Map(DIFFICULTY_ORDER.map((d, i) => [d, i]));
 
+const KURS_RE = /^KS(I{1,3}|IV|V)$/;
+
+/** Returns true if the difficulty value is a Kurs difficulty (KSI, KSII, KSIII, KSIV, KSV). */
+export function isKurs(difficulty: string): boolean {
+  return KURS_RE.test(difficulty);
+}
+
 /** Sort comparator for difficulty filter chips: known values in scale order, unknowns alphabetically at the end. */
 export function compareDifficulties(a: string, b: string): number {
   const ra = DIFFICULTY_RANK.get(a) ?? Number.MAX_SAFE_INTEGER;

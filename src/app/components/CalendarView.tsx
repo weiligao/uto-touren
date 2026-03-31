@@ -1,6 +1,6 @@
 "use client";
 
-import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
 import { formatDuration, na, parseDateString } from "@/lib/utils";
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
@@ -230,7 +230,7 @@ const TourPill = memo(function TourPill({
         type="button"
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={`${ct.tour.title} — ${STATUS_LABELS[ct.tour.status]}`}
+        aria-label={`${ct.tour.title} — ${STATUS_ARIA_LABELS[ct.tour.status]}`}
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight bg-blue-50 hover:bg-blue-100 text-left cursor-pointer"
       >
@@ -282,9 +282,12 @@ export function CalendarView({
     difficulties,
     selectedDifficulties,
     setSelectedDifficulties,
+    eventTypes,
+    selectedEventTypes,
+    setSelectedEventTypes,
     groups,
     selectedGroups,
-    setSelectedGroups,
+    setSelectedGroups,    
     resetFilters,
     matchesTour,
   } = useFilterState(toursList);
@@ -354,6 +357,9 @@ export function CalendarView({
         difficulties={difficulties}
         selectedDifficulties={selectedDifficulties}
         onDifficultiesChange={setSelectedDifficulties}
+        eventTypes={eventTypes}
+        selectedEventTypes={selectedEventTypes}
+        onEventTypesChange={setSelectedEventTypes}
         groups={groups}
         selectedGroups={selectedGroups}
         onGroupsChange={setSelectedGroups}

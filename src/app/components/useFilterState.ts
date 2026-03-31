@@ -1,6 +1,6 @@
-import { GROUPS } from "@/lib/constants";
+import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, GROUPS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { compareDifficulties } from "@/lib/utils";
+import { compareDifficulties, isKurs } from "@/lib/utils";
 import { useCallback, useMemo, useState } from "react";
 
 const STATUS_ORDER: readonly TourStatus[] = [
@@ -27,23 +27,27 @@ export interface FilterState {
   difficulties: string[];
   selectedDifficulties: Set<string>;
   setSelectedDifficulties: (v: Set<string>) => void;
+  eventTypes: string[];
+  selectedEventTypes: Set<string>;
+  setSelectedEventTypes: (v: Set<string>) => void;
   groups: string[];
   selectedGroups: Set<string>;
   setSelectedGroups: (v: Set<string>) => void;
-  /** Reset all four filter dimensions to "show all". */
+  /** Reset all filter dimensions to "show all". */
   resetFilters: () => void;
   /** Returns true if the tour passes all currently active filters. */
   matchesTour: (tour: Tour) => boolean;
 }
 
 /**
- * Manages the four filter dimensions (status / duration / difficulty / group) for a tour list.
+ * Manages filter dimensions (status / duration / difficulty / event type / group) for a tour list.
  * Pass a stable (memoized) `tours` reference so that the derived useMemos stay cheap.
  */
 export function useFilterState(tours: Tour[]): FilterState {
   const [selectedStatuses, setSelectedStatuses] = useState<Set<TourStatus>>(new Set());
   const [selectedDurations, setSelectedDurations] = useState<Set<number>>(new Set());
   const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set());
+  const [selectedEventTypes, setSelectedEventTypes] = useState<Set<string>>(new Set());
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
 
   const statuses = useMemo(
@@ -61,6 +65,19 @@ export function useFilterState(tours: Tour[]): FilterState {
     [tours],
   );
 
+  const eventTypes = useMemo(() => {
+    let hasKurs = false;
+    let hasTour = false;
+    for (const t of tours) {
+      if (isKurs(t.difficulty)) { hasKurs = true; } else { hasTour = true; }
+      if (hasKurs && hasTour) { break; }
+    }
+    const result: string[] = [];
+    if (hasTour) { result.push(EVENT_TYPE_TOUR); }
+    if (hasKurs) { result.push(EVENT_TYPE_KURS); }
+    return result;
+  }, [tours]);
+
   const groups = useMemo(
     () => [...new Set(tours.map((t) => t.group))].sort((a, b) => groupRank(a) - groupRank(b)),
     [tours],
@@ -70,6 +87,7 @@ export function useFilterState(tours: Tour[]): FilterState {
     setSelectedStatuses(new Set());
     setSelectedDurations(new Set());
     setSelectedDifficulties(new Set());
+    setSelectedEventTypes(new Set());
     setSelectedGroups(new Set());
   }, []);
 
@@ -78,8 +96,12 @@ export function useFilterState(tours: Tour[]): FilterState {
       (selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
       (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
       (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)) &&
+      (selectedEventTypes.size === 0 ||
+        (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
+        (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))
+      ) &&
       (selectedGroups.size === 0 || selectedGroups.has(tour.group)),
-    [selectedStatuses, selectedDurations, selectedDifficulties, selectedGroups],
+    [selectedStatuses, selectedDurations, selectedDifficulties, selectedGroups, selectedEventTypes],
   );
 
   return {
@@ -92,6 +114,9 @@ export function useFilterState(tours: Tour[]): FilterState {
     difficulties,
     selectedDifficulties,
     setSelectedDifficulties,
+    eventTypes,
+    selectedEventTypes,
+    setSelectedEventTypes,
     groups,
     selectedGroups,
     setSelectedGroups,
