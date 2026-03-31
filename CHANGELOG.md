@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/weiligao/uto-touren/compare/v1.6.2...v1.7.0) (2026-03-31)
+
+
+### Features
+
+* add event type filter ([#38](https://github.com/weiligao/uto-touren/issues/38)) ([69a9920](https://github.com/weiligao/uto-touren/commit/69a9920d839591c7506738a50b9caf49c6390682))
+
 ## [1.6.2](https://github.com/weiligao/uto-touren/compare/v1.6.1...v1.6.2) (2026-03-31)
 
 
