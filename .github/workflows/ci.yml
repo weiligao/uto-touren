@@ -10,15 +10,6 @@ on:
       - .github/dependabot.yml
       - .github/workflows/release.yml
       - .github/workflows/cd.yml
-  pull_request_target:
-    branches:
-      - main
-    paths-ignore:
-      - "**.md"
-      - LICENSE
-      - .github/dependabot.yml
-      - .github/workflows/release.yml
-      - .github/workflows/cd.yml
 
 jobs:
   ci:
