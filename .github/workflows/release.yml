@@ -17,8 +17,28 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
     steps:
       - name: Run Release Please
+        id: release
         uses: googleapis/release-please-action@v4
         with:
           release-type: node
+
+  deploy:
+    name: Deploy to Vercel (Production)
+    runs-on: ubuntu-latest
+    environment: Production
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Deploy to Vercel
+        run: npx vercel --prod --token "$VERCEL_TOKEN" --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
