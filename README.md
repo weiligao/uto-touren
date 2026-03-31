@@ -9,7 +9,7 @@ A web app for searching and browsing tours from [SAC-Sektion Uto](https://sac-ut
 
 - Search by year, tour type, event type, and group — form auto-collapses after a successful search
 - Live progress indicator during scraping: determinate ring showing pages loaded vs. total (e.g. "Seite 2 von 3 geladen…"), falling back to an indeterminate spinner when page count is unavailable
-- Post-search multi-select chip filters for status, duration, difficulty, and group — collapsible panel with active-filter count badge
+- Post-search multi-select chip filters for status, duration, difficulty, event type (Tour/Kurs), and group — collapsible panel with active-filter count badge
 - Table view with expandable rows on mobile
 - Calendar view with multi-day tour spanning and swipe navigation on mobile
 - Status indicators (open, full/cancelled, not yet open)
