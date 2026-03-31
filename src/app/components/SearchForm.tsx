@@ -28,7 +28,29 @@ function Spinner() {
 }
 
 const selectClass =
-  "w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
+  "w-full appearance-none border border-gray-300 rounded-md pl-3 pr-8 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
+
+function SelectWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      {children}
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-2.5 m-auto h-4 w-4 text-gray-500"
+        fill="none"
+        viewBox="0 0 20 20"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+          d="m6 8 4 4 4-4"
+        />
+      </svg>
+    </div>
+  );
+}
 
 export function SearchForm({
   year,
@@ -92,71 +114,79 @@ export function SearchForm({
             <label htmlFor="filter-year" className="block text-sm font-medium text-gray-700 mb-1">
               Jahr
             </label>
-            <select
-              id="filter-year"
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              className={selectClass}
-            >
-              {YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
+            <SelectWrapper>
+              <select
+                id="filter-year"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className={selectClass}
+              >
+                {YEARS.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </SelectWrapper>
           </div>
           <div>
             <label htmlFor="filter-tour-type" className="block text-sm font-medium text-gray-700 mb-1">
               Tourtyp
             </label>
-            <select
-              id="filter-tour-type"
-              value={typ}
-              onChange={(e) => setTyp(e.target.value)}
-              className={selectClass}
-            >
-              {TOUR_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+            <SelectWrapper>
+              <select
+                id="filter-tour-type"
+                value={typ}
+                onChange={(e) => setTyp(e.target.value)}
+                className={selectClass}
+              >
+                {TOUR_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </SelectWrapper>
           </div>
           <div>
             <label htmlFor="filter-event-type" className="block text-sm font-medium text-gray-700 mb-1">
               Anlasstyp
             </label>
-            <select
-              id="filter-event-type"
-              value={eventType}
-              onChange={(e) => setEventType(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Alle</option>
-              {EVENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+            <SelectWrapper>
+              <select
+                id="filter-event-type"
+                value={eventType}
+                onChange={(e) => setEventType(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">Alle</option>
+                {EVENT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </SelectWrapper>
           </div>
           <div>
             <label htmlFor="filter-group" className="block text-sm font-medium text-gray-700 mb-1">
               Gruppe
             </label>
-            <select
-              id="filter-group"
-              value={group}
-              onChange={(e) => setGroup(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Alle</option>
-              {GROUPS.map((g) => (
-                <option key={g.value} value={g.value}>
-                  {g.label}
-                </option>
-              ))}
-            </select>
+            <SelectWrapper>
+              <select
+                id="filter-group"
+                value={group}
+                onChange={(e) => setGroup(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">Alle</option>
+                {GROUPS.map((g) => (
+                  <option key={g.value} value={g.value}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </SelectWrapper>
           </div>
           <div className="flex items-end mt-2 sm:mt-0">
             <button

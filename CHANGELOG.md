@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/weiligao/uto-touren/compare/v1.5.0...v1.5.1) (2026-03-30)
+
+
+### Bug Fixes
+
+* add padding to dropdown arrow ([#26](https://github.com/weiligao/uto-touren/issues/26)) ([28c45db](https://github.com/weiligao/uto-touren/commit/28c45db350dc04699bb53e18b08579422a420ce3))
+
 ## [1.5.0](https://github.com/weiligao/uto-touren/compare/v1.4.0...v1.5.0) (2026-03-30)
 
 
