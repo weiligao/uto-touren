@@ -2,10 +2,6 @@
   <img src="public/logo.svg" alt="UtoTouren" width="96" height="96">
 </p>
 <h1 align="center">UtoTouren</h1>
-<p align="center">
-  <a href="https://github.com/weiligao/uto-touren/actions/workflows/ci.yml"><img src="https://github.com/weiligao/uto-touren/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://codecov.io/gh/weiligao/uto-touren"><img src="https://codecov.io/gh/weiligao/uto-touren/graph/badge.svg" alt="Coverage"></a>
-</p>
 
 A web app for searching and browsing tours from [SAC-Sektion Uto](https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/). Scrapes the official tour listing, parses results server-side, and displays them in a filterable table or month calendar view.
 
