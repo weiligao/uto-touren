@@ -1,6 +1,6 @@
 "use client";
 
-import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { formatDate, formatDuration, na } from "@/lib/utils";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -23,7 +23,7 @@ function StatusDot({ status }: { status: TourStatus }) {
   return (
     <span
       role="img"
-      aria-label={STATUS_LABELS[status]}
+      aria-label={STATUS_ARIA_LABELS[status]}
       className={`inline-block h-3 w-3 rounded-full ${STATUS_COLORS[status]}`}
     />
   );
@@ -147,6 +147,9 @@ export function TableView({
     difficulties,
     selectedDifficulties,
     setSelectedDifficulties,
+    eventTypes,
+    selectedEventTypes,
+    setSelectedEventTypes,
     groups,
     selectedGroups,
     setSelectedGroups,
@@ -188,6 +191,9 @@ export function TableView({
         difficulties={difficulties}
         selectedDifficulties={selectedDifficulties}
         onDifficultiesChange={setSelectedDifficulties}
+        eventTypes={eventTypes}
+        selectedEventTypes={selectedEventTypes}
+        onEventTypesChange={setSelectedEventTypes}
         groups={groups}
         selectedGroups={selectedGroups}
         onGroupsChange={setSelectedGroups}

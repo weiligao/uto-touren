@@ -1,6 +1,6 @@
 "use client";
 
-import { STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { TourStatus } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
 import { memo, useId, useState } from "react";
@@ -76,6 +76,9 @@ export const ResultsHeader = memo(function ResultsHeader({
   difficulties,
   selectedDifficulties,
   onDifficultiesChange,
+  eventTypes,
+  selectedEventTypes,
+  onEventTypesChange,
   groups,
   selectedGroups,
   onGroupsChange,
@@ -91,6 +94,9 @@ export const ResultsHeader = memo(function ResultsHeader({
   difficulties?: string[];
   selectedDifficulties?: Set<string>;
   onDifficultiesChange?: (v: Set<string>) => void;
+  eventTypes?: string[];
+  selectedEventTypes?: Set<string>;
+  onEventTypesChange?: (v: Set<string>) => void;
   groups?: string[];
   selectedGroups?: Set<string>;
   onGroupsChange?: (v: Set<string>) => void;
@@ -99,17 +105,20 @@ export const ResultsHeader = memo(function ResultsHeader({
     !!(statuses && statuses.length > 1) ||
     !!(durations && durations.length > 1) ||
     !!(difficulties && difficulties.length > 1) ||
+    !!(eventTypes && eventTypes.length > 1) ||
     !!(groups && groups.length > 1);
   const activeFilterCount =
     (selectedStatuses?.size ?? 0) +
     (selectedDurations?.size ?? 0) +
     (selectedDifficulties?.size ?? 0) +
+    (selectedEventTypes?.size ?? 0) +
     (selectedGroups?.size ?? 0);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const filterPanelId = useId();
   const statusLabelId = useId();
   const durationLabelId = useId();
   const difficultyLabelId = useId();
+  const eventTypeLabelId = useId();
   const groupLabelId = useId();
 
   return (
@@ -190,6 +199,7 @@ export const ResultsHeader = memo(function ResultsHeader({
                     key={s}
                     type="button"
                     aria-pressed={active}
+                    aria-label={STATUS_ARIA_LABELS[s]}
                     onClick={() => onStatusesChange?.(toggleSet(selectedStatuses, s))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
@@ -249,7 +259,32 @@ export const ResultsHeader = memo(function ResultsHeader({
                     onClick={() => onDifficultiesChange?.(toggleSet(selectedDifficulties, d))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
-                    {d || "Unbekannt"}
+                    {d || "—"}
+                  </button>
+                );
+              })}
+            </FilterRow>
+          )}
+
+          {eventTypes && eventTypes.length > 1 && (
+            <FilterRow
+              labelId={eventTypeLabelId}
+              label="Anlasstyp"
+              hasActive={!!selectedEventTypes?.size}
+              onReset={() => onEventTypesChange?.(new Set())}
+              resetLabel="Anlasstyp-Filter zurücksetzen"
+            >
+              {eventTypes.map((et) => {
+                const active = selectedEventTypes?.has(et) ?? false;
+                return (
+                  <button
+                    key={et}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => onEventTypesChange?.(toggleSet(selectedEventTypes, et))}
+                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                  >
+                    {et}
                   </button>
                 );
               })}
@@ -275,7 +310,7 @@ export const ResultsHeader = memo(function ResultsHeader({
                     onClick={() => onGroupsChange?.(toggleSet(selectedGroups, g))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
-                    {g !== "" ? g : "Unbekannt"}
+                    {g !== "" ? g : "—"}
                   </button>
                 );
               })}

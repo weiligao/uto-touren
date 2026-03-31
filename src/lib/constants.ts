@@ -1,5 +1,8 @@
 import type { TourStatus } from "@/lib/types";
 
+export const EVENT_TYPE_TOUR = "Tour" as const;
+export const EVENT_TYPE_KURS = "Kurs" as const;
+
 export const TOUR_TYPES = [
   { value: "Ak", label: "Alpinklettern" },
   { value: "Aw", label: "Alpinwandern (T4–T6)" },
@@ -46,8 +49,16 @@ export const STATUS_COLORS: Record<TourStatus, string> = {
 
 export const STATUS_LABELS: Record<TourStatus, string> = {
   open: "Offen",
-  full_or_cancelled: "Ausgebucht/Abgesagt",
-  not_yet_open: "Noch nicht offen",
+  full_or_cancelled: "Voll/Abgesagt",
+  not_yet_open: "Nicht offen",
+  unknown: "Unbekannt",
+};
+
+/** Screen-reader-friendly labels (no slash, reads naturally in TTS). */
+export const STATUS_ARIA_LABELS: Record<TourStatus, string> = {
+  open: "Offen",
+  full_or_cancelled: "Voll oder Abgesagt",
+  not_yet_open: "Nicht offen",
   unknown: "Unbekannt",
 };
 

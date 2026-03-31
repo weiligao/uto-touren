@@ -8,11 +8,22 @@ import {
   formatDate,
   formatDuration,
   generateIcs,
+  isKurs,
   na,
   parseDateString,
   parseDuration,
   parseGermanDate
 } from "./utils";
+
+describe("isKurs", () => {
+  it.each(["KSI", "KSII", "KSIII", "KSIV", "KSV"])("%s is a Kurs difficulty", (d) => {
+    expect(isKurs(d)).toBe(true);
+  });
+
+  it.each(["KI", "KII", "Ht", "WS", "", "KS", "KSVI"])("%s is not a Kurs difficulty", (d) => {
+    expect(isKurs(d)).toBe(false);
+  });
+});
 
 
 describe("compareDifficulties", () => {

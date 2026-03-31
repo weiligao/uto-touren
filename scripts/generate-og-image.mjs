@@ -66,6 +66,11 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
 
 </svg>`;
 
-await sharp(Buffer.from(svg)).png().toFile(outPath);
-// eslint-disable-next-line no-console
-console.log(`Written: ${outPath}`);
+try {
+  await sharp(Buffer.from(svg)).png().toFile(outPath);
+  // eslint-disable-next-line no-console
+  console.log(`Written: ${outPath}`);
+} catch (err) {
+  console.error(`Failed to write OG image to ${outPath}:`, err.message);
+  process.exit(1);
+}
