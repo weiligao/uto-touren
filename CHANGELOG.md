@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.0](https://github.com/weiligao/uto-touren/compare/v1.5.1...v1.6.0) (2026-03-31)
+
+
+### Features
+
+* replace loading spinner with progress ring ([#28](https://github.com/weiligao/uto-touren/issues/28)) ([16fee31](https://github.com/weiligao/uto-touren/commit/16fee31760b9042fd326b67b7cf4b4b668c4f7b2))
+* update og-image ([#30](https://github.com/weiligao/uto-touren/issues/30)) ([2dfc2dc](https://github.com/weiligao/uto-touren/commit/2dfc2dcab39a86b773f401b6ee3dd4d77d364d63))
+
 ## [1.5.1](https://github.com/weiligao/uto-touren/compare/v1.5.0...v1.5.1) (2026-03-30)
 
 
