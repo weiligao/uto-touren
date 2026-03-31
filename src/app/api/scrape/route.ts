@@ -125,7 +125,7 @@ function getTotalCount(html: string): number | null {
   // Matches the SAC pagination indicator "X-Y / N" to extract total count for
   // early loop termination. Falls back gracefully to the empty-page guard if
   // sac-uto.ch ever changes its pagination markup.
-  const match = html.match(/\d+-\d+\s*\/\s*(\d+)/);
+  const match = html.match(/\d+(?:&nbsp;|\s)*-(?:&nbsp;|\s)*\d+(?:&nbsp;|\s)*\/(?:&nbsp;|\s)*(\d+)/);
   return match ? parseInt(match[1], 10) : null;
 }
 
@@ -144,10 +144,12 @@ async function scrapeToursUncached(
   typ: string,
   anlasstyp: string,
   gruppe: string,
+  onProgress?: (loaded: number, total: number | null) => void,
 ): Promise<Tour[]> {
   const allTours: Tour[] = [];
   let offset = 0;
   let total: number | null = null;
+  let pagesLoaded = 0;
   const yearNum = parseInt(year, 10);
 
   while (true) {
@@ -180,6 +182,9 @@ async function scrapeToursUncached(
     const tours = parseTourRows(html, yearNum);
     if (tours.length === 0) {break;}
 
+    pagesLoaded++;
+    onProgress?.(pagesLoaded, total !== null ? Math.ceil(total / PAGE_SIZE) : null);
+
     allTours.push(...tours);
 
     if (total !== null && allTours.length >= total) {break;}
@@ -202,6 +207,21 @@ const cachedFetchTours = unstable_cache(
 // return the same promise instead of issuing duplicate upstream requests.
 const inFlight = new Map<string, Promise<Tour[]>>();
 
+// Module-level result cache with a TTL matching CACHE_REVALIDATE_SECONDS.
+// Shared between the streaming and non-streaming paths so that a fresh
+// streaming scrape also warms the cache for subsequent requests.
+const scrapeResultCache = new Map<string, { tours: Tour[]; ts: number }>();
+
+function getCachedTours(key: string): Tour[] | null {
+  const entry = scrapeResultCache.get(key);
+  if (!entry) { return null; }
+  if (Date.now() - entry.ts > CACHE_REVALIDATE_SECONDS * 1000) {
+    scrapeResultCache.delete(key);
+    return null;
+  }
+  return entry.tours;
+}
+
 async function scrapeTours(
   year: string,
   typ: string,
@@ -209,13 +229,30 @@ async function scrapeTours(
   gruppe: string,
 ): Promise<Tour[]> {
   const key = `${year}:${typ}:${anlasstyp}:${gruppe}`;
+  const cached = getCachedTours(key);
+  if (cached !== null) { return cached; }
   const existing = inFlight.get(key);
   if (existing) { return existing; }
-  const promise = cachedFetchTours(year, typ, anlasstyp, gruppe).finally(() => {
+  const promise = cachedFetchTours(year, typ, anlasstyp, gruppe).then((tours) => {
+    scrapeResultCache.set(key, { tours, ts: Date.now() });
+    return tours;
+  }).finally(() => {
     inFlight.delete(key);
   });
   inFlight.set(key, promise);
   return promise;
+}
+
+function makeDonePayload(rawYear: string, rawTyp: string, rawAnlasstyp: string, tours: Tour[]) {
+  return {
+    type: "done" as const,
+    source: "sac-uto.ch",
+    year: rawYear,
+    type_filter: rawTyp,
+    event_type: rawAnlasstyp,
+    total_scraped: tours.length,
+    tours,
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -236,6 +273,67 @@ export async function GET(request: NextRequest) {
   }
   if (rawGruppe && !VALID_GROUPS.has(rawGruppe)) {
     return NextResponse.json({ error: "Invalid group" }, { status: 400 });
+  }
+
+  if (sp.get("stream") === "1") {
+    const cacheKey = `${rawYear}:${rawTyp}:${rawAnlasstyp}:${rawGruppe}`;
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (payload: object) => {
+          try {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+          } catch {
+            // Client disconnected; stream is already closed.
+          }
+        };
+        try {
+          // 1. Serve from in-memory cache if still fresh.
+          const cachedTours = getCachedTours(cacheKey);
+          if (cachedTours !== null) {
+            send(makeDonePayload(rawYear, rawTyp, rawAnlasstyp, cachedTours));
+            return;
+          }
+
+          // 2. Join an already-running scrape for the same params.
+          const existingFlight = inFlight.get(cacheKey);
+          if (existingFlight) {
+            const tours = await existingFlight;
+            send(makeDonePayload(rawYear, rawTyp, rawAnlasstyp, tours));
+            return;
+          }
+
+          // 3. Fresh scrape with progress reporting.
+          const promise = scrapeToursUncached(
+            rawYear, rawTyp, rawAnlasstyp, rawGruppe,
+            (loaded, total) => send({ type: "progress", loaded, total }),
+          ).then((tours) => {
+            scrapeResultCache.set(cacheKey, { tours, ts: Date.now() });
+            return tours;
+          }).finally(() => {
+            inFlight.delete(cacheKey);
+          });
+          inFlight.set(cacheKey, promise);
+
+          const tours = await promise;
+          send(makeDonePayload(rawYear, rawTyp, rawAnlasstyp, tours));
+        } catch (err) {
+          send({
+            type: "error",
+            error: err instanceof UpstreamError ? err.message : "Internal server error",
+          });
+        } finally {
+          controller.close();
+        }
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-store",
+        "X-Accel-Buffering": "no",
+      },
+    });
   }
 
   try {
