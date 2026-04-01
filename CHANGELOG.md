@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/weiligao/uto-touren/compare/v1.7.0...v1.8.0) (2026-04-01)
+
+
+### Features
+
+* improve caching using Redis cache ([#41](https://github.com/weiligao/uto-touren/issues/41)) ([bb275c3](https://github.com/weiligao/uto-touren/commit/bb275c37bc77c721b94f3f2f7909b2bdb83a3a69))
+
 ## [1.7.0](https://github.com/weiligao/uto-touren/compare/v1.6.2...v1.7.0) (2026-03-31)
 
 
