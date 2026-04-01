@@ -7,7 +7,7 @@ vi.mock("next/server", () => ({
   NextRequest: class {},
 }));
 
-import { getTotalCount } from "./route";
+import { getTotalCount } from "./_parser";
 
 describe("getTotalCount", () => {
   it("extracts count from plain-space pagination string", () => {
