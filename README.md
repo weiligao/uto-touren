@@ -36,6 +36,17 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run build` | Production build |
 | `npm run lint` | Run ESLint |
 | `npm test` | Run Vitest tests |
+| `node scripts/generate-og-image.mjs` | Regenerate OG images |
+
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_APP_URL` | No | Canonical URL for OG metadata (defaults to `https://uto-touren.vercel.app`) |
+| `KV_REST_API_URL` | No | Upstash Redis REST endpoint — enables persistent cross-cold-start cache |
+| `KV_REST_API_TOKEN` | No | Upstash Redis REST token |
+
+Without the Upstash env vars the app falls back to an in-process cache that is lost on each cold start.
 
 ## Tech Stack
 
@@ -43,6 +54,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - [React](https://react.dev) 19
 - [Tailwind CSS](https://tailwindcss.com) v4
 - [cheerio](https://cheerio.js.org) for HTML parsing
+- [Upstash Redis](https://upstash.com) for persistent serverless cache
 - [Vitest](https://vitest.dev) for unit tests
 - [Vercel Analytics](https://vercel.com/docs/analytics) for usage analytics
 - [Vercel Speed Insights](https://vercel.com/docs/speed-insights) for performance monitoring
