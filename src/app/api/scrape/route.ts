@@ -60,13 +60,6 @@ async function persistToCache(key: string, tours: Tour[]): Promise<void> {
   await setRedisCache(key, tours);
 }
 
-interface ScrapeParams {
-  year: string;
-  typ: string;
-  anlasstyp: string;
-  gruppe: string;
-}
-
 function toCacheKey({ year, typ, anlasstyp, gruppe }: ScrapeParams): string {
   return `${year}:${typ}:${anlasstyp}:${gruppe}`;
 }
