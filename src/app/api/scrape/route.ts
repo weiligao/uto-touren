@@ -222,27 +222,6 @@ function getCachedTours(key: string): Tour[] | null {
   return entry.tours;
 }
 
-async function scrapeTours(
-  year: string,
-  typ: string,
-  anlasstyp: string,
-  gruppe: string,
-): Promise<Tour[]> {
-  const key = `${year}:${typ}:${anlasstyp}:${gruppe}`;
-  const cached = getCachedTours(key);
-  if (cached !== null) { return cached; }
-  const existing = inFlight.get(key);
-  if (existing) { return existing; }
-  const promise = cachedFetchTours(year, typ, anlasstyp, gruppe).then((tours) => {
-    scrapeResultCache.set(key, { tours, ts: Date.now() });
-    return tours;
-  }).finally(() => {
-    inFlight.delete(key);
-  });
-  inFlight.set(key, promise);
-  return promise;
-}
-
 function makeDonePayload(rawYear: string, rawTyp: string, rawAnlasstyp: string, tours: Tour[]) {
   return {
     type: "done" as const,
@@ -336,8 +315,22 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // Non-streaming fallback (stream param absent).
   try {
-    const tours = await scrapeTours(rawYear, rawTyp, rawAnlasstyp, rawGruppe);
+    const key = `${rawYear}:${rawTyp}:${rawAnlasstyp}:${rawGruppe}`;
+    const cached = getCachedTours(key);
+    if (cached !== null) {
+      return NextResponse.json({
+        source: "sac-uto.ch",
+        year: rawYear,
+        type_filter: rawTyp,
+        event_type: rawAnlasstyp,
+        total_scraped: cached.length,
+        tours: cached,
+      });
+    }
+    const tours = await cachedFetchTours(rawYear, rawTyp, rawAnlasstyp, rawGruppe);
+    scrapeResultCache.set(key, { tours, ts: Date.now() });
     const response = NextResponse.json({
       source: "sac-uto.ch",
       year: rawYear,
