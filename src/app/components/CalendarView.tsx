@@ -276,6 +276,8 @@ export function CalendarView({
     statuses,
     selectedStatuses,
     setSelectedStatuses,
+    selectedWeekdays,
+    setSelectedWeekdays,
     durations,
     selectedDurations,
     setSelectedDurations,
@@ -351,6 +353,8 @@ export function CalendarView({
         statuses={statuses}
         selectedStatuses={selectedStatuses}
         onStatusesChange={setSelectedStatuses}
+        selectedWeekdays={selectedWeekdays}
+        onWeekdaysChange={setSelectedWeekdays}
         durations={durations}
         selectedDurations={selectedDurations}
         onDurationsChange={setSelectedDurations}

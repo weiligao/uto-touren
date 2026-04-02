@@ -77,6 +77,21 @@ export function formatDuration(days: number): string {
   return days === 1 ? "1 Tag" : `${days} Tage`;
 }
 
+/**
+ * Returns the ordered array of JS day-of-week indices (0=Sun, 1=Mon … 6=Sat)
+ * for every calendar day covered by a tour (start_date inclusive, +durationDays exclusive).
+ * Returns null when start_date is null or empty.
+ */
+export function getTourWeekdays(startDate: string | null, durationDays: number): number[] | null {
+  if (!startDate) { return null; }
+  const start = parseDateString(startDate);
+  const days: number[] = [];
+  for (let i = 0; i < durationDays; i++) {
+    days.push(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i).getDay());
+  }
+  return days;
+}
+
 export function na(value: string): string {
   return value || "Unbekannt";
 }

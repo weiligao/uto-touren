@@ -141,6 +141,8 @@ export function TableView({
     statuses,
     selectedStatuses,
     setSelectedStatuses,
+    selectedWeekdays,
+    setSelectedWeekdays,
     durations,
     selectedDurations,
     setSelectedDurations,
@@ -185,6 +187,8 @@ export function TableView({
         statuses={statuses}
         selectedStatuses={selectedStatuses}
         onStatusesChange={setSelectedStatuses}
+        selectedWeekdays={selectedWeekdays}
+        onWeekdaysChange={setSelectedWeekdays}
         durations={durations}
         selectedDurations={selectedDurations}
         onDurationsChange={setSelectedDurations}
