@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/weiligao/uto-touren/compare/v1.8.0...v1.9.0) (2026-04-02)
+
+
+### Features
+
+* add weekday filter ([#43](https://github.com/weiligao/uto-touren/issues/43)) ([7832fd5](https://github.com/weiligao/uto-touren/commit/7832fd5d7039558ebde6c6e049bb783493655c2f))
+
 ## [1.8.0](https://github.com/weiligao/uto-touren/compare/v1.7.0...v1.8.0) (2026-04-01)
 
 
