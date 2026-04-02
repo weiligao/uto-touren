@@ -1,6 +1,6 @@
 import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, GROUPS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { compareDifficulties, isKurs } from "@/lib/utils";
+import { compareDifficulties, getTourWeekdays, isKurs } from "@/lib/utils";
 import { useCallback, useMemo, useState } from "react";
 
 const STATUS_ORDER: readonly TourStatus[] = [
@@ -21,6 +21,8 @@ export interface FilterState {
   statuses: TourStatus[];
   selectedStatuses: Set<TourStatus>;
   setSelectedStatuses: (v: Set<TourStatus>) => void;
+  selectedWeekdays: Set<number>;
+  setSelectedWeekdays: (v: Set<number>) => void;
   durations: number[];
   selectedDurations: Set<number>;
   setSelectedDurations: (v: Set<number>) => void;
@@ -45,6 +47,7 @@ export interface FilterState {
  */
 export function useFilterState(tours: Tour[]): FilterState {
   const [selectedStatuses, setSelectedStatuses] = useState<Set<TourStatus>>(new Set());
+  const [selectedWeekdays, setSelectedWeekdays] = useState<Set<number>>(new Set());
   const [selectedDurations, setSelectedDurations] = useState<Set<number>>(new Set());
   const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set());
   const [selectedEventTypes, setSelectedEventTypes] = useState<Set<string>>(new Set());
@@ -85,6 +88,7 @@ export function useFilterState(tours: Tour[]): FilterState {
 
   const resetFilters = useCallback(() => {
     setSelectedStatuses(new Set());
+    setSelectedWeekdays(new Set());
     setSelectedDurations(new Set());
     setSelectedDifficulties(new Set());
     setSelectedEventTypes(new Set());
@@ -92,22 +96,32 @@ export function useFilterState(tours: Tour[]): FilterState {
   }, []);
 
   const matchesTour = useCallback(
-    (tour: Tour) =>
-      (selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
-      (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
-      (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)) &&
-      (selectedEventTypes.size === 0 ||
-        (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
-        (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))
-      ) &&
-      (selectedGroups.size === 0 || selectedGroups.has(tour.group)),
-    [selectedStatuses, selectedDurations, selectedDifficulties, selectedGroups, selectedEventTypes],
+    (tour: Tour) => {
+      if (selectedWeekdays.size > 0) {
+        // getTourWeekdays returns null when start_date is absent — skip weekday filtering for those tours.
+        const tourDays = getTourWeekdays(tour.start_date, tour.duration_days);
+        if (tourDays !== null && !tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
+      }
+      return (
+        (selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
+        (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
+        (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)) &&
+        (selectedEventTypes.size === 0 ||
+          (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
+          (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))
+        ) &&
+        (selectedGroups.size === 0 || selectedGroups.has(tour.group))
+      );
+    },
+    [selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedGroups, selectedEventTypes],
   );
 
   return {
     statuses,
     selectedStatuses,
     setSelectedStatuses,
+    selectedWeekdays,
+    setSelectedWeekdays,
     durations,
     selectedDurations,
     setSelectedDurations,

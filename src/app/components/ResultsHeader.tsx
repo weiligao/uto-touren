@@ -5,6 +5,16 @@ import type { TourStatus } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
 import { memo, useId, useState } from "react";
 
+const WEEKDAYS: { key: number; label: string; fullName: string }[] = [
+  { key: 1, label: "Mo", fullName: "Montag" },
+  { key: 2, label: "Di", fullName: "Dienstag" },
+  { key: 3, label: "Mi", fullName: "Mittwoch" },
+  { key: 4, label: "Do", fullName: "Donnerstag" },
+  { key: 5, label: "Fr", fullName: "Freitag" },
+  { key: 6, label: "Sa", fullName: "Samstag" },
+  { key: 0, label: "So", fullName: "Sonntag" },
+];
+
 const chipBase =
   "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer";
 const chipActive = "border-blue-600 bg-blue-600 text-white";
@@ -70,6 +80,8 @@ export const ResultsHeader = memo(function ResultsHeader({
   statuses,
   selectedStatuses,
   onStatusesChange,
+  selectedWeekdays,
+  onWeekdaysChange,
   durations,
   selectedDurations,
   onDurationsChange,
@@ -88,6 +100,8 @@ export const ResultsHeader = memo(function ResultsHeader({
   statuses?: TourStatus[];
   selectedStatuses?: Set<TourStatus>;
   onStatusesChange?: (v: Set<TourStatus>) => void;
+  selectedWeekdays?: Set<number>;
+  onWeekdaysChange?: (v: Set<number>) => void;
   durations?: number[];
   selectedDurations?: Set<number>;
   onDurationsChange?: (v: Set<number>) => void;
@@ -103,12 +117,15 @@ export const ResultsHeader = memo(function ResultsHeader({
 }) {
   const hasFilterRows =
     !!(statuses && statuses.length > 1) ||
+    // Weekday chips are fixed (always 7 options), so show whenever the handler is provided.
+    !!onWeekdaysChange ||
     !!(durations && durations.length > 1) ||
     !!(difficulties && difficulties.length > 1) ||
     !!(eventTypes && eventTypes.length > 1) ||
     !!(groups && groups.length > 1);
   const activeFilterCount =
     (selectedStatuses?.size ?? 0) +
+    (selectedWeekdays?.size ?? 0) +
     (selectedDurations?.size ?? 0) +
     (selectedDifficulties?.size ?? 0) +
     (selectedEventTypes?.size ?? 0) +
@@ -116,6 +133,7 @@ export const ResultsHeader = memo(function ResultsHeader({
   const [filtersOpen, setFiltersOpen] = useState(true);
   const filterPanelId = useId();
   const statusLabelId = useId();
+  const weekdayLabelId = useId();
   const durationLabelId = useId();
   const difficultyLabelId = useId();
   const eventTypeLabelId = useId();
@@ -208,6 +226,32 @@ export const ResultsHeader = memo(function ResultsHeader({
                       className={`inline-block h-2 w-2 rounded-full shrink-0 ${active ? "bg-white/80" : STATUS_COLORS[s]}`}
                     />
                     {STATUS_LABELS[s]}
+                  </button>
+                );
+              })}
+            </FilterRow>
+          )}
+
+          {onWeekdaysChange && (
+            <FilterRow
+              labelId={weekdayLabelId}
+              label="Wochentag"
+              hasActive={!!selectedWeekdays?.size}
+              onReset={() => onWeekdaysChange(new Set())}
+              resetLabel="Wochentag-Filter zurücksetzen"
+            >
+              {WEEKDAYS.map(({ key, label, fullName }) => {
+                const active = selectedWeekdays?.has(key) ?? false;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={active}
+                    aria-label={fullName}
+                    onClick={() => onWeekdaysChange(toggleSet(selectedWeekdays, key))}
+                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                  >
+                    {label}
                   </button>
                 );
               })}

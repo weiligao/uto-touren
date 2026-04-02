@@ -8,6 +8,7 @@ import {
   formatDate,
   formatDuration,
   generateIcs,
+  getTourWeekdays,
   isKurs,
   na,
   parseDateString,
@@ -139,6 +140,37 @@ describe("formatDate", () => {
 
   it("returns fallback when start_date is empty string", () => {
     expect(formatDate("", "Fr 12. Jun.")).toBe("Fr 12. Jun.");
+  });
+});
+
+describe("getTourWeekdays", () => {
+  // 2026-04-01 is a Wednesday (day 3)
+  it("returns null when start_date is null", () => {
+    expect(getTourWeekdays(null, 2)).toBeNull();
+  });
+
+  it("1-day tour returns single weekday", () => {
+    // 2026-04-01 = Wednesday = 3
+    expect(getTourWeekdays("2026-04-01", 1)).toEqual([3]);
+  });
+
+  it("2-day tour returns two consecutive weekdays", () => {
+    // Wed=3, Thu=4
+    expect(getTourWeekdays("2026-04-01", 2)).toEqual([3, 4]);
+  });
+
+  it("3-day tour returns three consecutive weekdays", () => {
+    // Wed=3, Thu=4, Fri=5
+    expect(getTourWeekdays("2026-04-01", 3)).toEqual([3, 4, 5]);
+  });
+
+  it("wraps correctly across Sunday into next week", () => {
+    // 2026-04-04 = Saturday=6, Sun=0, Mon=1
+    expect(getTourWeekdays("2026-04-04", 3)).toEqual([6, 0, 1]);
+  });
+
+  it("duration 0 returns empty array", () => {
+    expect(getTourWeekdays("2026-04-01", 0)).toEqual([]);
   });
 });
 
