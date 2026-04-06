@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/weiligao/uto-touren/compare/v1.9.0...v1.10.0) (2026-04-06)
+
+
+### Features
+
+* bump versions ([#49](https://github.com/weiligao/uto-touren/issues/49)) ([c7cb053](https://github.com/weiligao/uto-touren/commit/c7cb053e5786173378da7cc8c38e11bc72e30acb))
+
 ## [1.9.0](https://github.com/weiligao/uto-touren/compare/v1.8.0...v1.9.0) (2026-04-02)
 
 
