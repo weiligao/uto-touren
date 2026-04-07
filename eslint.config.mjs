@@ -6,6 +6,14 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    // Workaround for eslint-plugin-react calling the removed context.getFilename() API in ESLint v10.
+    // Without this, React version auto-detection crashes. Remove once eslint-config-next ships a fix.
+    // See: https://github.com/vercel/next.js/issues/89764#issuecomment-3928272828
+    settings: {
+      react: { version: "19" },
+    },
+  },
+  {
     rules: {
       // Code quality
       "no-console": "warn",
