@@ -1,6 +1,5 @@
-// Generates two OG images:
-//   public/og-image.png        — 1200×630 landscape (Twitter/X, Facebook, LinkedIn)
-//   public/og-image-square.png — 1200×1200 square   (WhatsApp)
+// Generates the OG image:
+//   public/og-image.png — 1200×630 landscape (Facebook, LinkedIn, Twitter/X, WhatsApp, etc.)
 // Run with: node scripts/generate-og-image.mjs
 // Requires: npm install -D sharp
 
@@ -51,22 +50,6 @@ function buildLandscapeSvg(W, H) {
 </svg>`;
 }
 
-function buildSquareSvg(W) {
-  // Replicate logo.svg proportions exactly (viewBox 32×32, translate(4,7.6) scale(1.2))
-  const LOGO_SIZE = 32;
-  const scale = W / LOGO_SIZE;
-  const MTN_S  = 1.2 * scale;
-  const MTN_TX = 4 * scale;
-  const MTN_TY = 7.6 * scale;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${W}">
-  <rect width="${W}" height="${W}" fill="#2563eb"/>
-  <g transform="translate(${MTN_TX},${MTN_TY}) scale(${MTN_S})">
-    <path d="M0 13 L7 0 L11 6 L14 2 L20 13 Z" fill="white"/>
-  </g>
-</svg>`;
-}
-
 async function generate(svg, filename) {
   const outPath = resolve(__dirname, `../public/${filename}`);
   try {
@@ -80,5 +63,4 @@ async function generate(svg, filename) {
   }
 }
 
-await generate(buildLandscapeSvg(1200, 630),  "og-image.png");
-await generate(buildSquareSvg(1200),           "og-image-square.png");
+await generate(buildLandscapeSvg(1200, 630), "og-image.png");
