@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/weiligao/uto-touren/compare/v1.10.0...v1.11.0) (2026-04-07)
+
+
+### Features
+
+* add additional icons ([#51](https://github.com/weiligao/uto-touren/issues/51)) ([827cf7c](https://github.com/weiligao/uto-touren/commit/827cf7c80292bca7a5bb014b881d3495b92395da))
+
 ## [1.10.0](https://github.com/weiligao/uto-touren/compare/v1.9.0...v1.10.0) (2026-04-06)
 
 
