@@ -52,11 +52,10 @@ export const metadata: Metadata = {
       "Touren und Kurse der SAC-Sektion Uto suchen, filtern und in Google Kalender oder als .ics exportieren.",
     images: [
       { url: "/og-image.png", width: 1200, height: 630, alt: "UtoTouren" },
-      { url: "/og-image-square.png", width: 1200, height: 1200, alt: "UtoTouren" },
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "UtoTouren",
     description:
       "Touren und Kurse der SAC-Sektion Uto suchen, filtern und in Google Kalender oder als .ics exportieren.",

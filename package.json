@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate-icons": "node scripts/generate-icons.mjs",
+    "generate-og-image": "node scripts/generate-og-image.mjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.37.0",
