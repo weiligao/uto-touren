@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.12.0](https://github.com/weiligao/uto-touren/compare/v1.11.0...v1.12.0) (2026-04-12)
+
+
+### Features
+
+* add filter states to url ([#59](https://github.com/weiligao/uto-touren/issues/59)) ([fb33d99](https://github.com/weiligao/uto-touren/commit/fb33d995b79ffbdc23e7581abfec4d0d84a41742))
+* bump versions ([#61](https://github.com/weiligao/uto-touren/issues/61)) ([1787b60](https://github.com/weiligao/uto-touren/commit/1787b60a5545947118f0ac59271ca33c195c7b48))
+* fix clear filters button's position ([#62](https://github.com/weiligao/uto-touren/issues/62)) ([b0356cc](https://github.com/weiligao/uto-touren/commit/b0356ccd242c4ea63bd8c97005669a2807eebbf0))
+
 ## [1.11.0](https://github.com/weiligao/uto-touren/compare/v1.10.0...v1.11.0) (2026-04-07)
 
 
