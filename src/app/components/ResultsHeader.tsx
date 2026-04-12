@@ -28,6 +28,30 @@ function toggleSet<T>(set: Set<T> | undefined, item: T): Set<T> {
   return next;
 }
 
+/**
+ * A 16×16 visible dot with a 44×44 invisible touch-target button layered on top.
+ * The dot stays in layout flow so the label column height is never affected by
+ * whether the button is active or not.
+ */
+function ResetButton({ label, onReset, visible }: { label: string; onReset: () => void; visible: boolean }) {
+  return (
+    <div aria-live="polite" className={`group relative shrink-0 h-4 w-4 ${visible ? "" : "invisible"}`}>
+      <span aria-hidden="true" className="flex items-center justify-center h-4 w-4 rounded-full bg-blue-600 group-hover:bg-red-500 transition-colors pointer-events-none">
+        <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </span>
+      <button
+        type="button"
+        aria-label={label}
+        onClick={onReset}
+        tabIndex={visible ? 0 : -1}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-h-11 min-w-11 rounded cursor-pointer"
+      />
+    </div>
+  );
+}
+
 function FilterRow({
   labelId,
   label,
@@ -49,25 +73,16 @@ function FilterRow({
       aria-labelledby={labelId}
       className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-y-1.5 gap-x-4 items-start"
     >
-      <span
-        id={labelId}
-        className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 shrink-0 sm:pt-0.5"
-      >
-        {label}
-      </span>
+      <div className="flex items-center gap-1.5 sm:pt-1">
+        <span
+          id={labelId}
+          className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 shrink-0"
+        >
+          {label}
+        </span>
+        <ResetButton label={resetLabel} onReset={onReset} visible={hasActive} />
+      </div>
       <div className="flex flex-wrap gap-1.5">
-        {hasActive && (
-          <button
-            type="button"
-            aria-label={resetLabel}
-            onClick={onReset}
-            className={`${chipBase} border-gray-200 bg-white text-gray-400 hover:border-red-200 hover:bg-red-50 hover:text-red-500`}
-          >
-            <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
         {children}
       </div>
     </div>
