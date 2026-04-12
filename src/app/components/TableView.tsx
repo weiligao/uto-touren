@@ -7,6 +7,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
+import type { SelectedFilters } from "./useFilterState";
 import { useFilterState } from "./useFilterState";
 
 const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
@@ -131,9 +132,11 @@ const TourRow = memo(function TourRow({
 export function TableView({
   tours,
   totalScraped,
+  selectedFilters,
 }: {
   tours: Tour[];
   totalScraped: number;
+  selectedFilters: SelectedFilters;
 }) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [lastTours, setLastTours] = useState(tours);
@@ -157,13 +160,12 @@ export function TableView({
     setSelectedGroups,
     resetFilters,
     matchesTour,
-  } = useFilterState(tours);
+  } = useFilterState(tours, selectedFilters);
 
-  // Reset expanded rows and filters when the tours list changes (derived state pattern)
+  // Reset expanded rows when the tours list changes (derived state pattern)
   if (lastTours !== tours) {
     setLastTours(tours);
     setExpandedRows(new Set());
-    resetFilters();
   }
 
   const toggleRow = useCallback((i: number) => {

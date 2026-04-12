@@ -7,6 +7,7 @@ import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
+import type { SelectedFilters } from "./useFilterState";
 import { useFilterState } from "./useFilterState";
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -252,9 +253,11 @@ const SWIPE_THRESHOLD = 50;
 export function CalendarView({
   tours,
   year,
+  selectedFilters,
 }: {
   tours: Tour[];
   year: string;
+  selectedFilters: SelectedFilters;
 }) {
   const yearNum = parseInt(year, 10);
 
@@ -290,9 +293,8 @@ export function CalendarView({
     groups,
     selectedGroups,
     setSelectedGroups,    
-    resetFilters,
     matchesTour,
-  } = useFilterState(toursList);
+  } = useFilterState(toursList, selectedFilters);
 
   const visibleCalendarTours = useMemo(
     () => calendarTours.filter((ct) => matchesTour(ct.tour)),
@@ -317,10 +319,9 @@ export function CalendarView({
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     function reset() {
       setMonth(detectInitialMonth(calendarTours));
-      resetFilters();
     }
     reset();
-  }, [calendarTours, resetFilters]);
+  }, [calendarTours]);
 
   const cells = useMemo(() => getCalendarDays(yearNum, month), [yearNum, month]);
   const tourMap = useMemo(
