@@ -75,7 +75,7 @@ export function SearchForm({
   group: string;
   setGroup: (v: string) => void;
   loading: boolean;
-  onSearch: () => void;
+  onSearch: (options?: { keepFilters?: boolean }) => void;
   expanded: boolean;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }) {

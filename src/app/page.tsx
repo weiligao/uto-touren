@@ -3,11 +3,22 @@
 import { CalendarView } from "@/app/components/CalendarView";
 import { SearchForm } from "@/app/components/SearchForm";
 import { TableView } from "@/app/components/TableView";
+import type { SelectedFilters } from "@/app/components/useFilterState";
 import { TOUR_TYPES, YEARS } from "@/lib/constants";
-import type { ScrapeResult } from "@/lib/types";
+import type { ScrapeResult, TourStatus } from "@/lib/types";
 import { useSearchParams } from "next/navigation";
 import type { KeyboardEvent } from "react";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
+
+/** Parse a comma-separated URL param into a Set of strings. */
+function parseStringSet(v: string | null): Set<string> {
+  return v ? new Set(v.split(",")) : new Set();
+}
+
+/** Parse a comma-separated URL param into a Set of numbers. */
+function parseNumberSet(v: string | null): Set<number> {
+  return v ? new Set(v.split(",").map(Number)) : new Set();
+}
 
 type ViewMode = "table" | "calendar";
 
@@ -69,6 +80,34 @@ function HomeContent() {
     searchParams.get("view") === "calendar" ? "calendar" : "table",
   );
 
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<TourStatus>>(() =>
+    parseStringSet(searchParams.get("statuses")) as Set<TourStatus>,
+  );
+  const [selectedWeekdays, setSelectedWeekdays] = useState<Set<number>>(() =>
+    parseNumberSet(searchParams.get("weekdays")),
+  );
+  const [selectedDurations, setSelectedDurations] = useState<Set<number>>(() =>
+    parseNumberSet(searchParams.get("durations")),
+  );
+  const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(() =>
+    parseStringSet(searchParams.get("difficulties")),
+  );
+  const [selectedEventTypes, setSelectedEventTypes] = useState<Set<string>>(() =>
+    parseStringSet(searchParams.get("eventTypes")),
+  );
+  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(() =>
+    parseStringSet(searchParams.get("groups")),
+  );
+
+  const selectedFilters: SelectedFilters = {
+    selectedStatuses, setSelectedStatuses,
+    selectedWeekdays, setSelectedWeekdays,
+    selectedDurations, setSelectedDurations,
+    selectedDifficulties, setSelectedDifficulties,
+    selectedEventTypes, setSelectedEventTypes,
+    selectedGroups, setSelectedGroups,
+  };
+
   // Written to true after the first successful search; drives URL sync and shareable links.
   const [hasSearched, setHasSearched] = useState(() =>
     searchParams.has("year") || searchParams.has("type"),
@@ -96,8 +135,14 @@ function HomeContent() {
     if (eventType) {params.set("event", eventType);}
     if (group) {params.set("group", group);}
     if (viewMode !== "table") {params.set("view", viewMode);}
+    if (selectedStatuses.size > 0) {params.set("statuses", [...selectedStatuses].join(","));}
+    if (selectedWeekdays.size > 0) {params.set("weekdays", [...selectedWeekdays].join(","));}
+    if (selectedDurations.size > 0) {params.set("durations", [...selectedDurations].join(","));}
+    if (selectedDifficulties.size > 0) {params.set("difficulties", [...selectedDifficulties].join(","));}
+    if (selectedEventTypes.size > 0) {params.set("eventTypes", [...selectedEventTypes].join(","));}
+    if (selectedGroups.size > 0) {params.set("groups", [...selectedGroups].join(","));}
     window.history.replaceState(null, "", `?${params.toString()}`);
-  }, [year, typ, eventType, group, viewMode, hasSearched]);
+  }, [year, typ, eventType, group, viewMode, hasSearched, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -105,7 +150,7 @@ function HomeContent() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  async function handleSearch() {
+  async function handleSearch({ keepFilters = false }: { keepFilters?: boolean } = {}) {
     setLoading(true);
     setProgress(null);
     setError(null);
@@ -146,6 +191,14 @@ function HomeContent() {
             setProgress({ loaded: payload.loaded as number, total: payload.total as number | null });
           } else if (payload.type === "done") {
             receivedDone = true;
+            if (!keepFilters) {
+              setSelectedStatuses(new Set());
+              setSelectedWeekdays(new Set());
+              setSelectedDurations(new Set());
+              setSelectedDifficulties(new Set());
+              setSelectedEventTypes(new Set());
+              setSelectedGroups(new Set());
+            }
             setResult({
               source: payload.source as string,
               year: payload.year as string,
@@ -177,7 +230,7 @@ function HomeContent() {
     if (didAutoSearch.current) {return;}
     didAutoSearch.current = true;
     if (hasSearched) {
-      handleSearch();
+      handleSearch({ keepFilters: true });
     }
     // One-time effect: handleSearch closes over state but we intentionally only
     // run it once, using the values already initialised from the URL.
@@ -293,11 +346,13 @@ function HomeContent() {
                 <TableView
                   tours={result.tours}
                   totalScraped={result.total_scraped}
+                  selectedFilters={selectedFilters}
                 />
               ) : (
                 <CalendarView
                   tours={result.tours}
                   year={result.year}
+                  selectedFilters={selectedFilters}
                 />
               )}
             </div>

@@ -325,6 +325,7 @@ export const ResultsHeader = memo(function ResultsHeader({
                     key={et}
                     type="button"
                     aria-pressed={active}
+                    aria-label={et}
                     onClick={() => onEventTypesChange?.(toggleSet(selectedEventTypes, et))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
