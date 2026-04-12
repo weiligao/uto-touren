@@ -1,6 +1,8 @@
+"use client";
+
 import { EVENT_TYPES, GROUPS, TOUR_TYPES, YEARS } from "@/lib/constants";
 import type React from "react";
-import { useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 function Spinner() {
   return (
@@ -52,6 +54,147 @@ function SelectWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+function GroupSelect({ groups, setGroups }: { groups: string[]; setGroups: (v: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const listboxId = useId();
+
+  useEffect(() => {
+    if (!open) { return; }
+    function onOutside(e: MouseEvent | TouchEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) { setOpen(false); }
+    }
+    document.addEventListener("mousedown", onOutside);
+    document.addEventListener("touchstart", onOutside);
+    return () => {
+      document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("touchstart", onOutside);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) { return; }
+    const firstOption = listRef.current?.querySelector<HTMLElement>('[role="option"]');
+    firstOption?.focus();
+  }, [open]);
+
+  function toggle(value: string) {
+    setGroups(
+      groups.includes(value)
+        ? groups.filter((g) => g !== value)
+        : [...groups, value],
+    );
+  }
+
+  let label = "Alle";
+  if (groups.length === 1) {
+    label = GROUPS.find((g) => g.value === groups[0])?.label ?? groups[0];
+  } else if (groups.length > 1) {
+    label = `${groups.length} Gruppen`;
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listboxId : undefined}
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && open) { e.stopPropagation(); setOpen(false); }
+        }}
+        className={`${selectClass} text-left`}
+      >
+        {label}
+      </button>
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-2.5 m-auto h-4 w-4 text-gray-500"
+        fill="none"
+        viewBox="0 0 20 20"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+          d="m6 8 4 4 4-4"
+        />
+      </svg>
+
+      {open && (
+        <ul
+          ref={listRef}
+          id={listboxId}
+          role="listbox"
+          aria-multiselectable="true"
+          aria-label="Gruppe"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.stopPropagation();
+              setOpen(false);
+              triggerRef.current?.focus();
+              return;
+            }
+            if (e.key === "Tab") {
+              setOpen(false);
+              return;
+            }
+            if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Home" || e.key === "End") {
+              e.preventDefault();
+              const items = Array.from(listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
+              if (items.length === 0) { return; }
+              const currentIdx = items.indexOf(document.activeElement as HTMLElement);
+              let nextIdx: number;
+              if (e.key === "Home") { nextIdx = 0; }
+              else if (e.key === "End") { nextIdx = items.length - 1; }
+              else if (e.key === "ArrowDown") { nextIdx = (currentIdx + 1) % items.length; }
+              else { nextIdx = (currentIdx - 1 + items.length) % items.length; }
+              items[nextIdx]?.focus();
+            }
+          }}
+          className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg py-1"
+        >
+          {GROUPS.map((g) => {
+            const selected = groups.includes(g.value);
+            return (
+              <li
+                key={g.value}
+                role="option"
+                aria-selected={selected}
+                tabIndex={-1}
+                onClick={() => toggle(g.value)}
+                onKeyDown={(e) => {
+                  if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(g.value); }
+                }}
+                className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-900 cursor-pointer hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`flex items-center justify-center h-4 w-4 shrink-0 rounded border ${
+                    selected ? "border-blue-600 bg-blue-600" : "border-gray-300 bg-white"
+                  }`}
+                >
+                  {selected && (
+                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </span>
+                {g.label}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function SearchForm({
   year,
   setYear,
@@ -59,8 +202,8 @@ export function SearchForm({
   setTyp,
   eventType,
   setEventType,
-  group,
-  setGroup,
+  groups,
+  setGroups,
   loading,
   onSearch,
   expanded,
@@ -72,8 +215,8 @@ export function SearchForm({
   setTyp: (v: string) => void;
   eventType: string;
   setEventType: (v: string) => void;
-  group: string;
-  setGroup: (v: string) => void;
+  groups: string[];
+  setGroups: (v: string[]) => void;
   loading: boolean;
   onSearch: (options?: { keepFilters?: boolean }) => void;
   expanded: boolean;
@@ -169,24 +312,10 @@ export function SearchForm({
             </SelectWrapper>
           </div>
           <div>
-            <label htmlFor="filter-group" className="block text-sm font-medium text-gray-700 mb-1">
+            <span className="block text-sm font-medium text-gray-700 mb-1">
               Gruppe
-            </label>
-            <SelectWrapper>
-              <select
-                id="filter-group"
-                value={group}
-                onChange={(e) => setGroup(e.target.value)}
-                className={selectClass}
-              >
-                <option value="">Alle</option>
-                {GROUPS.map((g) => (
-                  <option key={g.value} value={g.value}>
-                    {g.label}
-                  </option>
-                ))}
-              </select>
-            </SelectWrapper>
+            </span>
+            <GroupSelect groups={groups} setGroups={setGroups} />
           </div>
           <div className="flex items-end mt-2 sm:mt-0">
             <button
