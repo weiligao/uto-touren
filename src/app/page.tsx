@@ -75,7 +75,10 @@ function HomeContent() {
     return v && TOUR_TYPES.some((t) => t.value === v) ? v : DEFAULT_TYP;
   });
   const [eventType, setEventType] = useState(() => searchParams.get("event") ?? "");
-  const [group, setGroup] = useState(() => searchParams.get("group") ?? "");
+  const [groups, setGroups] = useState<string[]>(() => {
+    const v = searchParams.get("group");
+    return v ? v.split(",").filter(Boolean) : [];
+  });
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     searchParams.get("view") === "calendar" ? "calendar" : "table",
   );
@@ -133,7 +136,7 @@ function HomeContent() {
     params.set("year", year);
     params.set("type", typ);
     if (eventType) {params.set("event", eventType);}
-    if (group) {params.set("group", group);}
+    if (groups.length > 0) {params.set("group", groups.join(","));}
     if (viewMode !== "table") {params.set("view", viewMode);}
     if (selectedStatuses.size > 0) {params.set("statuses", [...selectedStatuses].join(","));}
     if (selectedWeekdays.size > 0) {params.set("weekdays", [...selectedWeekdays].join(","));}
@@ -142,7 +145,7 @@ function HomeContent() {
     if (selectedEventTypes.size > 0) {params.set("eventTypes", [...selectedEventTypes].join(","));}
     if (selectedGroups.size > 0) {params.set("groups", [...selectedGroups].join(","));}
     window.history.replaceState(null, "", `?${params.toString()}`);
-  }, [year, typ, eventType, group, viewMode, hasSearched, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
+  }, [year, typ, eventType, groups, viewMode, hasSearched, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -156,7 +159,8 @@ function HomeContent() {
     setError(null);
     setResult(null);
 
-    const params = new URLSearchParams({ year, typ, anlasstyp: eventType, gruppe: group, stream: "1" });
+    const gruppe = groups.length === 1 ? groups[0] : "";
+    const params = new URLSearchParams({ year, typ, anlasstyp: eventType, gruppe, stream: "1" });
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
     try {
       const res = await fetch(`/api/scrape?${params.toString()}`);
@@ -197,7 +201,7 @@ function HomeContent() {
               setSelectedDurations(new Set());
               setSelectedDifficulties(new Set());
               setSelectedEventTypes(new Set());
-              setSelectedGroups(new Set());
+              setSelectedGroups(groups.length > 1 ? new Set(groups) : new Set());
             }
             setResult({
               source: payload.source as string,
@@ -261,8 +265,8 @@ function HomeContent() {
           setTyp={setTyp}
           eventType={eventType}
           setEventType={setEventType}
-          group={group}
-          setGroup={setGroup}
+          groups={groups}
+          setGroups={setGroups}
           loading={loading}
           onSearch={handleSearch}
           expanded={searchFormExpanded}
