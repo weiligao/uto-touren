@@ -11,6 +11,9 @@ on:
       - .github/workflows/release.yml
       - .github/workflows/cd.yml
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest

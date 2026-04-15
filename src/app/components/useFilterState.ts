@@ -1,4 +1,4 @@
-import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, GROUPS } from "@/lib/constants";
+import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, GROUPS, SPECIAL_GROUP_ALLE, TOUR_TYPES, YEARS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { compareDifficulties, getTourWeekdays, isKurs } from "@/lib/utils";
 import { useCallback, useMemo } from "react";
@@ -17,7 +17,16 @@ function groupRank(g: string): number {
   return i === -1 ? Number.MAX_SAFE_INTEGER : i;
 }
 
+/** Check if a tour applies to all groups (is not restricted to specific groups). */
+function tourAppliesToAllGroups(tour: Tour): boolean {
+  return tour.group.includes(SPECIAL_GROUP_ALLE);
+}
+
 export interface SelectedFilters {
+  selectedYears: Set<string>;
+  setSelectedYears: (v: Set<string>) => void;
+  selectedTourTypes: Set<string>;
+  setSelectedTourTypes: (v: Set<string>) => void;
   selectedStatuses: Set<TourStatus>;
   setSelectedStatuses: (v: Set<TourStatus>) => void;
   selectedWeekdays: Set<number>;
@@ -33,6 +42,8 @@ export interface SelectedFilters {
 }
 
 export interface FilterState extends SelectedFilters {
+  years: string[];
+  tourTypes: string[];
   statuses: TourStatus[];
   durations: number[];
   difficulties: string[];
@@ -52,6 +63,8 @@ export interface FilterState extends SelectedFilters {
  */
 export function useFilterState(tours: Tour[], selected: SelectedFilters): FilterState {
   const {
+    selectedYears, setSelectedYears,
+    selectedTourTypes, setSelectedTourTypes,
     selectedStatuses, setSelectedStatuses,
     selectedWeekdays, setSelectedWeekdays,
     selectedDurations, setSelectedDurations,
@@ -60,25 +73,58 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     selectedGroups, setSelectedGroups,
   } = selected;
 
+  // For faceted search: each dimension's options come from tours that pass
+  // every OTHER active filter. This keeps options relevant to the current selection.
+
+  const toursPassingAllExcept = useCallback((exclude: "years" | "tourTypes" | "statuses" | "weekdays" | "durations" | "difficulties" | "eventTypes" | "groups") => {
+    return tours.filter((tour) => {
+      if (exclude !== "weekdays" && selectedWeekdays.size > 0) {
+        const tourDays = getTourWeekdays(tour.start_date, tour.duration_days);
+        if (tourDays !== null && !tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
+      }
+      return (
+        (exclude === "years" || selectedYears.size === 0 || selectedYears.has(tour.start_date?.slice(0, 4) ?? "")) &&
+        (exclude === "tourTypes" || selectedTourTypes.size === 0 || selectedTourTypes.has(tour.tour_type)) &&
+        (exclude === "statuses" || selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
+        (exclude === "durations" || selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
+        (exclude === "difficulties" || selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)) &&
+        (exclude === "eventTypes" || selectedEventTypes.size === 0 ||
+          (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
+          (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))) &&
+        (exclude === "groups" || selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g)))
+      );
+    });
+  }, [tours, selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
+
+  const years = useMemo(
+    () => YEARS.filter((y) => toursPassingAllExcept("years").some((t) => t.start_date?.startsWith(y))),
+    [toursPassingAllExcept],
+  );
+
+  const tourTypes = useMemo(
+    () => TOUR_TYPES.map((t) => t.value).filter((v) => toursPassingAllExcept("tourTypes").some((t) => t.tour_type === v)),
+    [toursPassingAllExcept],
+  );
+
   const statuses = useMemo(
-    () => STATUS_ORDER.filter((s) => tours.some((t) => t.status === s)),
-    [tours],
+    () => STATUS_ORDER.filter((s) => toursPassingAllExcept("statuses").some((t) => t.status === s)),
+    [toursPassingAllExcept],
   );
 
   const durations = useMemo(
-    () => [...new Set(tours.map((t) => t.duration_days))].sort((a, b) => a - b),
-    [tours],
+    () => [...new Set(toursPassingAllExcept("durations").map((t) => t.duration_days))].sort((a, b) => a - b),
+    [toursPassingAllExcept],
   );
 
   const difficulties = useMemo(
-    () => [...new Set(tours.map((t) => t.difficulty))].sort(compareDifficulties),
-    [tours],
+    () => [...new Set(toursPassingAllExcept("difficulties").map((t) => t.difficulty))].sort(compareDifficulties),
+    [toursPassingAllExcept],
   );
 
   const eventTypes = useMemo(() => {
     let hasKurs = false;
     let hasTour = false;
-    for (const t of tours) {
+    for (const t of toursPassingAllExcept("eventTypes")) {
       if (isKurs(t.difficulty)) { hasKurs = true; } else { hasTour = true; }
       if (hasKurs && hasTour) { break; }
     }
@@ -86,24 +132,32 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     if (hasTour) { result.push(EVENT_TYPE_TOUR); }
     if (hasKurs) { result.push(EVENT_TYPE_KURS); }
     return result;
-  }, [tours]);
+  }, [toursPassingAllExcept]);
 
   const groups = useMemo(
-    () => [...new Set(tours.map((t) => t.group))].sort((a, b) => groupRank(a) - groupRank(b)),
-    [tours],
+    () => {
+      const allGroups = toursPassingAllExcept("groups")
+        .flatMap((t) => t.group)
+        .filter((g: string) => g !== SPECIAL_GROUP_ALLE);
+      return [...new Set(allGroups)].sort((a, b) => groupRank(a) - groupRank(b));
+    },
+    [toursPassingAllExcept],
   );
 
-  // Setters from useState are stable — no need to list them as deps.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Setters from useState are stable — per React docs, they don't need to be in deps.
+  // Including them here to satisfy React Compiler analysis.
   const resetFilters = useCallback(() => {
+    setSelectedYears(new Set());
+    setSelectedTourTypes(new Set());
     setSelectedStatuses(new Set());
     setSelectedWeekdays(new Set());
     setSelectedDurations(new Set());
     setSelectedDifficulties(new Set());
     setSelectedEventTypes(new Set());
     setSelectedGroups(new Set());
-  }, []);
+  }, [setSelectedYears, setSelectedTourTypes, setSelectedStatuses, setSelectedWeekdays, setSelectedDurations, setSelectedDifficulties, setSelectedEventTypes, setSelectedGroups]);
 
+  // Setters are not used; only the selected* state values are checked.
   const matchesTour = useCallback(
     (tour: Tour) => {
       if (selectedWeekdays.size > 0) {
@@ -112,6 +166,8 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
         if (tourDays !== null && !tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
       }
       return (
+        (selectedYears.size === 0 || selectedYears.has(tour.start_date?.slice(0, 4) ?? "")) &&
+        (selectedTourTypes.size === 0 || selectedTourTypes.has(tour.tour_type)) &&
         (selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
         (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
         (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)) &&
@@ -119,14 +175,16 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
           (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
           (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))
         ) &&
-        (selectedGroups.size === 0 || selectedGroups.has(tour.group))
+        (selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g)))
       );
     },
-    [selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedGroups, selectedEventTypes],
+    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups],
   );
 
   return {
     ...selected,
+    years,
+    tourTypes,
     statuses,
     durations,
     difficulties,

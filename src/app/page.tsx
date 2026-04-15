@@ -1,14 +1,13 @@
 "use client";
 
 import { CalendarView } from "@/app/components/CalendarView";
-import { SearchForm } from "@/app/components/SearchForm";
 import { TableView } from "@/app/components/TableView";
 import type { SelectedFilters } from "@/app/components/useFilterState";
-import { TOUR_TYPES, YEARS } from "@/lib/constants";
-import type { ScrapeResult, TourStatus } from "@/lib/types";
+import { YEARS } from "@/lib/constants";
+import type { Tour, TourStatus } from "@/lib/types";
 import { useSearchParams } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { Suspense, useEffect, useId, useRef, useState } from "react";
+import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 
 /** Parse a comma-separated URL param into a Set of strings. */
 function parseStringSet(v: string | null): Set<string> {
@@ -22,60 +21,19 @@ function parseNumberSet(v: string | null): Set<number> {
 
 type ViewMode = "table" | "calendar";
 
-const DEFAULT_TYP = "Ht";
 
-const RING_R = 10;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_R;
-
-function ProgressRing({ loaded, total }: { loaded: number; total: number | null }) {
-  if (total === null || total === 0) {
-    return (
-      <svg aria-hidden="true" className="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r={RING_R} stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
-    );
-  }
-  const fraction = Math.min(loaded / total, 1);
-  const dashoffset = RING_CIRCUMFERENCE * (1 - fraction);
-  return (
-    <svg aria-hidden="true" className="h-8 w-8 -rotate-90" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r={RING_R} fill="none" stroke="#E5E7EB" strokeWidth="3" />
-      <circle
-        cx="12"
-        cy="12"
-        r={RING_R}
-        fill="none"
-        stroke="#3B82F6"
-        strokeWidth="3"
-        strokeDasharray={RING_CIRCUMFERENCE}
-        strokeDashoffset={dashoffset}
-        strokeLinecap="round"
-        className="transition-[stroke-dashoffset] duration-[400ms] ease-in-out motion-reduce:transition-none"
-      />
-    </svg>
-  );
-}
-
-function loadingLabel(progress: { loaded: number; total: number | null } | null): string {
-  if (!progress) { return "Touren werden geladen…"; }
-  if (progress.total) { return `Seite ${progress.loaded} von ${progress.total} geladen…`; }
-  return `Seite ${progress.loaded} geladen…`;
-}
 
 function HomeContent() {
   const searchParams = useSearchParams();
 
-  const [year, setYear] = useState(() => {
-    const v = searchParams.get("year");
-    return v && YEARS.includes(v) ? v : String(new Date().getFullYear());
+  const [selectedYears, setSelectedYears] = useState<Set<string>>(() => {
+    const v = parseStringSet(searchParams.get("years"));
+    return v.size > 0 && [...v].every((y) => YEARS.includes(y)) ? v : new Set();
   });
-  const [typ, setTyp] = useState(() => {
-    const v = searchParams.get("type");
-    return v && TOUR_TYPES.some((t) => t.value === v) ? v : DEFAULT_TYP;
+  const [selectedTourTypes, setSelectedTourTypes] = useState<Set<string>>(() => {
+    const v = parseStringSet(searchParams.get("types"));
+    return v;
   });
-  const [eventType, setEventType] = useState(() => searchParams.get("event") ?? "");
-  const [group, setGroup] = useState(() => searchParams.get("group") ?? "");
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     searchParams.get("view") === "calendar" ? "calendar" : "table",
   );
@@ -100,6 +58,8 @@ function HomeContent() {
   );
 
   const selectedFilters: SelectedFilters = {
+    selectedYears, setSelectedYears,
+    selectedTourTypes, setSelectedTourTypes,
     selectedStatuses, setSelectedStatuses,
     selectedWeekdays, setSelectedWeekdays,
     selectedDurations, setSelectedDurations,
@@ -108,133 +68,84 @@ function HomeContent() {
     selectedGroups, setSelectedGroups,
   };
 
-  // Written to true after the first successful search; drives URL sync and shareable links.
-  const [hasSearched, setHasSearched] = useState(() =>
-    searchParams.has("year") || searchParams.has("type"),
-  );
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState<{ loaded: number; total: number | null } | null>(null);
-  const [result, setResult] = useState<ScrapeResult | null>(null);
+  const [allTours, setAllTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [searchFormExpanded, setSearchFormExpanded] = useState(true);
   const tableTabRef = useRef<HTMLButtonElement>(null);
   const calendarTabRef = useRef<HTMLButtonElement>(null);
   const tableTabId = useId();
   const calendarTabId = useId();
   const viewPanelId = useId();
 
-  // Sync filter state → URL without triggering navigation.
-  // Before the first search the URL stays clean; after a search all params are
-  // always written so that the URL can be shared and will auto-trigger.
+  // Fetch all tours for both years once on mount.
   useEffect(() => {
-    if (!hasSearched) {return;}
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const responses = await Promise.all(YEARS.map((y) => fetch(`/api/scrape?year=${y}`)));
+        const bodies = await Promise.all(
+          responses.map(async (r) => {
+            if (!r.ok) {
+              const body = await r.json().catch(() => ({})) as Record<string, unknown>;
+              throw new Error((body.error as string | undefined) ?? `Anfrage fehlgeschlagen: ${r.status}`);
+            }
+            return r.json() as Promise<{ tours: Tour[] }>;
+          }),
+        );
+        if (!cancelled) {
+          setAllTours(bodies.flatMap((b) => b.tours));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+        }
+      } finally {
+        if (!cancelled) { setLoading(false); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Derive year for CalendarView: use the single selected year, minimum year from allTours if no selection, or current year as fallback.
+  const calendarYear = useMemo(() => {
+    if (selectedYears.size === 1) { return [...selectedYears][0]; }
+    // If no year filter selected, find the minimum year from all tours to show from earliest available
+    if (selectedYears.size === 0 && allTours.length > 0) {
+      const parsedYears = allTours
+        .filter((t) => t.start_date !== null)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        .map((t) => parseInt(t.start_date!.slice(0, 4), 10))
+        .filter((year) => Number.isFinite(year));
+      if (parsedYears.length > 0) {
+        const minYear = Math.min(...parsedYears);
+        if (Number.isFinite(minYear)) { return String(minYear); }
+      }
+    }
+    return String(new Date().getFullYear());
+  }, [selectedYears, allTours]);
+
+  // Sync filter state → URL without triggering navigation.
+  useEffect(() => {
     const params = new URLSearchParams();
-    params.set("year", year);
-    params.set("type", typ);
-    if (eventType) {params.set("event", eventType);}
-    if (group) {params.set("group", group);}
-    if (viewMode !== "table") {params.set("view", viewMode);}
-    if (selectedStatuses.size > 0) {params.set("statuses", [...selectedStatuses].join(","));}
-    if (selectedWeekdays.size > 0) {params.set("weekdays", [...selectedWeekdays].join(","));}
-    if (selectedDurations.size > 0) {params.set("durations", [...selectedDurations].join(","));}
-    if (selectedDifficulties.size > 0) {params.set("difficulties", [...selectedDifficulties].join(","));}
-    if (selectedEventTypes.size > 0) {params.set("eventTypes", [...selectedEventTypes].join(","));}
-    if (selectedGroups.size > 0) {params.set("groups", [...selectedGroups].join(","));}
+    if (selectedYears.size > 0) { params.set("years", [...selectedYears].join(",")); }
+    if (selectedTourTypes.size > 0) { params.set("types", [...selectedTourTypes].join(",")); }
+    if (viewMode !== "table") { params.set("view", viewMode); }
+    if (selectedStatuses.size > 0) { params.set("statuses", [...selectedStatuses].join(",")); }
+    if (selectedWeekdays.size > 0) { params.set("weekdays", [...selectedWeekdays].join(",")); }
+    if (selectedDurations.size > 0) { params.set("durations", [...selectedDurations].join(",")); }
+    if (selectedDifficulties.size > 0) { params.set("difficulties", [...selectedDifficulties].join(",")); }
+    if (selectedEventTypes.size > 0) { params.set("eventTypes", [...selectedEventTypes].join(",")); }
+    if (selectedGroups.size > 0) { params.set("groups", [...selectedGroups].join(",")); }
     window.history.replaceState(null, "", `?${params.toString()}`);
-  }, [year, typ, eventType, group, viewMode, hasSearched, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
+  }, [selectedYears, selectedTourTypes, viewMode, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  async function handleSearch({ keepFilters = false }: { keepFilters?: boolean } = {}) {
-    setLoading(true);
-    setProgress(null);
-    setError(null);
-    setResult(null);
-
-    const params = new URLSearchParams({ year, typ, anlasstyp: eventType, gruppe: group, stream: "1" });
-    let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
-    try {
-      const res = await fetch(`/api/scrape?${params.toString()}`);
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? `Anfrage fehlgeschlagen: ${res.status}`);
-      }
-      if (!res.body) { throw new Error("Keine Antwort vom Server"); }
-      reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let receivedDone = false;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          if (!receivedDone) { throw new Error("Verbindung unterbrochen"); }
-          break;
-        }
-        buffer += decoder.decode(value, { stream: true });
-        const events = buffer.split("\n\n");
-        buffer = events.pop() ?? "";
-        for (const event of events) {
-          const dataLine = event.split("\n").find((l) => l.startsWith("data: "));
-          if (!dataLine) { continue; }
-          let payload: Record<string, unknown>;
-          try {
-            payload = JSON.parse(dataLine.slice(6));
-          } catch {
-            throw new Error("Ungültige Antwort vom Server");
-          }
-          if (payload.type === "progress") {
-            setProgress({ loaded: payload.loaded as number, total: payload.total as number | null });
-          } else if (payload.type === "done") {
-            receivedDone = true;
-            if (!keepFilters) {
-              setSelectedStatuses(new Set());
-              setSelectedWeekdays(new Set());
-              setSelectedDurations(new Set());
-              setSelectedDifficulties(new Set());
-              setSelectedEventTypes(new Set());
-              setSelectedGroups(new Set());
-            }
-            setResult({
-              source: payload.source as string,
-              year: payload.year as string,
-              type_filter: payload.type_filter as string,
-              event_type: payload.event_type as string,
-              total_scraped: payload.total_scraped as number,
-              tours: payload.tours as ScrapeResult["tours"],
-            });
-            setHasSearched(true);
-            setSearchFormExpanded(false);
-            break;
-          } else if (payload.type === "error") {
-            throw new Error(payload.error as string);
-          }
-        }
-      }
-    } catch (err) {
-      reader?.cancel().catch(() => {});
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
-    } finally {
-      setLoading(false);
-      setProgress(null);
-    }
-  }
-
-  // Auto-trigger search on initial load when the URL already carries search params
-  const didAutoSearch = useRef(false);
-  useEffect(() => {
-    if (didAutoSearch.current) {return;}
-    didAutoSearch.current = true;
-    if (hasSearched) {
-      handleSearch({ keepFilters: true });
-    }
-    // One-time effect: handleSearch closes over state but we intentionally only
-    // run it once, using the values already initialised from the URL.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -254,40 +165,27 @@ function HomeContent() {
       </header>
 
       <main id="main-content" className="max-w-7xl mx-auto px-4 py-6">
-        <SearchForm
-          year={year}
-          setYear={setYear}
-          typ={typ}
-          setTyp={setTyp}
-          eventType={eventType}
-          setEventType={setEventType}
-          group={group}
-          setGroup={setGroup}
-          loading={loading}
-          onSearch={handleSearch}
-          expanded={searchFormExpanded}
-          setExpanded={setSearchFormExpanded}
-        />
-
         {error && (
           <div role="alert" className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-800 text-sm font-medium">Fehler: {error}</p>
           </div>
         )}
 
-        {/* Persistent live region: always in the DOM so screen readers reliably announce updates */}
         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-          {loading ? loadingLabel(progress) : ""}
+          {loading ? "Touren werden geladen…" : ""}
         </div>
 
         {loading && (
           <div aria-hidden="true" className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6 flex flex-col items-center justify-center gap-3 text-gray-500 text-sm">
-            <ProgressRing loaded={progress?.loaded ?? 0} total={progress?.total ?? null} />
-            <span>{loadingLabel(progress)}</span>
+            <svg aria-hidden="true" className="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <span>Touren werden geladen…</span>
           </div>
         )}
 
-        {result && (
+        {!loading && !error && (
           <div>
             <div
               role="tablist"
@@ -344,14 +242,14 @@ function HomeContent() {
             >
               {viewMode === "table" ? (
                 <TableView
-                  tours={result.tours}
-                  totalScraped={result.total_scraped}
+                  tours={allTours}
+                  totalScraped={allTours.length}
                   selectedFilters={selectedFilters}
                 />
               ) : (
                 <CalendarView
-                  tours={result.tours}
-                  year={result.year}
+                  tours={allTours}
+                  year={calendarYear}
                   selectedFilters={selectedFilters}
                 />
               )}

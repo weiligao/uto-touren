@@ -1,3 +1,4 @@
+import { GROUP_DELIMITER } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { parseDuration, parseGermanDate } from "@/lib/utils";
 import * as cheerio from "cheerio";
@@ -16,6 +17,14 @@ const CELL = {
   LEADER: 10,
   MIN_LENGTH: 11,
 } as const;
+
+/** Parse pipe-delimited group string into array of trimmed group names. */
+function parseGroups(groupString: string): string[] {
+  return groupString
+    .split(GROUP_DELIMITER)
+    .map((g) => g.trim())
+    .filter((g) => !!g);
+}
 
 /** Format a local Date as YYYY-MM-DD. */
 function toIsoDate(date: Date): string {
@@ -74,7 +83,7 @@ export function parseTourRows(html: string, year: number): Tour[] {
       duration_days: parseDuration(text[CELL.DURATION]),
       tour_type: text[CELL.TOUR_TYPE],
       difficulty: text[CELL.DIFFICULTY],
-      group: text[CELL.GROUP],
+      group: parseGroups(text[CELL.GROUP]),
       title: text[CELL.TITLE],
       leader: text[CELL.LEADER],
       status: parseStatus(cells.eq(CELL.DATE).attr("class") ?? ""),
