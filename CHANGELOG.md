@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/weiligao/uto-touren/compare/v1.12.0...v1.13.0) (2026-04-15)
+
+
+### Features
+
+* scrape tours via cron job ([#64](https://github.com/weiligao/uto-touren/issues/64)) ([ff912b7](https://github.com/weiligao/uto-touren/commit/ff912b7448d66a89da11382cb7b83a16de6a1020))
+
 ## [1.12.0](https://github.com/weiligao/uto-touren/compare/v1.11.0...v1.12.0) (2026-04-12)
 
 
