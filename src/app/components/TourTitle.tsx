@@ -1,6 +1,6 @@
 /**
  * Validates that a URL is safe to use in a link.
- * Only allows http(s) and mailto protocols, blocks javascript: and data: URLs.
+ * Only allows http(s) protocols, blocks javascript: and data: URLs.
  */
 function isSafeUrl(url: string): boolean {
   if (!url) {

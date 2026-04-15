@@ -102,8 +102,15 @@ const TourRow = memo(function TourRow({
         hidden={!expanded}
         className="sm:hidden bg-gray-50 border-b border-gray-100"
       >
-        <td colSpan={4} className="px-4 py-3">
+        <td colSpan={3} className="px-4 py-3">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+            <div>
+              <dt className="font-medium text-gray-500">Status</dt>
+              <dd className="flex items-center gap-1.5 text-gray-800">
+                <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status] ?? STATUS_COLORS.unknown}`} />
+                {STATUS_LABELS[tour.status] ?? STATUS_LABELS.unknown}
+              </dd>
+            </div>
             <div>
               <dt className="font-medium text-gray-500">Tourtyp</dt>
               <dd className="text-gray-800">{na(tour.tour_type)}</dd>

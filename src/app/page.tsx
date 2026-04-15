@@ -114,13 +114,15 @@ function HomeContent() {
     if (selectedYears.size === 1) { return [...selectedYears][0]; }
     // If no year filter selected, find the minimum year from all tours to show from earliest available
     if (selectedYears.size === 0 && allTours.length > 0) {
-      const minYear = Math.min(
-        ...allTours
-          .filter((t) => t.start_date !== null)
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .map((t) => parseInt(t.start_date!.slice(0, 4), 10)),
-      );
-      if (!isNaN(minYear)) { return String(minYear); }
+      const parsedYears = allTours
+        .filter((t) => t.start_date !== null)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        .map((t) => parseInt(t.start_date!.slice(0, 4), 10))
+        .filter((year) => Number.isFinite(year));
+      if (parsedYears.length > 0) {
+        const minYear = Math.min(...parsedYears);
+        if (Number.isFinite(minYear)) { return String(minYear); }
+      }
     }
     return String(new Date().getFullYear());
   }, [selectedYears, allTours]);

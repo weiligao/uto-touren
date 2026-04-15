@@ -96,9 +96,9 @@ export function na(value: string): string {
   return value || "Unbekannt";
 }
 
-/** Format array of groups as comma-separated string. */
+/** Format array of groups as comma-separated string, with fallback for empty arrays. */
 export function formatGroups(groups: string[]): string {
-  return groups.join(", ");
+  return na(groups.join(", "));
 }
 
 function icsDate(dt: Date): string {

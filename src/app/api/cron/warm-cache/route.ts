@@ -7,8 +7,17 @@ import { UpstreamError, scrapeTours } from "../../scrape/_scraper";
 export const maxDuration = 300;
 
 export async function GET(request: Request) {
+  const isDev = process.env.NODE_ENV === "development";
   const secret = process.env.CRON_SECRET;
-  if (secret) {
+
+  // In production, CRON_SECRET is required; in development it's optional for testing.
+  if (!isDev || secret) {
+    if (!secret) {
+      return NextResponse.json(
+        { error: "CRON_SECRET is not configured" },
+        { status: 500 },
+      );
+    }
     const auth = request.headers.get("authorization");
     if (auth !== `Bearer ${secret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
