@@ -96,6 +96,11 @@ export function na(value: string): string {
   return value || "Unbekannt";
 }
 
+/** Format array of groups as comma-separated string. */
+export function formatGroups(groups: string[]): string {
+  return groups.join(", ");
+}
+
 function icsDate(dt: Date): string {
   const y = dt.getFullYear();
   const mo = String(dt.getMonth() + 1).padStart(2, "0");

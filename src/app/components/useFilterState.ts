@@ -13,6 +13,8 @@ const STATUS_ORDER: readonly TourStatus[] = [
 const GROUP_ORDER: string[] = GROUPS.map((g) => g.value);
 
 function groupRank(g: string): number {
+  // \"Alle\" (show all) should always sort first in the filter list
+  if (g === "Alle") return -1;
   const i = GROUP_ORDER.indexOf(g);
   return i === -1 ? Number.MAX_SAFE_INTEGER : i;
 }
@@ -86,7 +88,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
         (exclude === "eventTypes" || selectedEventTypes.size === 0 ||
           (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
           (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))) &&
-        (exclude === "groups" || selectedGroups.size === 0 || selectedGroups.has(tour.group))
+        (exclude === "groups" || selectedGroups.size === 0 || tour.group.some((g) => selectedGroups.has(g)))
       );
     });
   }, [tours, selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
@@ -130,7 +132,10 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
   }, [toursPassingAllExcept]);
 
   const groups = useMemo(
-    () => [...new Set(toursPassingAllExcept("groups").map((t) => t.group))].sort((a, b) => groupRank(a) - groupRank(b)),
+    () => {
+      const allGroups = toursPassingAllExcept("groups").flatMap((t) => t.group);
+      return [...new Set(allGroups)].sort((a, b) => groupRank(a) - groupRank(b));
+    },
     [toursPassingAllExcept],
   );
 
@@ -164,7 +169,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
           (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
           (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))
         ) &&
-        (selectedGroups.size === 0 || selectedGroups.has(tour.group))
+        (selectedGroups.size === 0 || tour.group.some((g) => selectedGroups.has(g)))
       );
     },
     [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedGroups, selectedEventTypes],

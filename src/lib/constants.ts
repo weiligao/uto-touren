@@ -30,7 +30,10 @@ export const EVENT_TYPES = [
   { value: "Kurs", label: "Kurs" },
 ] as const;
 
+export const GROUP_DELIMITER = "|";
+
 export const GROUPS = [
+  { value: "Alle", label: "Alle" },
   { value: "Jugend", label: "Jugend" },
   { value: "Jung-Alpinist/innen", label: "Jung-Alpinist/innen" },
   { value: "Alpinist/innen", label: "Alpinist/innen" },

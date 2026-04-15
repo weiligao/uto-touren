@@ -2,7 +2,7 @@
 
 import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
-import { formatDuration, na, parseDateString } from "@/lib/utils";
+import { formatDuration, formatGroups, na, parseDateString } from "@/lib/utils";
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
@@ -191,7 +191,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         </div>
         <div>
           <dt className="font-medium text-gray-500">Gruppe</dt>
-          <dd className="text-gray-800">{na(tour.group)}</dd>
+          <dd className="text-gray-800">{formatGroups(tour.group)}</dd>
         </div>
         <div>
           <dt className="font-medium text-gray-500">Leiter/in</dt>

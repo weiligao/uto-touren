@@ -2,7 +2,7 @@
 
 import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { formatDate, formatDuration, na } from "@/lib/utils";
+import { formatDate, formatDuration, formatGroups, na } from "@/lib/utils";
 import { memo, useCallback, useMemo, useState } from "react";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
@@ -60,8 +60,8 @@ const TourRow = memo(function TourRow({
         <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
           {na(tour.difficulty)}
         </td>
-        <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
-          {na(tour.group)}
+        <td className="hidden sm:table-cell px-4 py-3 text-gray-700">
+          {formatGroups(tour.group)}
         </td>
         <td className="px-4 py-3 text-gray-900">
           <TourTitle title={tour.title} url={tour.detail_url} />
@@ -106,7 +106,7 @@ const TourRow = memo(function TourRow({
             </div>
             <div>
               <dt className="font-medium text-gray-500">Gruppe</dt>
-              <dd className="text-gray-800">{na(tour.group)}</dd>
+              <dd className="text-gray-800">{formatGroups(tour.group)}</dd>
             </div>
             <div>
               <dt className="font-medium text-gray-500">Leiter/in</dt>
