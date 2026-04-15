@@ -18,7 +18,7 @@ const WEEKDAYS: { key: number; label: string; fullName: string }[] = [
 ];
 
 const chipBase =
-  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer";
+  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0";
 const chipActive = "border-blue-600 bg-blue-600 text-white";
 const chipInactive =
   "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50";
@@ -237,26 +237,30 @@ export const ResultsHeader = memo(function ResultsHeader({
           hidden={!filtersOpen}
           className="border-t border-gray-100 bg-gray-50/60 px-6 py-4 flex flex-col gap-4"
         >
-          {years && years.length > 1 && (
+          {statuses && statuses.length > 1 && (
             <FilterRow
-              labelId={yearLabelId}
-              label="Jahr"
-              hasActive={!!selectedYears?.size}
-              onReset={() => onYearsChange?.(new Set())}
-              resetLabel="Jahr-Filter zurücksetzen"
+              labelId={statusLabelId}
+              label="Status"
+              hasActive={!!selectedStatuses?.size}
+              onReset={() => onStatusesChange?.(new Set())}
+              resetLabel="Status-Filter zurücksetzen"
             >
-              {years.map((y) => {
-                const active = selectedYears?.has(y) ?? false;
+              {statuses.map((s) => {
+                const active = selectedStatuses?.has(s) ?? false;
                 return (
                   <button
-                    key={y}
+                    key={s}
                     type="button"
                     aria-pressed={active}
-                    aria-label={y}
-                    onClick={() => onYearsChange?.(toggleSet(selectedYears, y))}
+                    aria-label={STATUS_ARIA_LABELS[s]}
+                    onClick={() => onStatusesChange?.(toggleSet(selectedStatuses, s))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
-                    {y}
+                    <span
+                      aria-hidden="true"
+                      className={`inline-block h-2 w-2 rounded-full shrink-0 ${active ? "bg-white/80" : STATUS_COLORS[s]}`}
+                    />
+                    {STATUS_LABELS[s]}
                   </button>
                 );
               })}
@@ -289,30 +293,52 @@ export const ResultsHeader = memo(function ResultsHeader({
             </FilterRow>
           )}
 
-          {statuses && statuses.length > 1 && (
+          {eventTypes && eventTypes.length > 1 && (
             <FilterRow
-              labelId={statusLabelId}
-              label="Status"
-              hasActive={!!selectedStatuses?.size}
-              onReset={() => onStatusesChange?.(new Set())}
-              resetLabel="Status-Filter zurücksetzen"
+              labelId={eventTypeLabelId}
+              label="Anlasstyp"
+              hasActive={!!selectedEventTypes?.size}
+              onReset={() => onEventTypesChange?.(new Set())}
+              resetLabel="Anlasstyp-Filter zurücksetzen"
             >
-              {statuses.map((s) => {
-                const active = selectedStatuses?.has(s) ?? false;
+              {eventTypes.map((et) => {
+                const active = selectedEventTypes?.has(et) ?? false;
                 return (
                   <button
-                    key={s}
+                    key={et}
                     type="button"
                     aria-pressed={active}
-                    aria-label={STATUS_ARIA_LABELS[s]}
-                    onClick={() => onStatusesChange?.(toggleSet(selectedStatuses, s))}
+                    aria-label={et}
+                    onClick={() => onEventTypesChange?.(toggleSet(selectedEventTypes, et))}
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
-                    <span
-                      aria-hidden="true"
-                      className={`inline-block h-2 w-2 rounded-full shrink-0 ${active ? "bg-white/80" : STATUS_COLORS[s]}`}
-                    />
-                    {STATUS_LABELS[s]}
+                    {et}
+                  </button>
+                );
+              })}
+            </FilterRow>
+          )}
+
+          {years && years.length > 1 && (
+            <FilterRow
+              labelId={yearLabelId}
+              label="Jahr"
+              hasActive={!!selectedYears?.size}
+              onReset={() => onYearsChange?.(new Set())}
+              resetLabel="Jahr-Filter zurücksetzen"
+            >
+              {years.map((y) => {
+                const active = selectedYears?.has(y) ?? false;
+                return (
+                  <button
+                    key={y}
+                    type="button"
+                    aria-pressed={active}
+                    aria-label={y}
+                    onClick={() => onYearsChange?.(toggleSet(selectedYears, y))}
+                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                  >
+                    {y}
                   </button>
                 );
               })}
@@ -391,32 +417,6 @@ export const ResultsHeader = memo(function ResultsHeader({
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
                     {d || "—"}
-                  </button>
-                );
-              })}
-            </FilterRow>
-          )}
-
-          {eventTypes && eventTypes.length > 1 && (
-            <FilterRow
-              labelId={eventTypeLabelId}
-              label="Anlasstyp"
-              hasActive={!!selectedEventTypes?.size}
-              onReset={() => onEventTypesChange?.(new Set())}
-              resetLabel="Anlasstyp-Filter zurücksetzen"
-            >
-              {eventTypes.map((et) => {
-                const active = selectedEventTypes?.has(et) ?? false;
-                return (
-                  <button
-                    key={et}
-                    type="button"
-                    aria-pressed={active}
-                    aria-label={et}
-                    onClick={() => onEventTypesChange?.(toggleSet(selectedEventTypes, et))}
-                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
-                  >
-                    {et}
                   </button>
                 );
               })}

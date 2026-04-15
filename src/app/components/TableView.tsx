@@ -1,8 +1,8 @@
 "use client";
 
-import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { formatDate, formatDuration, formatGroups, na } from "@/lib/utils";
+import { formatDate, formatDuration, formatGroups, isKurs, na } from "@/lib/utils";
 import { memo, useCallback, useMemo, useState } from "react";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
@@ -12,6 +12,8 @@ import { useFilterState } from "./useFilterState";
 
 const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
   { label: "Status", center: true, mobileHidden: true },
+  { label: "Tourtyp", mobileHidden: true },
+  { label: "Anlasstyp", mobileHidden: true },
   { label: "Datum" },
   { label: "Dauer", mobileHidden: true },
   { label: "Schwierigkeit", mobileHidden: true },
@@ -24,8 +26,8 @@ function StatusDot({ status }: { status: TourStatus }) {
   return (
     <span
       role="img"
-      aria-label={STATUS_ARIA_LABELS[status]}
-      className={`inline-block h-3 w-3 rounded-full ${STATUS_COLORS[status]}`}
+      aria-label={STATUS_ARIA_LABELS[status] ?? STATUS_ARIA_LABELS.unknown}
+      className={`inline-block h-3 w-3 rounded-full ${STATUS_COLORS[status] ?? STATUS_COLORS.unknown}`}
     />
   );
 }
@@ -47,10 +49,16 @@ const TourRow = memo(function TourRow({
         <td className="hidden sm:table-cell px-4 py-3 text-center">
           <StatusDot status={tour.status} />
         </td>
+        <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+          {na(tour.tour_type)}
+        </td>
+        <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
+          {isKurs(tour.difficulty) ? EVENT_TYPE_KURS : EVENT_TYPE_TOUR}
+        </td>
         <td className="px-4 py-3 whitespace-nowrap text-gray-900">
           <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className={`sm:hidden inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
-            <span className="sr-only sm:hidden">{STATUS_LABELS[tour.status]}</span>
+            <span aria-hidden="true" className={`sm:hidden inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status] ?? STATUS_COLORS.unknown}`} />
+            <span className="sr-only sm:hidden">{STATUS_LABELS[tour.status] ?? STATUS_LABELS.unknown}</span>
             {formatDate(tour.start_date, tour.date)}
           </span>
         </td>
@@ -70,11 +78,11 @@ const TourRow = memo(function TourRow({
         <td className="hidden sm:table-cell px-3 py-3 text-center">
           <CalendarExportButtons tour={tour} compact />
         </td>
-        <td className="sm:hidden px-2 pr-4 py-3 text-center">
+        <td className="sm:hidden sticky right-0 z-10 bg-white px-2 pr-4 py-3 text-center">
           <button
             type="button"
             onClick={() => onToggle(i)}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-pointer"
+            className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
             aria-expanded={expanded}
             aria-controls={`tour-detail-${i}`}
             aria-label={expanded ? `${tour.title} zuklappen` : `${tour.title} aufklappen`}
@@ -97,6 +105,14 @@ const TourRow = memo(function TourRow({
         <td colSpan={4} className="px-4 py-3">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
             <div>
+              <dt className="font-medium text-gray-500">Tourtyp</dt>
+              <dd className="text-gray-800">{na(tour.tour_type)}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-gray-500">Anlasstyp</dt>
+              <dd className="text-gray-800">{isKurs(tour.difficulty) ? EVENT_TYPE_KURS : EVENT_TYPE_TOUR}</dd>
+            </div>
+            <div>
               <dt className="font-medium text-gray-500">Dauer</dt>
               <dd className="text-gray-800">{formatDuration(tour.duration_days)}</dd>
             </div>
@@ -111,13 +127,6 @@ const TourRow = memo(function TourRow({
             <div>
               <dt className="font-medium text-gray-500">Leiter/in</dt>
               <dd className="text-gray-800">{na(tour.leader)}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-gray-500">Status</dt>
-              <dd className="flex items-center gap-1.5 text-gray-800">
-                <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
-                {STATUS_LABELS[tour.status]}
-              </dd>
             </div>
             <div className="flex items-end">
               <CalendarExportButtons tour={tour} />

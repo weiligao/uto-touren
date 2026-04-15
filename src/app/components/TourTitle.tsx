@@ -1,5 +1,21 @@
+/**
+ * Validates that a URL is safe to use in a link.
+ * Only allows http(s) and mailto protocols, blocks javascript: and data: URLs.
+ */
+function isSafeUrl(url: string): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url, "https://example.com");
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    // Invalid URL or relative path starting with //
+    return url.startsWith("http://") || url.startsWith("https://");
+  }
+}
+
 export function TourTitle({ title, url }: { title: string; url: string | null }) {
-  if (url) {
+  // Only render link if URL is safe
+  if (url && isSafeUrl(url)) {
     return (
       <a
         href={url}

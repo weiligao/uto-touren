@@ -1,8 +1,8 @@
 "use client";
 
-import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
-import { formatDuration, formatGroups, na, parseDateString } from "@/lib/utils";
+import { formatDuration, formatGroups, isKurs, na, parseDateString } from "@/lib/utils";
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
@@ -182,6 +182,21 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
       </div>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
         <div>
+          <dt className="font-medium text-gray-500">Status</dt>
+          <dd className="flex items-center gap-1.5 text-gray-800">
+            <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status] ?? STATUS_COLORS.unknown}`} />
+            {STATUS_LABELS[tour.status] ?? STATUS_LABELS.unknown}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-medium text-gray-500">Tourtyp</dt>
+          <dd className="text-gray-800">{na(tour.tour_type)}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-gray-500">Anlasstyp</dt>
+          <dd className="text-gray-800">{isKurs(tour.difficulty) ? EVENT_TYPE_KURS : EVENT_TYPE_TOUR}</dd>
+        </div>
+        <div>
           <dt className="font-medium text-gray-500">Dauer</dt>
           <dd className="text-gray-800">{formatDuration(tour.duration_days)}</dd>
         </div>
@@ -196,13 +211,6 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         <div>
           <dt className="font-medium text-gray-500">Leiter/in</dt>
           <dd className="text-gray-800">{na(tour.leader)}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-gray-500">Status</dt>
-          <dd className="flex items-center gap-1.5 text-gray-800">
-            <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status]}`} />
-            {STATUS_LABELS[tour.status]}
-          </dd>
         </div>
       </dl>
       <CalendarExportButtons tour={tour} onAfterDownload={onClose} fullWidth />
@@ -231,9 +239,9 @@ const TourPill = memo(function TourPill({
         type="button"
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={`${ct.tour.title} — ${STATUS_ARIA_LABELS[ct.tour.status]}`}
+        aria-label={`${ct.tour.title} — ${STATUS_ARIA_LABELS[ct.tour.status] ?? STATUS_ARIA_LABELS.unknown}`}
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight bg-blue-50 hover:bg-blue-100 text-left cursor-pointer"
+        className="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight bg-blue-50 hover:bg-blue-100 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
       >
         <span aria-hidden="true" className={`shrink-0 inline-block h-2 w-2 rounded-full ${dotColor}`} />
         <span className="truncate">{ct.tour.title}</span>
@@ -243,9 +251,25 @@ const TourPill = memo(function TourPill({
   );
 });
 
-function detectInitialMonth(tours: CalendarTour[]): number {
-  if (tours.length === 0) { return new Date().getMonth(); }
-  return tours.reduce((min, ct) => Math.min(min, ct.startDate.getMonth()), 11);
+/**
+ * Calculates a month offset relative to the given year.
+ * Month offset = 0 for Jan of yearNum, -1 for Dec of yearNum-1, 12 for Jan of yearNum+1, etc.
+ * This allows year-aware calendar navigation where month can go negative or exceed 11.
+ */
+function toMonthOffset(year: number, month: number, yearNum: number): number {
+  return (year - yearNum) * 12 + month;
+}
+
+/**
+ * Finds the first month (earliest month offset) with a tour.
+ * Used to auto-navigate calendar to the first event after filtering.
+ */
+function detectInitialMonth(tours: CalendarTour[], yearNum: number): number {
+  if (tours.length === 0) { return 0; }
+  return tours.reduce((min, ct) => {
+    const offset = toMonthOffset(ct.startDate.getFullYear(), ct.startDate.getMonth(), yearNum);
+    return Math.min(min, offset);
+  }, Infinity);
 }
 
 const SWIPE_THRESHOLD = 50;
@@ -273,7 +297,7 @@ export function CalendarView({
     [tours],
   );
 
-  const [month, setMonth] = useState(() => detectInitialMonth(calendarTours));
+  const [month, setMonth] = useState(() => detectInitialMonth(calendarTours, parseInt(year, 10)));
   const toursList = useMemo(() => calendarTours.map((ct) => ct.tour), [calendarTours]);
   const {
     years,
@@ -308,31 +332,38 @@ export function CalendarView({
   );
 
   const { minMonth, maxMonth } = useMemo(() => {
-    if (calendarTours.length === 0) { return { minMonth: 0, maxMonth: 11 }; }
-    return calendarTours.reduce(
+    // Calculate navigation bounds from filtered tours - constrain navigation to months with matching events
+    if (visibleCalendarTours.length === 0) {
+      // No tours match filter: allow full range navigation
+      return { minMonth: -Infinity, maxMonth: Infinity };
+    }
+    return visibleCalendarTours.reduce(
       (acc, ct) => {
-        const m = ct.startDate.getMonth();
-        return { minMonth: Math.min(acc.minMonth, m), maxMonth: Math.max(acc.maxMonth, m) };
+        const offset = toMonthOffset(ct.startDate.getFullYear(), ct.startDate.getMonth(), yearNum);
+        return { minMonth: Math.min(acc.minMonth, offset), maxMonth: Math.max(acc.maxMonth, offset) };
       },
-      { minMonth: 11, maxMonth: 0 },
+      { minMonth: Infinity, maxMonth: -Infinity },
     );
-  }, [calendarTours]);
+  }, [visibleCalendarTours, yearNum]);
 
   // Skip the initial run — useState already set the correct month via the lazy initializer.
-  // Only reset when calendarTours changes after mount (e.g. new search).
+  // Auto-navigate to first month with events when tours data or filters change.
   const isFirstRender = useRef(true);
   useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
-    function reset() {
-      setMonth(detectInitialMonth(calendarTours));
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
-    reset();
-  }, [calendarTours]);
+    setMonth(detectInitialMonth(visibleCalendarTours, yearNum));
+  }, [visibleCalendarTours, yearNum]);
 
-  const cells = useMemo(() => getCalendarDays(yearNum, month), [yearNum, month]);
+  const displayYear = yearNum + Math.floor(month / 12);
+  const displayMonth = ((month % 12) + 12) % 12;
+
+  const cells = useMemo(() => getCalendarDays(displayYear, displayMonth), [displayYear, displayMonth]);
   const tourMap = useMemo(
-    () => buildTourMap(visibleCalendarTours, yearNum, month),
-    [visibleCalendarTours, yearNum, month],
+    () => buildTourMap(visibleCalendarTours, displayYear, displayMonth),
+    [visibleCalendarTours, displayYear, displayMonth],
   );
 
   const prevMonth = useCallback(() => setMonth((m) => Math.max(m - 1, minMonth)), [minMonth]);
@@ -387,23 +418,29 @@ export function CalendarView({
         <button
           type="button"
           onClick={prevMonth}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft") { e.preventDefault(); prevMonth(); }
+          }}
           disabled={month <= minMonth}
-          aria-label={month <= minMonth ? `Keine Touren vor ${MONTH_NAMES[minMonth]}` : `Zu ${MONTH_NAMES[month - 1]}`}
-          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
+          aria-label={month <= minMonth ? "Keine weiteren Touren in vorherigen Monaten" : `Zu ${MONTH_NAMES[((month - 1) % 12 + 12) % 12]}`}
+          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
         >
           <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         <span aria-live="polite" aria-atomic="true" className="text-sm font-semibold text-gray-800">
-          {MONTH_NAMES[month]} {yearNum}
+          {MONTH_NAMES[displayMonth]} {displayYear}
         </span>
         <button
           type="button"
           onClick={nextMonth}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight") { e.preventDefault(); nextMonth(); }
+          }}
           disabled={month >= maxMonth}
-          aria-label={month >= maxMonth ? `Keine Touren nach ${MONTH_NAMES[maxMonth]}` : `Zu ${MONTH_NAMES[month + 1]}`}
-          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default"
+          aria-label={month >= maxMonth ? "Keine weiteren Touren in künftigen Monaten" : `Zu ${MONTH_NAMES[((month + 1) % 12 + 12) % 12]}`}
+          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
         >
           <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -411,7 +448,7 @@ export function CalendarView({
         </button>
       </nav>
       <div className="p-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        <div role="grid" aria-label={`${MONTH_NAMES[month]} ${yearNum} Kalender`} className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
+        <div role="grid" aria-label={`${MONTH_NAMES[displayMonth]} ${displayYear} Kalender`} className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
           {/* Header row */}
           <div role="row" className="contents">
             {WEEKDAYS.map((d, idx) => (
@@ -433,7 +470,7 @@ export function CalendarView({
             <div key={`row-${yearNum}-${month}-${rowIdx}`} role="row" className="contents">
               {row.map((day, colIdx) => {
                 const cellIdx = rowIdx * 7 + colIdx;
-                const key = day ? dateKey(yearNum, month, day) : `empty-${cellIdx}`;
+                const key = day ? dateKey(displayYear, displayMonth, day) : `empty-${cellIdx}`;
                 const toursForDay = day ? tourMap.get(key) ?? [] : [];
                 return (
                   <div
@@ -445,7 +482,7 @@ export function CalendarView({
                     {day && (
                       <>
                         <time
-                          dateTime={`${yearNum}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`}
+                          dateTime={`${displayYear}-${String(displayMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`}
                           className="text-xs text-gray-500 mb-0.5 block"
                         >
                           {day}

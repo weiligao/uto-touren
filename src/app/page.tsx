@@ -110,11 +110,20 @@ function HomeContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Derive year for CalendarView: use the single selected year, or current year as fallback.
+  // Derive year for CalendarView: use the single selected year, minimum year from allTours if no selection, or current year as fallback.
   const calendarYear = useMemo(() => {
     if (selectedYears.size === 1) { return [...selectedYears][0]; }
+    // If no year filter selected, find the minimum year from all tours to show from earliest available
+    if (selectedYears.size === 0 && allTours.length > 0) {
+      const minYear = Math.min(
+        ...allTours
+          .filter((t) => t.start_date !== null)
+          .map((t) => parseInt(t.start_date!.slice(0, 4), 10)),
+      );
+      if (!isNaN(minYear)) { return String(minYear); }
+    }
     return String(new Date().getFullYear());
-  }, [selectedYears]);
+  }, [selectedYears, allTours]);
 
   // Sync filter state → URL without triggering navigation.
   useEffect(() => {
