@@ -1,9 +1,11 @@
 "use client";
 
-import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS, TOUR_TYPES } from "@/lib/constants";
 import type { TourStatus } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
 import { memo, useId, useState } from "react";
+
+const TOUR_TYPE_LABEL = new Map<string, string>(TOUR_TYPES.map((t) => [t.value, t.label]));
 
 const WEEKDAYS: { key: number; label: string; fullName: string }[] = [
   { key: 1, label: "Mo", fullName: "Montag" },
@@ -92,6 +94,12 @@ function FilterRow({
 export const ResultsHeader = memo(function ResultsHeader({
   totalScraped,
   visibleCount,
+  years,
+  selectedYears,
+  onYearsChange,
+  tourTypes,
+  selectedTourTypes,
+  onTourTypesChange,
   statuses,
   selectedStatuses,
   onStatusesChange,
@@ -112,6 +120,12 @@ export const ResultsHeader = memo(function ResultsHeader({
 }: {
   totalScraped: number;
   visibleCount: number;
+  years?: string[];
+  selectedYears?: Set<string>;
+  onYearsChange?: (v: Set<string>) => void;
+  tourTypes?: string[];
+  selectedTourTypes?: Set<string>;
+  onTourTypesChange?: (v: Set<string>) => void;
   statuses?: TourStatus[];
   selectedStatuses?: Set<TourStatus>;
   onStatusesChange?: (v: Set<TourStatus>) => void;
@@ -131,6 +145,8 @@ export const ResultsHeader = memo(function ResultsHeader({
   onGroupsChange?: (v: Set<string>) => void;
 }) {
   const hasFilterRows =
+    !!(years && years.length > 1) ||
+    !!(tourTypes && tourTypes.length > 1) ||
     !!(statuses && statuses.length > 1) ||
     // Weekday chips are fixed (always 7 options), so show whenever the handler is provided.
     !!onWeekdaysChange ||
@@ -139,6 +155,8 @@ export const ResultsHeader = memo(function ResultsHeader({
     !!(eventTypes && eventTypes.length > 1) ||
     !!(groups && groups.length > 1);
   const activeFilterCount =
+    (selectedYears?.size ?? 0) +
+    (selectedTourTypes?.size ?? 0) +
     (selectedStatuses?.size ?? 0) +
     (selectedWeekdays?.size ?? 0) +
     (selectedDurations?.size ?? 0) +
@@ -147,6 +165,8 @@ export const ResultsHeader = memo(function ResultsHeader({
     (selectedGroups?.size ?? 0);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const filterPanelId = useId();
+  const yearLabelId = useId();
+  const tourTypeLabelId = useId();
   const statusLabelId = useId();
   const weekdayLabelId = useId();
   const durationLabelId = useId();
@@ -158,7 +178,7 @@ export const ResultsHeader = memo(function ResultsHeader({
     <div className="border-b border-gray-200">
       {/* Header bar */}
       <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <h2 className="text-lg font-semibold text-gray-800">Ergebnisse</h2>
+        <h2 className="text-lg font-semibold text-gray-800">Touren</h2>
         <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-12">
           {hasFilterRows && (
             <button
@@ -217,6 +237,58 @@ export const ResultsHeader = memo(function ResultsHeader({
           hidden={!filtersOpen}
           className="border-t border-gray-100 bg-gray-50/60 px-6 py-4 flex flex-col gap-4"
         >
+          {years && years.length > 1 && (
+            <FilterRow
+              labelId={yearLabelId}
+              label="Jahr"
+              hasActive={!!selectedYears?.size}
+              onReset={() => onYearsChange?.(new Set())}
+              resetLabel="Jahr-Filter zurücksetzen"
+            >
+              {years.map((y) => {
+                const active = selectedYears?.has(y) ?? false;
+                return (
+                  <button
+                    key={y}
+                    type="button"
+                    aria-pressed={active}
+                    aria-label={y}
+                    onClick={() => onYearsChange?.(toggleSet(selectedYears, y))}
+                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                  >
+                    {y}
+                  </button>
+                );
+              })}
+            </FilterRow>
+          )}
+
+          {tourTypes && tourTypes.length > 1 && (
+            <FilterRow
+              labelId={tourTypeLabelId}
+              label="Tourtyp"
+              hasActive={!!selectedTourTypes?.size}
+              onReset={() => onTourTypesChange?.(new Set())}
+              resetLabel="Tourtyp-Filter zurücksetzen"
+            >
+              {tourTypes.map((tt) => {
+                const active = selectedTourTypes?.has(tt) ?? false;
+                return (
+                  <button
+                    key={tt}
+                    type="button"
+                    aria-pressed={active}
+                    aria-label={TOUR_TYPE_LABEL.get(tt) ?? tt}
+                    onClick={() => onTourTypesChange?.(toggleSet(selectedTourTypes, tt))}
+                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                  >
+                    {TOUR_TYPE_LABEL.get(tt) ?? tt}
+                  </button>
+                );
+              })}
+            </FilterRow>
+          )}
+
           {statuses && statuses.length > 1 && (
             <FilterRow
               labelId={statusLabelId}

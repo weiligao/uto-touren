@@ -141,6 +141,12 @@ export function TableView({
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [lastTours, setLastTours] = useState(tours);
   const {
+    years,
+    selectedYears,
+    setSelectedYears,
+    tourTypes,
+    selectedTourTypes,
+    setSelectedTourTypes,
     statuses,
     selectedStatuses,
     setSelectedStatuses,
@@ -186,6 +192,12 @@ export function TableView({
       <ResultsHeader
         totalScraped={totalScraped}
         visibleCount={visibleTours.length}
+        years={years}
+        selectedYears={selectedYears}
+        onYearsChange={setSelectedYears}
+        tourTypes={tourTypes}
+        selectedTourTypes={selectedTourTypes}
+        onTourTypesChange={setSelectedTourTypes}
         statuses={statuses}
         selectedStatuses={selectedStatuses}
         onStatusesChange={setSelectedStatuses}

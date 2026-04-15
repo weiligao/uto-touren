@@ -84,10 +84,10 @@ export const DIFFICULTY_ORDER: readonly string[] = [
   "WT1", "WT2", "WT3", "WT4", "WT5",
   // Mountainbike Singletrail scale (S0–S3)
   "S0", "S1", "S2", "S3",
-  // Ice climbing (Wi1-I … Wi5-III)
-  "Wi1-I", "Wi1-II", "Wi1-III",
-  "Wi2-I", "Wi2-II", "Wi2-III",
-  "Wi3-I", "Wi3-II", "Wi3-III",
-  "Wi4-I", "Wi4-II", "Wi4-III",
-  "Wi5-I", "Wi5-II", "Wi5-III",
+  // Ice climbing (Wi1-I … Wi5-IV)
+  "Wi1-I", "Wi1-II", "Wi1-III", "Wi1-IV",
+  "Wi2-I", "Wi2-II", "Wi2-III", "Wi2-IV",
+  "Wi3-I", "Wi3-II", "Wi3-III", "Wi3-IV",
+  "Wi4-I", "Wi4-II", "Wi4-III", "Wi4-IV",
+  "Wi5-I", "Wi5-II", "Wi5-III", "Wi5-IV",
 ];

@@ -17,27 +17,18 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function buildUrl(
-  year: string,
-  typ: string,
-  anlasstyp: string,
-  gruppe: string,
-  offset: number,
-): string {
-  const searchParams = new URLSearchParams({ page: "touren", year, typ, anlasstyp, gruppe });
+function buildUrl(year: string, offset: number): string {
+  const searchParams = new URLSearchParams({ page: "touren", year });
   if (offset > 0) { searchParams.set("offset", String(offset)); }
   return `${BASE_URL}?${searchParams.toString()}`;
 }
 
 export interface ScrapeParams {
   year: string;
-  typ: string;
-  anlasstyp: string;
-  gruppe: string;
 }
 
 export async function scrapeTours(
-  { year, typ, anlasstyp, gruppe }: ScrapeParams,
+  { year }: ScrapeParams,
   onProgress?: (loaded: number, total: number | null) => void,
 ): Promise<Tour[]> {
   const allTours: Tour[] = [];
@@ -47,7 +38,7 @@ export async function scrapeTours(
   const yearNum = parseInt(year, 10);
 
   while (true) {
-    const url = buildUrl(year, typ, anlasstyp, gruppe, offset);
+    const url = buildUrl(year, offset);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     const resp = await fetch(url, {

@@ -276,6 +276,12 @@ export function CalendarView({
   const [month, setMonth] = useState(() => detectInitialMonth(calendarTours));
   const toursList = useMemo(() => calendarTours.map((ct) => ct.tour), [calendarTours]);
   const {
+    years,
+    selectedYears,
+    setSelectedYears,
+    tourTypes,
+    selectedTourTypes,
+    setSelectedTourTypes,
     statuses,
     selectedStatuses,
     setSelectedStatuses,
@@ -292,7 +298,7 @@ export function CalendarView({
     setSelectedEventTypes,
     groups,
     selectedGroups,
-    setSelectedGroups,    
+    setSelectedGroups,
     matchesTour,
   } = useFilterState(toursList, selectedFilters);
 
@@ -351,6 +357,12 @@ export function CalendarView({
       <ResultsHeader
         totalScraped={calendarTours.length}
         visibleCount={visibleCalendarTours.length}
+        years={years}
+        selectedYears={selectedYears}
+        onYearsChange={setSelectedYears}
+        tourTypes={tourTypes}
+        selectedTourTypes={selectedTourTypes}
+        onTourTypesChange={setSelectedTourTypes}
         statuses={statuses}
         selectedStatuses={selectedStatuses}
         onStatusesChange={setSelectedStatuses}

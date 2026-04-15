@@ -5,18 +5,28 @@
 
 A web app for searching, filtering and exporting tours from [SAC-Sektion Uto](https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/). Scrapes the official tour listing, parses results server-side, and displays them in a filterable table or month calendar view.
 
+
 ## Features
 
-- Search by year, tour type, event type, and group — form auto-collapses after a successful search
-- Live progress indicator during scraping: determinate ring showing pages loaded vs. total (e.g. "Seite 2 von 3 geladen…"), falling back to an indeterminate spinner when page count is unavailable
-- Post-search multi-select chip filters for status, weekday, duration, difficulty, event type (Tour/Kurs), and group — collapsible panel with active-filter count badge
-- Table view with expandable rows on mobile
-- Calendar view with multi-day tour spanning and swipe navigation on mobile
-- Status indicators (open, full/cancelled, not yet open)
-- Tour detail tooltips with links to the original listing
-- Export tours to calendar via a dropdown: `.ics` download (tour event + registration reminder with Zurich-midnight alarm, linked via `RELATED-TO`) or direct Google Calendar links for both events; all entries enriched with route details, equipment, accommodation, and cost info fetched server-side and cached 24 h
-- All search parameters, view mode, and active filters are persisted in the URL — shareable links auto-trigger the search and restore filters exactly
-- Results cached in-memory for 24 hours; repeat searches are served instantly without re-scraping
+### Powerful Filtering & Browsing
+- Faceted, chip-based filters for year, tour type, event type, group, status, weekday, duration, and difficulty
+- Instantly updates results as filters are selected (no search form, no defaults)
+- Collapsible filter panel with active-filter count badge
+- Table view (expandable rows on mobile)
+- Calendar view (multi-day spanning, swipe navigation on mobile)
+
+### Tour Details & Export
+- Status indicators: open, full/cancelled, not yet open
+- Tooltips with tour details and links to the original listing
+- Export to calendar: `.ics` download or direct Google Calendar links
+- Calendar entries include route, equipment, accommodation, and cost info
+
+### Sharing, Caching & Automation
+- All filters and view state are persisted in the URL for easy sharing
+- Results cached in-memory for 24 hours for instant repeat filtering
+- Automated backend job (cron) fetches and updates tours daily for fresh data
+
+### Analytics & Monitoring
 - Vercel Analytics and Speed Insights for performance monitoring
 
 ## Development
