@@ -144,8 +144,8 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     [toursPassingAllExcept],
   );
 
-  // Setters from useState are stable — no need to list them as deps.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Setters from useState are stable — per React docs, they don't need to be in deps.
+  // Including them here to satisfy React Compiler analysis.
   const resetFilters = useCallback(() => {
     setSelectedYears(new Set());
     setSelectedTourTypes(new Set());
@@ -155,8 +155,9 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     setSelectedDifficulties(new Set());
     setSelectedEventTypes(new Set());
     setSelectedGroups(new Set());
-  }, []);
+  }, [setSelectedYears, setSelectedTourTypes, setSelectedStatuses, setSelectedWeekdays, setSelectedDurations, setSelectedDifficulties, setSelectedEventTypes, setSelectedGroups]);
 
+  // Setters are not used; only the selected* state values are checked.
   const matchesTour = useCallback(
     (tour: Tour) => {
       if (selectedWeekdays.size > 0) {
@@ -177,7 +178,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
         (selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g)))
       );
     },
-    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedGroups, selectedEventTypes],
+    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups],
   );
 
   return {

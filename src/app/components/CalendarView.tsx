@@ -348,13 +348,17 @@ export function CalendarView({
 
   // Skip the initial run — useState already set the correct month via the lazy initializer.
   // Auto-navigate to first month with events when tours data or filters change.
+  // Skip first render using a ref to avoid unnecessary navigation on mount.
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    setMonth(detectInitialMonth(visibleCalendarTours, yearNum));
+    const newMonth = detectInitialMonth(visibleCalendarTours, yearNum);
+    // Valid use case: auto-navigate calendar to first month with filtered events
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMonth(newMonth);
   }, [visibleCalendarTours, yearNum]);
 
   const displayYear = yearNum + Math.floor(month / 12);

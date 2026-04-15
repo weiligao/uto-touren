@@ -3,7 +3,9 @@
  * Only allows http(s) and mailto protocols, blocks javascript: and data: URLs.
  */
 function isSafeUrl(url: string): boolean {
-  if (!url) return false;
+  if (!url) {
+    return false;
+  }
   try {
     const parsed = new URL(url, "https://example.com");
     return parsed.protocol === "http:" || parsed.protocol === "https:";

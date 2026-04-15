@@ -107,7 +107,6 @@ function HomeContent() {
       }
     })();
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Derive year for CalendarView: use the single selected year, minimum year from allTours if no selection, or current year as fallback.
@@ -118,6 +117,7 @@ function HomeContent() {
       const minYear = Math.min(
         ...allTours
           .filter((t) => t.start_date !== null)
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           .map((t) => parseInt(t.start_date!.slice(0, 4), 10)),
       );
       if (!isNaN(minYear)) { return String(minYear); }
