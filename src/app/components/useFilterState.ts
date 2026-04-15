@@ -1,4 +1,4 @@
-import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, GROUPS, TOUR_TYPES, YEARS } from "@/lib/constants";
+import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, GROUPS, SPECIAL_GROUP_ALLE, TOUR_TYPES, YEARS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { compareDifficulties, getTourWeekdays, isKurs } from "@/lib/utils";
 import { useCallback, useMemo } from "react";
@@ -13,10 +13,13 @@ const STATUS_ORDER: readonly TourStatus[] = [
 const GROUP_ORDER: string[] = GROUPS.map((g) => g.value);
 
 function groupRank(g: string): number {
-  // \"Alle\" (show all) should always sort first in the filter list
-  if (g === "Alle") return -1;
   const i = GROUP_ORDER.indexOf(g);
   return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+}
+
+/** Check if a tour applies to all groups (is not restricted to specific groups). */
+function tourAppliesToAllGroups(tour: Tour): boolean {
+  return tour.group.includes(SPECIAL_GROUP_ALLE);
 }
 
 export interface SelectedFilters {
@@ -88,7 +91,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
         (exclude === "eventTypes" || selectedEventTypes.size === 0 ||
           (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
           (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))) &&
-        (exclude === "groups" || selectedGroups.size === 0 || tour.group.some((g) => selectedGroups.has(g)))
+        (exclude === "groups" || selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g)))
       );
     });
   }, [tours, selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
@@ -133,7 +136,9 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
 
   const groups = useMemo(
     () => {
-      const allGroups = toursPassingAllExcept("groups").flatMap((t) => t.group);
+      const allGroups = toursPassingAllExcept("groups")
+        .flatMap((t) => t.group)
+        .filter((g: string) => g !== SPECIAL_GROUP_ALLE);
       return [...new Set(allGroups)].sort((a, b) => groupRank(a) - groupRank(b));
     },
     [toursPassingAllExcept],
@@ -169,7 +174,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
           (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
           (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))
         ) &&
-        (selectedGroups.size === 0 || tour.group.some((g) => selectedGroups.has(g)))
+        (selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g)))
       );
     },
     [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedGroups, selectedEventTypes],

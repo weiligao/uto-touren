@@ -32,8 +32,10 @@ export const EVENT_TYPES = [
 
 export const GROUP_DELIMITER = "|";
 
+/** Special group value meaning "applies to all groups" (not a selectable filter option). */
+export const SPECIAL_GROUP_ALLE = "Alle";
+
 export const GROUPS = [
-  { value: "Alle", label: "Alle" },
   { value: "Jugend", label: "Jugend" },
   { value: "Jung-Alpinist/innen", label: "Jung-Alpinist/innen" },
   { value: "Alpinist/innen", label: "Alpinist/innen" },
