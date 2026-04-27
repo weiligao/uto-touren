@@ -13,6 +13,7 @@ import {
   parseDateString,
   parseDuration,
   parseGermanDate,
+  parseLeaders,
   unknownIfEmpty
 } from "./utils";
 
@@ -393,5 +394,43 @@ describe("buildGoogleCalendarRegistrationUrl", () => {
     const url = buildGoogleCalendarRegistrationUrl(tour, "2026-03-30");
     const details = new URL(url).searchParams.get("details") ?? "";
     expect(details).toContain("Details: https://sac-uto.ch/de/touren/123");
+  });
+});
+
+describe("parseLeaders", () => {
+  it("parses single leader", () => {
+    expect(parseLeaders("Max Muster")).toEqual(["Max Muster"]);
+  });
+
+  it("parses multiple comma-separated leaders", () => {
+    expect(parseLeaders("Alice, Bob, Charlie")).toEqual(["Alice", "Bob", "Charlie"]);
+  });
+
+  it("trims whitespace around names", () => {
+    expect(parseLeaders("  Alice  ,  Bob  ")).toEqual(["Alice", "Bob"]);
+  });
+
+  it("filters out empty segments", () => {
+    expect(parseLeaders("Alice,,Bob")).toEqual(["Alice", "Bob"]);
+  });
+
+  it("filters trailing comma", () => {
+    expect(parseLeaders("Alice, Bob,")).toEqual(["Alice", "Bob"]);
+  });
+
+  it("handles leading comma", () => {
+    expect(parseLeaders(",Alice,Bob")).toEqual(["Alice", "Bob"]);
+  });
+
+  it("returns empty array for empty string", () => {
+    expect(parseLeaders("")).toEqual([]);
+  });
+
+  it("returns empty array for comma-only string", () => {
+    expect(parseLeaders(",,,")).toEqual([]);
+  });
+
+  it("returns empty array for whitespace-only string", () => {
+    expect(parseLeaders("   ,   ,   ")).toEqual([]);
   });
 });

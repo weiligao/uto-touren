@@ -84,7 +84,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     return tours.filter((tour) => {
       if (exclude !== "weekdays" && selectedWeekdays.size > 0) {
         const tourDays = getTourWeekdays(tour.start_date, tour.duration_days);
-        if (tourDays !== null && !tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
+        if (!tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
       }
       return (
         (exclude === "years" || selectedYears.size === 0 || selectedYears.has(tour.start_date.slice(0, 4))) &&
@@ -177,7 +177,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     (tour: Tour) => {
       if (selectedWeekdays.size > 0) {
         const tourDays = getTourWeekdays(tour.start_date, tour.duration_days);
-        if (tourDays !== null && !tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
+        if (!tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
       }
       return (
         (selectedYears.size === 0 || selectedYears.has(tour.start_date.slice(0, 4))) &&

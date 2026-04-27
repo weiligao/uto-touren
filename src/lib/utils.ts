@@ -97,11 +97,9 @@ export function unknownIfEmpty(value: string): string {
 
 /**
  * Parse a comma-separated leader string into an array of individual leader names.
- * Trims whitespace and filters empty strings.
- * Returns empty array if input is null, undefined, or empty.
+ * Splits by comma, trims whitespace, and filters out empty entries.
  */
 export function parseLeaders(leaderString: string): string[] {
-  if (!leaderString) { return []; }
   return leaderString
     .split(",")
     .map((leader) => leader.trim())

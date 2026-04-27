@@ -3,7 +3,7 @@
 import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS, TOUR_TYPES } from "@/lib/constants";
 import type { TourStatus } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
-import { memo, useId, useMemo, useState } from "react";
+import { memo, useEffect, useId, useMemo, useRef, useState } from "react";
 
 const TOUR_TYPE_LABEL = new Map<string, string>(TOUR_TYPES.map((t) => [t.value, t.label]));
 
@@ -487,6 +487,16 @@ function LeaderFilterRow({
 }) {
   const [searchText, setSearchText] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear blur timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const filteredLeaders = useMemo(
     () => leaders.filter((leader) => leader.toLowerCase().includes(searchText.toLowerCase())),
@@ -531,8 +541,12 @@ function LeaderFilterRow({
   };
 
   const handleInputBlur = () => {
+    // Clear any existing timeout to prevent stacking
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+    }
     // Delay blur to prevent dropdown from closing before option click registers
-    setTimeout(() => setShowDropdown(false), LEADER_SEARCH_BLUR_DELAY_MS);
+    blurTimeoutRef.current = setTimeout(() => setShowDropdown(false), LEADER_SEARCH_BLUR_DELAY_MS);
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
