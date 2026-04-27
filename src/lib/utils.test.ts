@@ -10,10 +10,10 @@ import {
   generateIcs,
   getTourWeekdays,
   isKurs,
-  na,
   parseDateString,
   parseDuration,
-  parseGermanDate
+  parseGermanDate,
+  unknownIfEmpty
 } from "./utils";
 
 describe("isKurs", () => {
@@ -145,9 +145,6 @@ describe("formatDate", () => {
 
 describe("getTourWeekdays", () => {
   // 2026-04-01 is a Wednesday (day 3)
-  it("returns null when start_date is null", () => {
-    expect(getTourWeekdays(null, 2)).toBeNull();
-  });
 
   it("1-day tour returns single weekday", () => {
     // 2026-04-01 = Wednesday = 3
@@ -188,13 +185,13 @@ describe("formatDuration", () => {
   });
 });
 
-describe("na", () => {
+describe("unknownIfEmpty", () => {
   it("returns value when non-empty", () => {
-    expect(na("hello")).toBe("hello");
+    expect(unknownIfEmpty("hello")).toBe("hello");
   });
 
   it("returns Unbekannt for empty string", () => {
-    expect(na("")).toBe("Unbekannt");
+    expect(unknownIfEmpty("")).toBe("Unbekannt");
   });
 });
 

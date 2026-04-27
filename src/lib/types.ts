@@ -6,7 +6,7 @@ export type TourStatus =
 
 export interface Tour {
   date: string;
-  start_date: string | null;
+  start_date: string;
   duration_days: number;
   tour_type: string;
   difficulty: string;

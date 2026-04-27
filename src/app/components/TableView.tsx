@@ -2,7 +2,7 @@
 
 import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { formatDate, formatDuration, formatGroups, isKurs, na } from "@/lib/utils";
+import { formatDate, formatDuration, formatGroups, isKurs, unknownIfEmpty } from "@/lib/utils";
 import { memo, useCallback, useMemo, useState } from "react";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
@@ -50,7 +50,7 @@ const TourRow = memo(function TourRow({
           <StatusDot status={tour.status} />
         </td>
         <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
-          {na(tour.tour_type)}
+          {unknownIfEmpty(tour.tour_type)}
         </td>
         <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
           {isKurs(tour.difficulty) ? EVENT_TYPE_KURS : EVENT_TYPE_TOUR}
@@ -66,7 +66,7 @@ const TourRow = memo(function TourRow({
           {formatDuration(tour.duration_days)}
         </td>
         <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
-          {na(tour.difficulty)}
+          {unknownIfEmpty(tour.difficulty)}
         </td>
         <td className="hidden sm:table-cell px-4 py-3 text-gray-700">
           {formatGroups(tour.group)}
@@ -74,7 +74,7 @@ const TourRow = memo(function TourRow({
         <td className="px-4 py-3 text-gray-900">
           <TourTitle title={tour.title} url={tour.detail_url} />
         </td>
-        <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{na(tour.leader)}</td>
+        <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{unknownIfEmpty(tour.leader)}</td>
         <td className="hidden sm:table-cell px-3 py-3 text-center">
           <CalendarExportButtons tour={tour} compact />
         </td>
@@ -113,7 +113,7 @@ const TourRow = memo(function TourRow({
             </div>
             <div>
               <dt className="font-medium text-gray-500">Tourtyp</dt>
-              <dd className="text-gray-800">{na(tour.tour_type)}</dd>
+              <dd className="text-gray-800">{unknownIfEmpty(tour.tour_type)}</dd>
             </div>
             <div>
               <dt className="font-medium text-gray-500">Anlasstyp</dt>
@@ -125,7 +125,7 @@ const TourRow = memo(function TourRow({
             </div>
             <div>
               <dt className="font-medium text-gray-500">Schwierigkeit</dt>
-              <dd className="text-gray-800">{na(tour.difficulty)}</dd>
+              <dd className="text-gray-800">{unknownIfEmpty(tour.difficulty)}</dd>
             </div>
             <div>
               <dt className="font-medium text-gray-500">Gruppe</dt>
@@ -133,7 +133,7 @@ const TourRow = memo(function TourRow({
             </div>
             <div>
               <dt className="font-medium text-gray-500">Leiter/in</dt>
-              <dd className="text-gray-800">{na(tour.leader)}</dd>
+              <dd className="text-gray-800">{unknownIfEmpty(tour.leader)}</dd>
             </div>
             <div className="flex items-end">
               <CalendarExportButtons tour={tour} />
@@ -180,6 +180,9 @@ export function TableView({
     groups,
     selectedGroups,
     setSelectedGroups,
+    leaders,
+    selectedLeaders,
+    setSelectedLeaders,
     resetFilters,
     matchesTour,
   } = useFilterState(tours, selectedFilters);
@@ -231,6 +234,9 @@ export function TableView({
         groups={groups}
         selectedGroups={selectedGroups}
         onGroupsChange={setSelectedGroups}
+        leaders={leaders}
+        selectedLeaders={selectedLeaders}
+        onLeadersChange={setSelectedLeaders}
       />
       <div className="overflow-x-auto">
         <table className="w-full text-sm" aria-label="Tourenliste">

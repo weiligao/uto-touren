@@ -2,7 +2,7 @@
 
 import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
-import { formatDuration, formatGroups, isKurs, na, parseDateString } from "@/lib/utils";
+import { formatDuration, formatGroups, isKurs, parseDateString, unknownIfEmpty } from "@/lib/utils";
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
@@ -190,7 +190,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         </div>
         <div>
           <dt className="font-medium text-gray-500">Tourtyp</dt>
-          <dd className="text-gray-800">{na(tour.tour_type)}</dd>
+          <dd className="text-gray-800">{unknownIfEmpty(tour.tour_type)}</dd>
         </div>
         <div>
           <dt className="font-medium text-gray-500">Anlasstyp</dt>
@@ -202,7 +202,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         </div>
         <div>
           <dt className="font-medium text-gray-500">Schwierigkeit</dt>
-          <dd className="text-gray-800">{na(tour.difficulty)}</dd>
+          <dd className="text-gray-800">{unknownIfEmpty(tour.difficulty)}</dd>
         </div>
         <div>
           <dt className="font-medium text-gray-500">Gruppe</dt>
@@ -210,7 +210,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         </div>
         <div>
           <dt className="font-medium text-gray-500">Leiter/in</dt>
-          <dd className="text-gray-800">{na(tour.leader)}</dd>
+          <dd className="text-gray-800">{unknownIfEmpty(tour.leader)}</dd>
         </div>
       </dl>
       <CalendarExportButtons tour={tour} onAfterDownload={onClose} fullWidth />
@@ -323,6 +323,9 @@ export function CalendarView({
     groups,
     selectedGroups,
     setSelectedGroups,
+    leaders,
+    selectedLeaders,
+    setSelectedLeaders,
     matchesTour,
   } = useFilterState(toursList, selectedFilters);
 
@@ -415,6 +418,9 @@ export function CalendarView({
         groups={groups}
         selectedGroups={selectedGroups}
         onGroupsChange={setSelectedGroups}
+        leaders={leaders}
+        selectedLeaders={selectedLeaders}
+        onLeadersChange={setSelectedLeaders}
       />
 
       {/* Month navigation */}
