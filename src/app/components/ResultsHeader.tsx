@@ -590,7 +590,7 @@ function LeaderFilterRow({
                     key={leader}
                     type="button"
                     role="option"
-                    aria-selected={selectedLeaders.has(leader)}
+                    aria-selected={selectedLeaders?.has(leader) ?? false}
                     onClick={() => handleLeaderSelect(leader)}
                     // Prevent blur when option is clicked; blur would close dropdown before handleLeaderSelect fires
                     onMouseDown={(e) => e.preventDefault()}
