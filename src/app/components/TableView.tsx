@@ -183,6 +183,7 @@ export function TableView({
     leaders,
     selectedLeaders,
     setSelectedLeaders,
+    titles,
     resetFilters,
     matchesTour,
   } = useFilterState(tours, selectedFilters);
@@ -237,6 +238,9 @@ export function TableView({
         leaders={leaders}
         selectedLeaders={selectedLeaders}
         onLeadersChange={setSelectedLeaders}
+        titles={titles}
+        selectedTitles={selectedFilters.selectedTitles}
+        onTitlesChange={selectedFilters.setSelectedTitles}
       />
       <div className="overflow-x-auto">
         <table className="w-full text-sm" aria-label="Tourenliste">

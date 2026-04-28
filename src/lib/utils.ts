@@ -63,7 +63,8 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-CH", {
 });
 
 /** Parse a YYYY-MM-DD date string as a local-time Date, avoiding UTC midnight shifting. */
-export function parseDateString(s: string): Date {
+export function
+  parseDateString(s: string): Date {
   const [y, m, d] = s.split("-").map(Number);
   return new Date(y, m - 1, d);
 }

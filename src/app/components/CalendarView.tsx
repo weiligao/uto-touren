@@ -326,6 +326,7 @@ export function CalendarView({
     leaders,
     selectedLeaders,
     setSelectedLeaders,
+    titles,
     matchesTour,
   } = useFilterState(toursList, selectedFilters);
 
@@ -360,7 +361,6 @@ export function CalendarView({
     }
     const newMonth = detectInitialMonth(visibleCalendarTours, yearNum);
     // Valid use case: auto-navigate calendar to first month with filtered events
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMonth(newMonth);
   }, [visibleCalendarTours, yearNum]);
 
@@ -421,6 +421,9 @@ export function CalendarView({
         leaders={leaders}
         selectedLeaders={selectedLeaders}
         onLeadersChange={setSelectedLeaders}
+        titles={titles}
+        selectedTitles={selectedFilters.selectedTitles}
+        onTitlesChange={selectedFilters.setSelectedTitles}
       />
 
       {/* Month navigation */}
