@@ -56,6 +56,12 @@ function HomeContent() {
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(() =>
     parseStringSet(searchParams.get("groups")),
   );
+  const [selectedLeaders, setSelectedLeaders] = useState<Set<string>>(() =>
+    parseStringSet(searchParams.get("leaders")),
+  );
+  const [selectedTitles, setSelectedTitles] = useState<Set<string>>(() =>
+    parseStringSet(searchParams.get("titles")),
+  );
 
   const selectedFilters: SelectedFilters = {
     selectedYears, setSelectedYears,
@@ -66,6 +72,8 @@ function HomeContent() {
     selectedDifficulties, setSelectedDifficulties,
     selectedEventTypes, setSelectedEventTypes,
     selectedGroups, setSelectedGroups,
+    selectedLeaders, setSelectedLeaders,
+    selectedTitles, setSelectedTitles,
   };
 
   const [allTours, setAllTours] = useState<Tour[]>([]);
@@ -115,9 +123,7 @@ function HomeContent() {
     // If no year filter selected, find the minimum year from all tours to show from earliest available
     if (selectedYears.size === 0 && allTours.length > 0) {
       const parsedYears = allTours
-        .filter((t) => t.start_date !== null)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        .map((t) => parseInt(t.start_date!.slice(0, 4), 10))
+        .map((t) => parseInt(t.start_date.slice(0, 4), 10))
         .filter((year) => Number.isFinite(year));
       if (parsedYears.length > 0) {
         const minYear = Math.min(...parsedYears);
@@ -139,8 +145,10 @@ function HomeContent() {
     if (selectedDifficulties.size > 0) { params.set("difficulties", [...selectedDifficulties].join(",")); }
     if (selectedEventTypes.size > 0) { params.set("eventTypes", [...selectedEventTypes].join(",")); }
     if (selectedGroups.size > 0) { params.set("groups", [...selectedGroups].join(",")); }
+    if (selectedLeaders.size > 0) { params.set("leaders", [...selectedLeaders].join(",")); }
+    if (selectedTitles.size > 0) { params.set("titles", [...selectedTitles].join(",")); }
     window.history.replaceState(null, "", `?${params.toString()}`);
-  }, [selectedYears, selectedTourTypes, viewMode, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
+  }, [selectedYears, selectedTourTypes, viewMode, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles]);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 300);

@@ -1,6 +1,6 @@
 import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, GROUPS, SPECIAL_GROUP_ALLE, TOUR_TYPES, YEARS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { compareDifficulties, getTourWeekdays, isKurs } from "@/lib/utils";
+import { compareDifficulties, getTourWeekdays, isKurs, parseLeaders } from "@/lib/utils";
 import { useCallback, useMemo } from "react";
 
 const STATUS_ORDER: readonly TourStatus[] = [
@@ -39,6 +39,10 @@ export interface SelectedFilters {
   setSelectedEventTypes: (v: Set<string>) => void;
   selectedGroups: Set<string>;
   setSelectedGroups: (v: Set<string>) => void;
+  selectedLeaders: Set<string>;
+  setSelectedLeaders: (v: Set<string>) => void;
+  selectedTitles: Set<string>;
+  setSelectedTitles: (v: Set<string>) => void;
 }
 
 export interface FilterState extends SelectedFilters {
@@ -49,6 +53,8 @@ export interface FilterState extends SelectedFilters {
   difficulties: string[];
   eventTypes: string[];
   groups: string[];
+  leaders: string[];
+  titles: string[];
   /** Reset all filter dimensions to "show all". */
   resetFilters: () => void;
   /** Returns true if the tour passes all currently active filters. */
@@ -71,19 +77,21 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     selectedDifficulties, setSelectedDifficulties,
     selectedEventTypes, setSelectedEventTypes,
     selectedGroups, setSelectedGroups,
+    selectedLeaders, setSelectedLeaders,
+    selectedTitles, setSelectedTitles,
   } = selected;
 
   // For faceted search: each dimension's options come from tours that pass
   // every OTHER active filter. This keeps options relevant to the current selection.
 
-  const toursPassingAllExcept = useCallback((exclude: "years" | "tourTypes" | "statuses" | "weekdays" | "durations" | "difficulties" | "eventTypes" | "groups") => {
+  const toursPassingAllExcept = useCallback((exclude: "years" | "tourTypes" | "statuses" | "weekdays" | "durations" | "difficulties" | "eventTypes" | "groups" | "leaders" | "titles") => {
     return tours.filter((tour) => {
       if (exclude !== "weekdays" && selectedWeekdays.size > 0) {
         const tourDays = getTourWeekdays(tour.start_date, tour.duration_days);
-        if (tourDays !== null && !tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
+        if (!tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
       }
       return (
-        (exclude === "years" || selectedYears.size === 0 || selectedYears.has(tour.start_date?.slice(0, 4) ?? "")) &&
+        (exclude === "years" || selectedYears.size === 0 || selectedYears.has(tour.start_date.slice(0, 4))) &&
         (exclude === "tourTypes" || selectedTourTypes.size === 0 || selectedTourTypes.has(tour.tour_type)) &&
         (exclude === "statuses" || selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
         (exclude === "durations" || selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
@@ -91,13 +99,15 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
         (exclude === "eventTypes" || selectedEventTypes.size === 0 ||
           (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
           (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))) &&
-        (exclude === "groups" || selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g)))
+        (exclude === "groups" || selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g))) &&
+        (exclude === "leaders" || selectedLeaders.size === 0 || parseLeaders(tour.leader).some((leader) => selectedLeaders.has(leader))) &&
+        (exclude === "titles" || selectedTitles.size === 0 || selectedTitles.has(tour.title))
       );
     });
-  }, [tours, selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups]);
+  }, [tours, selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles]);
 
   const years = useMemo(
-    () => YEARS.filter((y) => toursPassingAllExcept("years").some((t) => t.start_date?.startsWith(y))),
+    () => YEARS.filter((y) => toursPassingAllExcept("years").some((t) => t.start_date.startsWith(y))),
     [toursPassingAllExcept],
   );
 
@@ -144,6 +154,23 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     [toursPassingAllExcept],
   );
 
+  const leaders = useMemo(
+    () => {
+      const allLeaders = toursPassingAllExcept("leaders")
+        .flatMap((t) => parseLeaders(t.leader));
+      return [...new Set(allLeaders)].sort((a, b) => a.localeCompare(b));
+    },
+    [toursPassingAllExcept],
+  );
+
+  const titles = useMemo(
+    () => {
+      const allTitles = toursPassingAllExcept("titles").map((t) => t.title);
+      return [...new Set(allTitles)].sort((a, b) => a.localeCompare(b));
+    },
+    [toursPassingAllExcept],
+  );
+
   // Setters from useState are stable — per React docs, they don't need to be in deps.
   // Including them here to satisfy React Compiler analysis.
   const resetFilters = useCallback(() => {
@@ -155,18 +182,19 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     setSelectedDifficulties(new Set());
     setSelectedEventTypes(new Set());
     setSelectedGroups(new Set());
-  }, [setSelectedYears, setSelectedTourTypes, setSelectedStatuses, setSelectedWeekdays, setSelectedDurations, setSelectedDifficulties, setSelectedEventTypes, setSelectedGroups]);
+    setSelectedLeaders(new Set());
+    setSelectedTitles(new Set());
+  }, [setSelectedYears, setSelectedTourTypes, setSelectedStatuses, setSelectedWeekdays, setSelectedDurations, setSelectedDifficulties, setSelectedEventTypes, setSelectedGroups, setSelectedLeaders, setSelectedTitles]);
 
   // Setters are not used; only the selected* state values are checked.
   const matchesTour = useCallback(
     (tour: Tour) => {
       if (selectedWeekdays.size > 0) {
-        // getTourWeekdays returns null when start_date is absent — skip weekday filtering for those tours.
         const tourDays = getTourWeekdays(tour.start_date, tour.duration_days);
-        if (tourDays !== null && !tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
+        if (!tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
       }
       return (
-        (selectedYears.size === 0 || selectedYears.has(tour.start_date?.slice(0, 4) ?? "")) &&
+        (selectedYears.size === 0 || selectedYears.has(tour.start_date.slice(0, 4))) &&
         (selectedTourTypes.size === 0 || selectedTourTypes.has(tour.tour_type)) &&
         (selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
         (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
@@ -175,10 +203,12 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
           (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
           (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))
         ) &&
-        (selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g)))
+        (selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g))) &&
+        (selectedLeaders.size === 0 || parseLeaders(tour.leader).some((leader) => selectedLeaders.has(leader))) &&
+        (selectedTitles.size === 0 || selectedTitles.has(tour.title))
       );
     },
-    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups],
+    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles],
   );
 
   return {
@@ -190,6 +220,8 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     difficulties,
     eventTypes,
     groups,
+    leaders,
+    titles,
     resetFilters,
     matchesTour,
   };

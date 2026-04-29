@@ -76,10 +76,11 @@ export function parseTourRows(html: string, year: number): Tour[] {
 
     const dateStr = text[CELL.DATE];
     const startDate = parseGermanDate(dateStr, year);
+    if (!startDate) { return; } // Skip tours with unparseable dates
 
     tours.push({
       date: dateStr,
-      start_date: startDate ? toIsoDate(startDate) : null,
+      start_date: toIsoDate(startDate),
       duration_days: parseDuration(text[CELL.DURATION]),
       tour_type: text[CELL.TOUR_TYPE],
       difficulty: text[CELL.DIFFICULTY],

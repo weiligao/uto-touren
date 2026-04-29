@@ -3,7 +3,7 @@
 import { STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS, TOUR_TYPES } from "@/lib/constants";
 import type { TourStatus } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
-import { memo, useId, useState } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 const TOUR_TYPE_LABEL = new Map<string, string>(TOUR_TYPES.map((t) => [t.value, t.label]));
 
@@ -91,6 +91,277 @@ function FilterRow({
   );
 }
 
+const SEARCHABLE_FILTER_BLUR_DELAY_MS = 200;
+
+/**
+ * Reusable searchable filter dropdown for multi-select filtering.
+ * Features case-insensitive search, keyboard support (Escape), and accessible dropdown.
+ * Memoized for performance since it receives many props and renders frequently.
+ */
+const SearchableFilterRow = memo(function SearchableFilterRow({
+  labelId,
+  label,
+  placeholder,
+  items,
+  selected,
+  onItemsChange,
+  notFoundMessage,
+  resetLabel,
+  dropdownId,
+}: {
+  labelId: string;
+  label: string;
+  placeholder: string;
+  items: string[];
+  selected?: Set<string>;
+  onItemsChange?: (v: Set<string>) => void;
+  notFoundMessage: string;
+  resetLabel: string;
+  dropdownId: string;
+}) {
+  const [searchText, setSearchText] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTextRef = useRef("");
+  const dropdownButtonsRef = useRef(new Map<number, HTMLButtonElement>());
+
+  // Clear blur timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Keep searchTextRef in sync with searchText state for use in callbacks
+  useEffect(() => {
+    searchTextRef.current = searchText;
+  }, [searchText]);
+
+  const filteredItems = useMemo(
+    () => items.filter((item) => item.toLowerCase().includes(searchText.toLowerCase())),
+    [items, searchText],
+  );
+
+  const hasActive = !!selected?.size;
+  const selectedList = useMemo(() => Array.from(selected ?? []), [selected]);
+  const availableItems = useMemo(
+    () => filteredItems.filter((item) => !selected?.has(item)),
+    [filteredItems, selected],
+  );
+  const isDropdownVisible = showDropdown && searchText;
+
+  // Clear button refs when available items change
+  useEffect(() => {
+    dropdownButtonsRef.current.clear();
+  }, [availableItems]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchText(value);
+    setShowDropdown(value.length > 0);
+    setFocusedIndex(-1);
+  }, []);
+
+  const handleItemSelect = useCallback(
+    (item: string) => {
+      onItemsChange?.(toggleSet(selected, item));
+      setSearchText("");
+      setShowDropdown(false);
+    },
+    [selected, onItemsChange],
+  );
+
+  const handleReset = useCallback(() => {
+    onItemsChange?.(new Set());
+    setSearchText("");
+    setShowDropdown(false);
+  }, [onItemsChange]);
+
+  const handleInputFocus = useCallback(() => {
+    // Use ref to check current search text without creating dependency on searchText
+    // This prevents callback recreation on every keystroke
+    if (searchTextRef.current.length > 0) {
+      setShowDropdown(true);
+    }
+  }, []);
+
+  const handleInputBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    // If focus is moving to a dropdown option, keep dropdown open for keyboard navigation
+    if (relatedTarget?.getAttribute('role') === 'option') {
+      return;
+    }
+    
+    // Otherwise close dropdown with delay (allows time to click items with mouse)
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+    }
+    blurTimeoutRef.current = setTimeout(
+      () => setShowDropdown(false),
+      SEARCHABLE_FILTER_BLUR_DELAY_MS,
+    );
+  }, []);
+
+  const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      setShowDropdown(false);
+      setSearchText("");
+      setFocusedIndex(-1);
+      return;
+    }
+
+    // Keyboard navigation for listbox
+    if (!isDropdownVisible) {
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setFocusedIndex((prev) => {
+        const newIndex = prev + 1;
+        if (newIndex < availableItems.length) {
+          setTimeout(() => {
+            dropdownButtonsRef.current.get(newIndex)?.focus();
+          }, 0);
+          return newIndex;
+        }
+        return prev;
+      });
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setFocusedIndex((prev) => {
+        if (prev > 0) {
+          const newIndex = prev - 1;
+          setTimeout(() => {
+            dropdownButtonsRef.current.get(newIndex)?.focus();
+          }, 0);
+          return newIndex;
+        } else if (prev === 0) {
+          // Move focus back to input
+          const inputElement = e.currentTarget as HTMLInputElement;
+          inputElement.focus();
+          return -1;
+        }
+        return prev;
+      });
+    } else if (e.key === "Enter" && focusedIndex >= 0) {
+      e.preventDefault();
+      handleItemSelect(availableItems[focusedIndex]);
+      setFocusedIndex(-1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setFocusedIndex(0);
+      setTimeout(() => {
+        dropdownButtonsRef.current.get(0)?.focus();
+      }, 0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      const lastIndex = availableItems.length - 1;
+      setFocusedIndex(lastIndex);
+      setTimeout(() => {
+        dropdownButtonsRef.current.get(lastIndex)?.focus();
+      }, 0);
+    }
+  }, [isDropdownVisible, availableItems, focusedIndex, handleItemSelect]);
+
+  return (
+    <div
+      role="group"
+      aria-labelledby={labelId}
+      className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-y-1.5 gap-x-4 items-start"
+    >
+      <div className="flex items-center gap-1.5 sm:pt-1">
+        <span
+          id={labelId}
+          className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 shrink-0"
+        >
+          {label}
+        </span>
+        <ResetButton
+          label={resetLabel}
+          onReset={handleReset}
+          visible={hasActive}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder={placeholder}
+            value={searchText}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
+            className="w-full sm:max-w-sm px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={isDropdownVisible ? "true" : "false"}
+            aria-haspopup="listbox"
+            aria-label={placeholder}
+            aria-controls={dropdownId}
+          />
+
+          {isDropdownVisible && (
+            <div
+              id={dropdownId}
+              role="listbox"
+              className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-md z-10 max-h-48 overflow-y-auto"
+            >
+              {availableItems.length > 0 ? (
+                availableItems.map((item, idx) => (
+                  <button
+                    key={`${item}-${idx}`}
+                    ref={(el) => {
+                      if (el) {
+                        dropdownButtonsRef.current.set(idx, el);
+                      }
+                    }}
+                    type="button"
+                    role="option"
+                    aria-selected={selected?.has(item) ?? false}
+                    onFocus={() => setFocusedIndex(idx)}
+                    onClick={() => handleItemSelect(item)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    className={`w-full text-left px-3 py-2 text-sm border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${
+                      focusedIndex === idx ? "bg-blue-100" : "hover:bg-blue-50"
+                    } text-gray-700`}
+                  >
+                    {item}
+                  </button>
+                ))
+              ) : (
+                <div role="status" className="px-3 py-2 text-sm text-gray-500 italic">
+                  {notFoundMessage}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {selectedList.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {selectedList.map((item, idx) => (
+              <button
+                key={`selected-${item}-${idx}`}
+                type="button"
+                aria-pressed={true}
+                aria-label={`${item} entfernen`}
+                onClick={() => handleItemSelect(item)}
+                className={`${chipBase} ${chipActive}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 export const ResultsHeader = memo(function ResultsHeader({
   totalScraped,
   visibleCount,
@@ -117,6 +388,12 @@ export const ResultsHeader = memo(function ResultsHeader({
   groups,
   selectedGroups,
   onGroupsChange,
+  leaders,
+  selectedLeaders,
+  onLeadersChange,
+  titles,
+  selectedTitles,
+  onTitlesChange,
 }: {
   totalScraped: number;
   visibleCount: number;
@@ -143,6 +420,12 @@ export const ResultsHeader = memo(function ResultsHeader({
   groups?: string[];
   selectedGroups?: Set<string>;
   onGroupsChange?: (v: Set<string>) => void;
+  leaders?: string[];
+  selectedLeaders?: Set<string>;
+  onLeadersChange?: (v: Set<string>) => void;
+  titles?: string[];
+  selectedTitles?: Set<string>;
+  onTitlesChange?: (v: Set<string>) => void;
 }) {
   const hasFilterRows =
     !!(years && years.length > 1) ||
@@ -153,7 +436,9 @@ export const ResultsHeader = memo(function ResultsHeader({
     !!(durations && durations.length > 1) ||
     !!(difficulties && difficulties.length > 1) ||
     !!(eventTypes && eventTypes.length > 1) ||
-    !!(groups && groups.length > 1);
+    !!(groups && groups.length > 1) ||
+    !!(leaders && leaders.length > 1) ||
+    !!(titles && titles.length > 1);
   const activeFilterCount =
     (selectedYears?.size ?? 0) +
     (selectedTourTypes?.size ?? 0) +
@@ -162,7 +447,9 @@ export const ResultsHeader = memo(function ResultsHeader({
     (selectedDurations?.size ?? 0) +
     (selectedDifficulties?.size ?? 0) +
     (selectedEventTypes?.size ?? 0) +
-    (selectedGroups?.size ?? 0);
+    (selectedGroups?.size ?? 0) +
+    (selectedLeaders?.size ?? 0) +
+    (selectedTitles?.size ?? 0);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const filterPanelId = useId();
   const yearLabelId = useId();
@@ -173,6 +460,8 @@ export const ResultsHeader = memo(function ResultsHeader({
   const difficultyLabelId = useId();
   const eventTypeLabelId = useId();
   const groupLabelId = useId();
+  const leaderLabelId = useId();
+  const titleLabelId = useId();
 
   return (
     <div className="border-b border-gray-200">
@@ -235,6 +524,7 @@ export const ResultsHeader = memo(function ResultsHeader({
         <div
           id={filterPanelId}
           hidden={!filtersOpen}
+          aria-hidden={!filtersOpen}
           className="border-t border-gray-100 bg-gray-50/60 px-6 py-4 flex flex-col gap-4"
         >
           {statuses && statuses.length > 1 && (
@@ -448,10 +738,39 @@ export const ResultsHeader = memo(function ResultsHeader({
               })}
             </FilterRow>
           )}
+
+          {leaders && leaders.length > 1 && (
+            <SearchableFilterRow
+              labelId={leaderLabelId}
+              label="Leiter/in"
+              placeholder="Nach Name suchen…"
+              items={leaders}
+              selected={selectedLeaders}
+              onItemsChange={onLeadersChange}
+              notFoundMessage="Keine Leiter/innen gefunden"
+              resetLabel="Leiter/in-Filter zurücksetzen"
+              dropdownId="leader-dropdown"
+            />
+          )}
+
+          {titles && titles.length > 1 && (
+            <SearchableFilterRow
+              labelId={titleLabelId}
+              label="Titel"
+              placeholder="Nach Titel suchen…"
+              items={titles}
+              selected={selectedTitles}
+              onItemsChange={onTitlesChange}
+              notFoundMessage="Keine Titel gefunden"
+              resetLabel="Titel-Filter zurücksetzen"
+              dropdownId="title-dropdown"
+            />
+          )}
         </div>
       )}
     </div>
   );
 });
+
 
 

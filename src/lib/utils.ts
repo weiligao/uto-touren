@@ -63,7 +63,8 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-CH", {
 });
 
 /** Parse a YYYY-MM-DD date string as a local-time Date, avoiding UTC midnight shifting. */
-export function parseDateString(s: string): Date {
+export function
+  parseDateString(s: string): Date {
   const [y, m, d] = s.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
@@ -80,10 +81,8 @@ export function formatDuration(days: number): string {
 /**
  * Returns the ordered array of JS day-of-week indices (0=Sun, 1=Mon … 6=Sat)
  * for every calendar day covered by a tour (start_date inclusive, +durationDays exclusive).
- * Returns null when start_date is null or empty.
  */
-export function getTourWeekdays(startDate: string | null, durationDays: number): number[] | null {
-  if (!startDate) { return null; }
+export function getTourWeekdays(startDate: string, durationDays: number): number[] {
   const start = parseDateString(startDate);
   const days: number[] = [];
   for (let i = 0; i < durationDays; i++) {
@@ -92,13 +91,25 @@ export function getTourWeekdays(startDate: string | null, durationDays: number):
   return days;
 }
 
-export function na(value: string): string {
+/** Fallback to 'Unbekannt' (unknown) if value is empty or falsy. */
+export function unknownIfEmpty(value: string): string {
   return value || "Unbekannt";
 }
 
-/** Format array of groups as comma-separated string, with fallback for empty arrays. */
+/**
+ * Parse a comma-separated leader string into an array of individual leader names.
+ * Splits by comma, trims whitespace, and filters out empty entries.
+ */
+export function parseLeaders(leaderString: string): string[] {
+  return leaderString
+    .split(",")
+    .map((leader) => leader.trim())
+    .filter((leader) => leader.length > 0);
+}
+
+/** Format array of groups as comma-separated string, falling back to 'Unbekannt' if empty. */
 export function formatGroups(groups: string[]): string {
-  return na(groups.join(", "));
+  return unknownIfEmpty(groups.join(", "));
 }
 
 function icsDate(dt: Date): string {
@@ -179,10 +190,9 @@ function buildDetailsParam(detailUrl: string | null, description?: string): stri
 
 /**
  * Build a Google Calendar "Add event" URL for the tour's main event.
- * Only call this when `tour.start_date` is non-null.
  */
 export function buildGoogleCalendarUrl(
-  tour: Tour & { start_date: string },
+  tour: Tour,
   description?: string,
 ): string {
   const start = parseDateString(tour.start_date);
@@ -199,10 +209,9 @@ export function buildGoogleCalendarUrl(
 
 /**
  * Build a Google Calendar "Add event" URL for the registration reminder.
- * Only call this when `tour.start_date` is non-null.
  */
 export function buildGoogleCalendarRegistrationUrl(
-  tour: Tour & { start_date: string },
+  tour: Tour,
   registrationDate: string,
   description?: string,
 ): string {
@@ -220,10 +229,9 @@ export function buildGoogleCalendarRegistrationUrl(
 
 /**
  * Trigger a browser download of an ICS file for the given tour.
- * Only call this when `tour.start_date` is non-null.
  */
 export function downloadIcs(
-  tour: Tour & { start_date: string },
+  tour: Tour,
   description?: string,
   registrationDate?: string,
 ): void {
@@ -241,10 +249,9 @@ export function downloadIcs(
 
 /**
  * Generate an ICS (iCalendar) string for a tour as a full-day event.
- * Only call this when `tour.start_date` is non-null.
  */
 export function generateIcs(
-  tour: Tour & { start_date: string },
+  tour: Tour,
   description?: string,
   registrationDate?: string,
 ): string {
