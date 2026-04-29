@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/weiligao/uto-touren/compare/v1.14.0...v1.15.0) (2026-04-29)
+
+
+### Features
+
+* increase font size in tour leader and tour title filter inputs ([#73](https://github.com/weiligao/uto-touren/issues/73)) ([f6a78ff](https://github.com/weiligao/uto-touren/commit/f6a78ff227d81454e22ecda7b8fc720a24517673))
+
 ## [1.14.0](https://github.com/weiligao/uto-touren/compare/v1.13.0...v1.14.0) (2026-04-29)
 
 
