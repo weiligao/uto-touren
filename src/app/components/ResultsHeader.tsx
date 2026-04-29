@@ -170,8 +170,8 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
       onItemsChange?.(toggleSet(selected, item));
       setSearchText("");
       setShowDropdown(false);
-      // Blur input to zoom out on mobile
-      inputRef.current?.blur();
+      // Blur input after state settles to zoom out on mobile
+      setTimeout(() => inputRef.current?.blur(), 0);
     },
     [selected, onItemsChange],
   );
