@@ -124,7 +124,6 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchTextRef = useRef("");
-  const inputRef = useRef<HTMLInputElement>(null);
   const dropdownButtonsRef = useRef(new Map<number, HTMLButtonElement>());
 
   // Clear blur timeout on unmount
@@ -170,8 +169,6 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
       onItemsChange?.(toggleSet(selected, item));
       setSearchText("");
       setShowDropdown(false);
-      // Blur input after state settles to zoom out on mobile
-      setTimeout(() => inputRef.current?.blur(), 0);
     },
     [selected, onItemsChange],
   );
@@ -291,7 +288,6 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
       <div className="flex flex-col gap-2">
         <div className="relative">
           <input
-            ref={inputRef}
             type="text"
             placeholder={placeholder}
             value={searchText}
@@ -299,7 +295,7 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             onKeyDown={handleInputKeyDown}
-            className="w-full sm:max-w-sm px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full sm:max-w-sm px-3 py-2 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             role="combobox"
             aria-autocomplete="list"
             aria-expanded={isDropdownVisible ? "true" : "false"}
