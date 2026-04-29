@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/weiligao/uto-touren/compare/v1.13.0...v1.14.0) (2026-04-29)
+
+
+### Features
+
+* filter by leader name & tour title ([#71](https://github.com/weiligao/uto-touren/issues/71)) ([059bb10](https://github.com/weiligao/uto-touren/commit/059bb10f4958c66917254674103d0fd0c2ae3b97))
+
 ## [1.13.0](https://github.com/weiligao/uto-touren/compare/v1.12.0...v1.13.0) (2026-04-15)
 
 
