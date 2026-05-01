@@ -394,6 +394,8 @@ export const ResultsHeader = memo(function ResultsHeader({
   titles,
   selectedTitles,
   onTitlesChange,
+  showPastTours,
+  onShowPastToursChange,
 }: {
   totalScraped: number;
   visibleCount: number;
@@ -426,6 +428,8 @@ export const ResultsHeader = memo(function ResultsHeader({
   titles?: string[];
   selectedTitles?: Set<string>;
   onTitlesChange?: (v: Set<string>) => void;
+  showPastTours: boolean;
+  onShowPastToursChange: (v: boolean) => void;
 }) {
   const hasFilterRows =
     !!(years && years.length > 1) ||
@@ -527,6 +531,20 @@ export const ResultsHeader = memo(function ResultsHeader({
           aria-hidden={!filtersOpen}
           className="border-t border-gray-100 bg-gray-50/60 px-6 py-4 flex flex-col gap-4"
         >
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="show-past-tours"
+              checked={showPastTours}
+              onChange={(e) => onShowPastToursChange(e.target.checked)}
+              aria-label="Abgelaufene Touren anzeigen oder verbergen"
+              className="w-4 h-4 cursor-pointer"
+            />
+            <label htmlFor="show-past-tours" className="text-sm text-gray-700 cursor-pointer">
+              Vergangene Touren anzeigen
+            </label>
+          </div>
+
           {statuses && statuses.length > 1 && (
             <FilterRow
               labelId={statusLabelId}
@@ -560,10 +578,10 @@ export const ResultsHeader = memo(function ResultsHeader({
           {tourTypes && tourTypes.length > 1 && (
             <FilterRow
               labelId={tourTypeLabelId}
-              label="Tourtyp"
+              label="Typ"
               hasActive={!!selectedTourTypes?.size}
               onReset={() => onTourTypesChange?.(new Set())}
-              resetLabel="Tourtyp-Filter zurücksetzen"
+              resetLabel="Typ-Filter zurücksetzen"
             >
               {tourTypes.map((tt) => {
                 const active = selectedTourTypes?.has(tt) ?? false;
@@ -586,10 +604,10 @@ export const ResultsHeader = memo(function ResultsHeader({
           {eventTypes && eventTypes.length > 1 && (
             <FilterRow
               labelId={eventTypeLabelId}
-              label="Anlasstyp"
+              label="Anlass"
               hasActive={!!selectedEventTypes?.size}
               onReset={() => onEventTypesChange?.(new Set())}
-              resetLabel="Anlasstyp-Filter zurücksetzen"
+              resetLabel="Anlass-Filter zurücksetzen"
             >
               {eventTypes.map((et) => {
                 const active = selectedEventTypes?.has(et) ?? false;

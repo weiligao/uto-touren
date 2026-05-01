@@ -43,6 +43,8 @@ export interface SelectedFilters {
   setSelectedLeaders: (v: Set<string>) => void;
   selectedTitles: Set<string>;
   setSelectedTitles: (v: Set<string>) => void;
+  showPastTours: boolean;
+  setShowPastTours: (v: boolean) => void;
 }
 
 export interface FilterState extends SelectedFilters {
@@ -79,7 +81,14 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     selectedGroups, setSelectedGroups,
     selectedLeaders, setSelectedLeaders,
     selectedTitles, setSelectedTitles,
+    showPastTours, setShowPastTours,
   } = selected;
+
+  // Memoize today's date string to avoid recomputing for every tour
+  const todayString = useMemo(
+    () => new Date().toISOString().split("T")[0],
+    [], // Recompute once per day
+  );
 
   // For faceted search: each dimension's options come from tours that pass
   // every OTHER active filter. This keeps options relevant to the current selection.
@@ -193,6 +202,8 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
         const tourDays = getTourWeekdays(tour.start_date, tour.duration_days);
         if (!tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
       }
+      // Filter out past tours unless showPastTours is enabled
+      if (!showPastTours && tour.start_date <= todayString) { return false; }
       return (
         (selectedYears.size === 0 || selectedYears.has(tour.start_date.slice(0, 4))) &&
         (selectedTourTypes.size === 0 || selectedTourTypes.has(tour.tour_type)) &&
@@ -208,7 +219,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
         (selectedTitles.size === 0 || selectedTitles.has(tour.title))
       );
     },
-    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles],
+    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles, showPastTours, todayString],
   );
 
   return {

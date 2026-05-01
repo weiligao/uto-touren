@@ -189,11 +189,11 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
           </dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-500">Tourtyp</dt>
+          <dt className="font-medium text-gray-500">Typ</dt>
           <dd className="text-gray-800">{unknownIfEmpty(tour.tour_type)}</dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-500">Anlasstyp</dt>
+          <dt className="font-medium text-gray-500">Anlass</dt>
           <dd className="text-gray-800">{isKurs(tour.difficulty) ? EVENT_TYPE_KURS : EVENT_TYPE_TOUR}</dd>
         </div>
         <div>
@@ -424,6 +424,8 @@ export function CalendarView({
         titles={titles}
         selectedTitles={selectedFilters.selectedTitles}
         onTitlesChange={selectedFilters.setSelectedTitles}
+        showPastTours={selectedFilters.showPastTours}
+        onShowPastToursChange={selectedFilters.setShowPastTours}
       />
 
       {/* Month navigation */}
