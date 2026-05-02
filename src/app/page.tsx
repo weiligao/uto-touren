@@ -62,6 +62,9 @@ function HomeContent() {
   const [selectedTitles, setSelectedTitles] = useState<Set<string>>(() =>
     parseStringSet(searchParams.get("titles")),
   );
+  const [showPastTours, setShowPastTours] = useState<boolean>(() =>
+    searchParams.get("showPast") === "true",
+  );
 
   const selectedFilters: SelectedFilters = {
     selectedYears, setSelectedYears,
@@ -74,6 +77,7 @@ function HomeContent() {
     selectedGroups, setSelectedGroups,
     selectedLeaders, setSelectedLeaders,
     selectedTitles, setSelectedTitles,
+    showPastTours, setShowPastTours,
   };
 
   const [allTours, setAllTours] = useState<Tour[]>([]);
@@ -147,8 +151,9 @@ function HomeContent() {
     if (selectedGroups.size > 0) { params.set("groups", [...selectedGroups].join(",")); }
     if (selectedLeaders.size > 0) { params.set("leaders", [...selectedLeaders].join(",")); }
     if (selectedTitles.size > 0) { params.set("titles", [...selectedTitles].join(",")); }
+    if (showPastTours) { params.set("showPast", "true"); }
     window.history.replaceState(null, "", `?${params.toString()}`);
-  }, [selectedYears, selectedTourTypes, viewMode, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles]);
+  }, [selectedYears, selectedTourTypes, viewMode, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles, showPastTours]);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 300);

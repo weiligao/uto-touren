@@ -84,7 +84,7 @@ function FilterRow({
         </span>
         <ResetButton label={resetLabel} onReset={onReset} visible={hasActive} />
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex gap-1.5 overflow-x-auto whitespace-nowrap px-1 py-1 hide-scrollbar scrollable-chips sm:flex-wrap sm:overflow-visible sm:whitespace-normal">
         {children}
       </div>
     </div>
@@ -295,7 +295,7 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             onKeyDown={handleInputKeyDown}
-            className="w-full sm:max-w-sm px-3 py-2 border border-gray-300 rounded-md text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full sm:max-w-sm px-3 py-2 bg-gray-100 rounded-md text-base sm:text-sm placeholder:text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
             role="combobox"
             aria-autocomplete="list"
             aria-expanded={isDropdownVisible ? "true" : "false"}
@@ -342,7 +342,7 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
         </div>
 
         {selectedList.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex gap-1.5 overflow-x-auto whitespace-nowrap px-1 py-1 hide-scrollbar scrollable-chips sm:flex-wrap sm:overflow-visible sm:whitespace-normal">
             {selectedList.map((item, idx) => (
               <button
                 key={`selected-${item}-${idx}`}
@@ -394,6 +394,8 @@ export const ResultsHeader = memo(function ResultsHeader({
   titles,
   selectedTitles,
   onTitlesChange,
+  showPastTours,
+  onShowPastToursChange,
 }: {
   totalScraped: number;
   visibleCount: number;
@@ -426,6 +428,8 @@ export const ResultsHeader = memo(function ResultsHeader({
   titles?: string[];
   selectedTitles?: Set<string>;
   onTitlesChange?: (v: Set<string>) => void;
+  showPastTours: boolean;
+  onShowPastToursChange: (v: boolean) => void;
 }) {
   const hasFilterRows =
     !!(years && years.length > 1) ||
@@ -451,6 +455,17 @@ export const ResultsHeader = memo(function ResultsHeader({
     (selectedLeaders?.size ?? 0) +
     (selectedTitles?.size ?? 0);
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const advancedActiveCount =
+    (showPastTours ? 1 : 0) +
+    (selectedYears?.size ?? 0) +
+    (selectedGroups?.size ?? 0) +
+    (selectedDurations?.size ?? 0) +
+    (selectedDifficulties?.size ?? 0) +
+    (selectedLeaders?.size ?? 0) +
+    (selectedTitles?.size ?? 0);
+  const [advancedOpenLocal, setAdvancedOpenLocal] = useState(advancedActiveCount > 0);
+  const advancedOpen = advancedActiveCount > 0 || advancedOpenLocal;
+
   const filterPanelId = useId();
   const yearLabelId = useId();
   const tourTypeLabelId = useId();
@@ -560,10 +575,10 @@ export const ResultsHeader = memo(function ResultsHeader({
           {tourTypes && tourTypes.length > 1 && (
             <FilterRow
               labelId={tourTypeLabelId}
-              label="Tourtyp"
+              label="Typ"
               hasActive={!!selectedTourTypes?.size}
               onReset={() => onTourTypesChange?.(new Set())}
-              resetLabel="Tourtyp-Filter zurücksetzen"
+              resetLabel="Typ-Filter zurücksetzen"
             >
               {tourTypes.map((tt) => {
                 const active = selectedTourTypes?.has(tt) ?? false;
@@ -586,10 +601,10 @@ export const ResultsHeader = memo(function ResultsHeader({
           {eventTypes && eventTypes.length > 1 && (
             <FilterRow
               labelId={eventTypeLabelId}
-              label="Anlasstyp"
+              label="Anlass"
               hasActive={!!selectedEventTypes?.size}
               onReset={() => onEventTypesChange?.(new Set())}
-              resetLabel="Anlasstyp-Filter zurücksetzen"
+              resetLabel="Anlass-Filter zurücksetzen"
             >
               {eventTypes.map((et) => {
                 const active = selectedEventTypes?.has(et) ?? false;
@@ -603,32 +618,6 @@ export const ResultsHeader = memo(function ResultsHeader({
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
                     {et}
-                  </button>
-                );
-              })}
-            </FilterRow>
-          )}
-
-          {years && years.length > 1 && (
-            <FilterRow
-              labelId={yearLabelId}
-              label="Jahr"
-              hasActive={!!selectedYears?.size}
-              onReset={() => onYearsChange?.(new Set())}
-              resetLabel="Jahr-Filter zurücksetzen"
-            >
-              {years.map((y) => {
-                const active = selectedYears?.has(y) ?? false;
-                return (
-                  <button
-                    key={y}
-                    type="button"
-                    aria-pressed={active}
-                    aria-label={y}
-                    onClick={() => onYearsChange?.(toggleSet(selectedYears, y))}
-                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
-                  >
-                    {y}
                   </button>
                 );
               })}
@@ -661,111 +650,186 @@ export const ResultsHeader = memo(function ResultsHeader({
             </FilterRow>
           )}
 
-          {durations && durations.length > 1 && (
-            <FilterRow
-              labelId={durationLabelId}
-              label="Dauer (Tage)"
-              hasActive={!!selectedDurations?.size}
-              onReset={() => onDurationsChange?.(new Set())}
-              resetLabel="Dauer-Filter zurücksetzen"
+          <div className="border-t border-gray-100 pt-4">
+            <button
+              type="button"
+              aria-expanded={advancedOpen}
+              onClick={() => setAdvancedOpenLocal((v) => !v)}
+              className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
             >
-              {durations.map((d) => {
-                const active = selectedDurations?.has(d) ?? false;
-                return (
-                  <button
-                    key={d}
-                    type="button"
-                    aria-pressed={active}
-                    aria-label={formatDuration(d)}
-                    onClick={() => onDurationsChange?.(toggleSet(selectedDurations, d))}
-                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
-                  >
-                    {d}
-                  </button>
-                );
-              })}
-            </FilterRow>
-          )}
+              <span>Erweiterte Filter</span>
+              <svg
+                aria-hidden="true"
+                className={`h-4 w-4 transition-transform ${advancedOpen ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+              {advancedActiveCount > 0 && (
+                <span
+                  className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-blue-600 px-2 text-[11px] font-bold leading-none text-white"
+                  aria-label={`${advancedActiveCount} erweiterte Filter aktiv`}
+                >
+                  {advancedActiveCount}
+                </span>
+              )}
+            </button>
 
-          {difficulties && difficulties.length > 1 && (
-            <FilterRow
-              labelId={difficultyLabelId}
-              label="Schwierigkeit"
-              hasActive={!!selectedDifficulties?.size}
-              onReset={() => onDifficultiesChange?.(new Set())}
-              resetLabel="Schwierigkeits-Filter zurücksetzen"
-            >
-              {difficulties.map((d) => {
-                const active = selectedDifficulties?.has(d) ?? false;
-                return (
-                  <button
-                    key={d || "__empty__"}
-                    type="button"
-                    aria-pressed={active}
-                    aria-label={d || "Unbekannt"}
-                    onClick={() => onDifficultiesChange?.(toggleSet(selectedDifficulties, d))}
-                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
-                  >
-                    {d || "—"}
-                  </button>
-                );
-              })}
-            </FilterRow>
-          )}
+            <div hidden={!advancedOpen} aria-hidden={!advancedOpen} className="mt-4 flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  aria-pressed={showPastTours}
+                  onClick={() => onShowPastToursChange(!showPastTours)}
+                  aria-label="Abgelaufene Touren anzeigen oder verbergen"
+                  className="inline-flex items-center gap-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                >
+                  <span className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 ${showPastTours ? "bg-blue-600" : "bg-gray-200"}`}>
+                    <span
+                      aria-hidden="true"
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${showPastTours ? "translate-x-5" : "translate-x-0"}`}
+                    />
+                  </span>
+                  <span>Vergangene Touren anzeigen</span>
+                </button>
+              </div>
 
-          {groups && groups.length > 1 && (
-            <FilterRow
-              labelId={groupLabelId}
-              label="Gruppe"
-              hasActive={!!selectedGroups?.size}
-              onReset={() => onGroupsChange?.(new Set())}
-              resetLabel="Gruppen-Filter zurücksetzen"
-            >
-              {groups.map((g) => {
-                const active = selectedGroups?.has(g) ?? false;
-                return (
-                  <button
-                    key={g !== "" ? g : "__empty__"}
-                    type="button"
-                    aria-pressed={active}
-                    aria-label={g !== "" ? g : "Unbekannt"}
-                    onClick={() => onGroupsChange?.(toggleSet(selectedGroups, g))}
-                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
-                  >
-                    {g !== "" ? g : "—"}
-                  </button>
-                );
-              })}
-            </FilterRow>
-          )}
+              {years && years.length > 1 && (
+                <FilterRow
+                  labelId={yearLabelId}
+                  label="Jahr"
+                  hasActive={!!selectedYears?.size}
+                  onReset={() => onYearsChange?.(new Set())}
+                  resetLabel="Jahr-Filter zurücksetzen"
+                >
+                  {years.map((y) => {
+                    const active = selectedYears?.has(y) ?? false;
+                    return (
+                      <button
+                        key={y}
+                        type="button"
+                        aria-pressed={active}
+                        aria-label={y}
+                        onClick={() => onYearsChange?.(toggleSet(selectedYears, y))}
+                        className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                      >
+                        {y}
+                      </button>
+                    );
+                  })}
+                </FilterRow>
+              )}
 
-          {leaders && leaders.length > 1 && (
-            <SearchableFilterRow
-              labelId={leaderLabelId}
-              label="Leiter/in"
-              placeholder="Nach Name suchen…"
-              items={leaders}
-              selected={selectedLeaders}
-              onItemsChange={onLeadersChange}
-              notFoundMessage="Keine Leiter/innen gefunden"
-              resetLabel="Leiter/in-Filter zurücksetzen"
-              dropdownId="leader-dropdown"
-            />
-          )}
+              {groups && groups.length > 1 && (
+                <FilterRow
+                  labelId={groupLabelId}
+                  label="Gruppe"
+                  hasActive={!!selectedGroups?.size}
+                  onReset={() => onGroupsChange?.(new Set())}
+                  resetLabel="Gruppen-Filter zurücksetzen"
+                >
+                  {groups.map((g) => {
+                    const active = selectedGroups?.has(g) ?? false;
+                    return (
+                      <button
+                        key={g !== "" ? g : "__empty__"}
+                        type="button"
+                        aria-pressed={active}
+                        aria-label={g !== "" ? g : "Unbekannt"}
+                        onClick={() => onGroupsChange?.(toggleSet(selectedGroups, g))}
+                        className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                      >
+                        {g !== "" ? g : "—"}
+                      </button>
+                    );
+                  })}
+                </FilterRow>
+              )}
 
-          {titles && titles.length > 1 && (
-            <SearchableFilterRow
-              labelId={titleLabelId}
-              label="Titel"
-              placeholder="Nach Titel suchen…"
-              items={titles}
-              selected={selectedTitles}
-              onItemsChange={onTitlesChange}
-              notFoundMessage="Keine Titel gefunden"
-              resetLabel="Titel-Filter zurücksetzen"
-              dropdownId="title-dropdown"
-            />
-          )}
+              {durations && durations.length > 1 && (
+                <FilterRow
+                  labelId={durationLabelId}
+                  label="Dauer (Tage)"
+                  hasActive={!!selectedDurations?.size}
+                  onReset={() => onDurationsChange?.(new Set())}
+                  resetLabel="Dauer-Filter zurücksetzen"
+                >
+                  {durations.map((d) => {
+                    const active = selectedDurations?.has(d) ?? false;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        aria-pressed={active}
+                        aria-label={formatDuration(d)}
+                        onClick={() => onDurationsChange?.(toggleSet(selectedDurations, d))}
+                        className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                      >
+                        {d}
+                      </button>
+                    );
+                  })}
+                </FilterRow>
+              )}
+
+              {difficulties && difficulties.length > 1 && (
+                <FilterRow
+                  labelId={difficultyLabelId}
+                  label="Schwierigkeit"
+                  hasActive={!!selectedDifficulties?.size}
+                  onReset={() => onDifficultiesChange?.(new Set())}
+                  resetLabel="Schwierigkeits-Filter zurücksetzen"
+                >
+                  {difficulties.map((d) => {
+                    const active = selectedDifficulties?.has(d) ?? false;
+                    return (
+                      <button
+                        key={d || "__empty__"}
+                        type="button"
+                        aria-pressed={active}
+                        aria-label={d || "Unbekannt"}
+                        onClick={() => onDifficultiesChange?.(toggleSet(selectedDifficulties, d))}
+                        className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                      >
+                        {d || "—"}
+                      </button>
+                    );
+                  })}
+                </FilterRow>
+              )}
+
+              {leaders && leaders.length > 1 && (
+                <SearchableFilterRow
+                  labelId={leaderLabelId}
+                  label="Leiter/in"
+                  placeholder="Nach Name suchen…"
+                  items={leaders}
+                  selected={selectedLeaders}
+                  onItemsChange={onLeadersChange}
+                  notFoundMessage="Keine Leiter/innen gefunden"
+                  resetLabel="Leiter/in-Filter zurücksetzen"
+                  dropdownId="leader-dropdown"
+                />
+              )}
+
+              {titles && titles.length > 1 && (
+                <SearchableFilterRow
+                  labelId={titleLabelId}
+                  label="Titel"
+                  placeholder="Nach Titel suchen…"
+                  items={titles}
+                  selected={selectedTitles}
+                  onItemsChange={onTitlesChange}
+                  notFoundMessage="Keine Titel gefunden"
+                  resetLabel="Titel-Filter zurücksetzen"
+                  dropdownId="title-dropdown"
+                />
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
