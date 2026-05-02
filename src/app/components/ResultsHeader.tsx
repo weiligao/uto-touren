@@ -457,6 +457,8 @@ export const ResultsHeader = memo(function ResultsHeader({
   const [filtersOpen, setFiltersOpen] = useState(true);
   const advancedActiveCount =
     (showPastTours ? 1 : 0) +
+    (selectedYears?.size ?? 0) +
+    (selectedGroups?.size ?? 0) +
     (selectedDurations?.size ?? 0) +
     (selectedDifficulties?.size ?? 0) +
     (selectedLeaders?.size ?? 0) +
@@ -622,32 +624,6 @@ export const ResultsHeader = memo(function ResultsHeader({
             </FilterRow>
           )}
 
-          {years && years.length > 1 && (
-            <FilterRow
-              labelId={yearLabelId}
-              label="Jahr"
-              hasActive={!!selectedYears?.size}
-              onReset={() => onYearsChange?.(new Set())}
-              resetLabel="Jahr-Filter zurücksetzen"
-            >
-              {years.map((y) => {
-                const active = selectedYears?.has(y) ?? false;
-                return (
-                  <button
-                    key={y}
-                    type="button"
-                    aria-pressed={active}
-                    aria-label={y}
-                    onClick={() => onYearsChange?.(toggleSet(selectedYears, y))}
-                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
-                  >
-                    {y}
-                  </button>
-                );
-              })}
-            </FilterRow>
-          )}
-
           {onWeekdaysChange && (
             <FilterRow
               labelId={weekdayLabelId}
@@ -668,32 +644,6 @@ export const ResultsHeader = memo(function ResultsHeader({
                     className={`${chipBase} ${active ? chipActive : chipInactive}`}
                   >
                     {label}
-                  </button>
-                );
-              })}
-            </FilterRow>
-          )}
-
-          {groups && groups.length > 1 && (
-            <FilterRow
-              labelId={groupLabelId}
-              label="Gruppe"
-              hasActive={!!selectedGroups?.size}
-              onReset={() => onGroupsChange?.(new Set())}
-              resetLabel="Gruppen-Filter zurücksetzen"
-            >
-              {groups.map((g) => {
-                const active = selectedGroups?.has(g) ?? false;
-                return (
-                  <button
-                    key={g !== "" ? g : "__empty__"}
-                    type="button"
-                    aria-pressed={active}
-                    aria-label={g !== "" ? g : "Unbekannt"}
-                    onClick={() => onGroupsChange?.(toggleSet(selectedGroups, g))}
-                    className={`${chipBase} ${active ? chipActive : chipInactive}`}
-                  >
-                    {g !== "" ? g : "—"}
                   </button>
                 );
               })}
@@ -746,6 +696,58 @@ export const ResultsHeader = memo(function ResultsHeader({
                   <span>Vergangene Touren anzeigen</span>
                 </button>
               </div>
+
+              {years && years.length > 1 && (
+                <FilterRow
+                  labelId={yearLabelId}
+                  label="Jahr"
+                  hasActive={!!selectedYears?.size}
+                  onReset={() => onYearsChange?.(new Set())}
+                  resetLabel="Jahr-Filter zurücksetzen"
+                >
+                  {years.map((y) => {
+                    const active = selectedYears?.has(y) ?? false;
+                    return (
+                      <button
+                        key={y}
+                        type="button"
+                        aria-pressed={active}
+                        aria-label={y}
+                        onClick={() => onYearsChange?.(toggleSet(selectedYears, y))}
+                        className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                      >
+                        {y}
+                      </button>
+                    );
+                  })}
+                </FilterRow>
+              )}
+
+              {groups && groups.length > 1 && (
+                <FilterRow
+                  labelId={groupLabelId}
+                  label="Gruppe"
+                  hasActive={!!selectedGroups?.size}
+                  onReset={() => onGroupsChange?.(new Set())}
+                  resetLabel="Gruppen-Filter zurücksetzen"
+                >
+                  {groups.map((g) => {
+                    const active = selectedGroups?.has(g) ?? false;
+                    return (
+                      <button
+                        key={g !== "" ? g : "__empty__"}
+                        type="button"
+                        aria-pressed={active}
+                        aria-label={g !== "" ? g : "Unbekannt"}
+                        onClick={() => onGroupsChange?.(toggleSet(selectedGroups, g))}
+                        className={`${chipBase} ${active ? chipActive : chipInactive}`}
+                      >
+                        {g !== "" ? g : "—"}
+                      </button>
+                    );
+                  })}
+                </FilterRow>
+              )}
 
               {durations && durations.length > 1 && (
                 <FilterRow
