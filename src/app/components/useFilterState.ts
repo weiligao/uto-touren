@@ -90,6 +90,18 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     [], // Recompute once per day
   );
 
+  // Memoize parsed leaders for fast lookup without re-parsing
+  const leadersByTourId = useMemo(
+    () => {
+      const map = new Map<Tour, string[]>();
+      for (const tour of tours) {
+        map.set(tour, parseLeaders(tour.leader));
+      }
+      return map;
+    },
+    [tours],
+  );
+
   // For faceted search: each dimension's options come from tours that pass
   // every OTHER active filter. This keeps options relevant to the current selection.
 
@@ -165,11 +177,16 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
 
   const leaders = useMemo(
     () => {
-      const allLeaders = toursPassingAllExcept("leaders")
-        .flatMap((t) => parseLeaders(t.leader));
+      const allLeaders: string[] = [];
+      for (const tour of toursPassingAllExcept("leaders")) {
+        const parsedLeaders = leadersByTourId.get(tour);
+        if (parsedLeaders) {
+          allLeaders.push(...parsedLeaders);
+        }
+      }
       return [...new Set(allLeaders)].sort((a, b) => a.localeCompare(b));
     },
-    [toursPassingAllExcept],
+    [toursPassingAllExcept, leadersByTourId],
   );
 
   const titles = useMemo(
@@ -204,6 +221,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
       }
       // Filter out past tours unless showPastTours is enabled
       if (!showPastTours && tour.start_date <= todayString) { return false; }
+      const tourLeaders = leadersByTourId.get(tour) || [];
       return (
         (selectedYears.size === 0 || selectedYears.has(tour.start_date.slice(0, 4))) &&
         (selectedTourTypes.size === 0 || selectedTourTypes.has(tour.tour_type)) &&
@@ -215,11 +233,11 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
           (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))
         ) &&
         (selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g))) &&
-        (selectedLeaders.size === 0 || parseLeaders(tour.leader).some((leader) => selectedLeaders.has(leader))) &&
+        (selectedLeaders.size === 0 || tourLeaders.some((leader) => selectedLeaders.has(leader))) &&
         (selectedTitles.size === 0 || selectedTitles.has(tour.title))
       );
     },
-    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles, showPastTours, todayString],
+    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles, showPastTours, todayString, leadersByTourId],
   );
 
   return {
