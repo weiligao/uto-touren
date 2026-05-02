@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.15.1](https://github.com/weiligao/uto-touren/compare/v1.15.0...v1.15.1) (2026-05-02)
+
+
+### Bug Fixes
+
+* add show past tours toggle ([#77](https://github.com/weiligao/uto-touren/issues/77)) ([2a5b1c4](https://github.com/weiligao/uto-touren/commit/2a5b1c40c8a23b3d0060b875c3b27a2e353f975f))
+* change cron schedule ([#75](https://github.com/weiligao/uto-touren/issues/75)) ([0b40556](https://github.com/weiligao/uto-touren/commit/0b405566d453e5d51ea350de89001eddc637da55))
+
 ## [1.15.0](https://github.com/weiligao/uto-touren/compare/v1.14.0...v1.15.0) (2026-04-29)
 
 
