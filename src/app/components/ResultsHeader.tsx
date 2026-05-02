@@ -461,13 +461,8 @@ export const ResultsHeader = memo(function ResultsHeader({
     (selectedDifficulties?.size ?? 0) +
     (selectedLeaders?.size ?? 0) +
     (selectedTitles?.size ?? 0);
-  const [advancedOpen, setAdvancedOpen] = useState(advancedActiveCount > 0);
-
-  useEffect(() => {
-    if (advancedActiveCount > 0) {
-      setAdvancedOpen(true);
-    }
-  }, [advancedActiveCount]);
+  const [advancedOpenLocal, setAdvancedOpenLocal] = useState(advancedActiveCount > 0);
+  const advancedOpen = advancedActiveCount > 0 || advancedOpenLocal;
 
   const filterPanelId = useId();
   const yearLabelId = useId();
@@ -709,7 +704,7 @@ export const ResultsHeader = memo(function ResultsHeader({
             <button
               type="button"
               aria-expanded={advancedOpen}
-              onClick={() => setAdvancedOpen((v) => !v)}
+              onClick={() => setAdvancedOpenLocal((v) => !v)}
               className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
             >
               <span>Erweiterte Filter</span>

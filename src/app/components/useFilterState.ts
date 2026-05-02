@@ -81,7 +81,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     selectedGroups, setSelectedGroups,
     selectedLeaders, setSelectedLeaders,
     selectedTitles, setSelectedTitles,
-    showPastTours, setShowPastTours,
+    showPastTours, setShowPastTours: _setShowPastTours,
   } = selected;
 
   // Memoize today's date string to avoid recomputing for every tour
@@ -221,7 +221,7 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
       }
       // Filter out past tours unless showPastTours is enabled
       if (!showPastTours && tour.start_date <= todayString) { return false; }
-      const tourLeaders = leadersByTourId.get(tour) || [];
+      const tourLeaders = leadersByTourId.get(tour) ?? [];
       return (
         (selectedYears.size === 0 || selectedYears.has(tour.start_date.slice(0, 4))) &&
         (selectedTourTypes.size === 0 || selectedTourTypes.has(tour.tour_type)) &&
