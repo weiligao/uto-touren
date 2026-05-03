@@ -124,6 +124,7 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchTextRef = useRef("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const dropdownButtonsRef = useRef(new Map<number, HTMLButtonElement>());
 
   // Clear blur timeout on unmount
@@ -169,6 +170,7 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
       onItemsChange?.(toggleSet(selected, item));
       setSearchText("");
       setShowDropdown(false);
+      inputRef.current?.blur();
     },
     [selected, onItemsChange],
   );
@@ -288,6 +290,7 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
       <div className="flex flex-col gap-2">
         <div className="relative">
           <input
+            ref={inputRef}
             type="text"
             placeholder={placeholder}
             value={searchText}
