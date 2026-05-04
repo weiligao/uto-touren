@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/weiligao/uto-touren/compare/v1.15.1...v1.15.2) (2026-05-04)
+
+
+### Bug Fixes
+
+* blur filter input after selection ([#78](https://github.com/weiligao/uto-touren/issues/78)) ([76f6b0d](https://github.com/weiligao/uto-touren/commit/76f6b0d199254c9075f0132f1b0f76ecbc3d68d5))
+
 ## [1.15.1](https://github.com/weiligao/uto-touren/compare/v1.15.0...v1.15.1) (2026-05-02)
 
 
