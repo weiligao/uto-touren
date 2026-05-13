@@ -15,6 +15,7 @@ export interface Tour {
   leader: string;
   status: TourStatus;
   detail_url: string | null;
+  isPast: boolean;
 }
 
 export interface ScrapeResult {

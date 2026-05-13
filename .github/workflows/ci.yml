@@ -41,6 +41,7 @@ jobs:
         run: npm run build
 
       - name: Deploy to Vercel (Preview)
+        if: github.actor != 'dependabot[bot]'
         run: npx vercel --token "$VERCEL_TOKEN" --yes
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

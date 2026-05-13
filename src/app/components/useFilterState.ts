@@ -22,6 +22,25 @@ function tourAppliesToAllGroups(tour: Tour): boolean {
   return tour.group.includes(SPECIAL_GROUP_ALLE);
 }
 
+// Dimension indices map: used to efficiently exclude one dimension at a time when building facets.
+const DIMENSION_INDICES = {
+  year: 0,
+  tourType: 1,
+  status: 2,
+  duration: 3,
+  difficulty: 4,
+  eventType: 5,
+  group: 6,
+  leader: 7,
+  title: 8,
+  weekdays: 9,
+} as const;
+
+type EnrichedTour = Tour & {
+  parsedLeaders: string[];
+  weekdayArray: number[];
+};
+
 export interface SelectedFilters {
   selectedYears: Set<string>;
   setSelectedYears: (v: Set<string>) => void;
@@ -70,132 +89,121 @@ export interface FilterState extends SelectedFilters {
  * that the derived useMemos stay cheap.
  */
 export function useFilterState(tours: Tour[], selected: SelectedFilters): FilterState {
+  // Extract only the setters; selected values are accessed via the `selected` object parameter
   const {
-    selectedYears, setSelectedYears,
-    selectedTourTypes, setSelectedTourTypes,
-    selectedStatuses, setSelectedStatuses,
-    selectedWeekdays, setSelectedWeekdays,
-    selectedDurations, setSelectedDurations,
-    selectedDifficulties, setSelectedDifficulties,
-    selectedEventTypes, setSelectedEventTypes,
-    selectedGroups, setSelectedGroups,
-    selectedLeaders, setSelectedLeaders,
-    selectedTitles, setSelectedTitles,
-    showPastTours, setShowPastTours: _setShowPastTours,
+    setSelectedYears,
+    setSelectedTourTypes,
+    setSelectedStatuses,
+    setSelectedWeekdays,
+    setSelectedDurations,
+    setSelectedDifficulties,
+    setSelectedEventTypes,
+    setSelectedGroups,
+    setSelectedLeaders,
+    setSelectedTitles,
   } = selected;
 
-  // Memoize today's date string to avoid recomputing for every tour
-  const todayString = useMemo(
-    () => new Date().toISOString().split("T")[0],
-    [], // Recompute once per day
-  );
+  const enrichedTourMap = useMemo(() => {
+    const map = new Map<Tour, EnrichedTour>();
 
-  // Memoize parsed leaders for fast lookup without re-parsing
-  const leadersByTourId = useMemo(
-    () => {
-      const map = new Map<Tour, string[]>();
-      for (const tour of tours) {
-        map.set(tour, parseLeaders(tour.leader));
-      }
-      return map;
-    },
-    [tours],
-  );
-
-  // For faceted search: each dimension's options come from tours that pass
-  // every OTHER active filter. This keeps options relevant to the current selection.
-
-  const toursPassingAllExcept = useCallback((exclude: "years" | "tourTypes" | "statuses" | "weekdays" | "durations" | "difficulties" | "eventTypes" | "groups" | "leaders" | "titles") => {
-    return tours.filter((tour) => {
-      if (exclude !== "weekdays" && selectedWeekdays.size > 0) {
-        const tourDays = getTourWeekdays(tour.start_date, tour.duration_days);
-        if (!tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
-      }
-      return (
-        (exclude === "years" || selectedYears.size === 0 || selectedYears.has(tour.start_date.slice(0, 4))) &&
-        (exclude === "tourTypes" || selectedTourTypes.size === 0 || selectedTourTypes.has(tour.tour_type)) &&
-        (exclude === "statuses" || selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
-        (exclude === "durations" || selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
-        (exclude === "difficulties" || selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)) &&
-        (exclude === "eventTypes" || selectedEventTypes.size === 0 ||
-          (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
-          (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))) &&
-        (exclude === "groups" || selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g))) &&
-        (exclude === "leaders" || selectedLeaders.size === 0 || parseLeaders(tour.leader).some((leader) => selectedLeaders.has(leader))) &&
-        (exclude === "titles" || selectedTitles.size === 0 || selectedTitles.has(tour.title))
-      );
-    });
-  }, [tours, selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles]);
-
-  const years = useMemo(
-    () => YEARS.filter((y) => toursPassingAllExcept("years").some((t) => t.start_date.startsWith(y))),
-    [toursPassingAllExcept],
-  );
-
-  const tourTypes = useMemo(
-    () => TOUR_TYPES.map((t) => t.value).filter((v) => toursPassingAllExcept("tourTypes").some((t) => t.tour_type === v)),
-    [toursPassingAllExcept],
-  );
-
-  const statuses = useMemo(
-    () => STATUS_ORDER.filter((s) => toursPassingAllExcept("statuses").some((t) => t.status === s)),
-    [toursPassingAllExcept],
-  );
-
-  const durations = useMemo(
-    () => [...new Set(toursPassingAllExcept("durations").map((t) => t.duration_days))].sort((a, b) => a - b),
-    [toursPassingAllExcept],
-  );
-
-  const difficulties = useMemo(
-    () => [...new Set(toursPassingAllExcept("difficulties").map((t) => t.difficulty))].sort(compareDifficulties),
-    [toursPassingAllExcept],
-  );
-
-  const eventTypes = useMemo(() => {
-    let hasKurs = false;
-    let hasTour = false;
-    for (const t of toursPassingAllExcept("eventTypes")) {
-      if (isKurs(t.difficulty)) { hasKurs = true; } else { hasTour = true; }
-      if (hasKurs && hasTour) { break; }
+    for (const tour of tours) {
+      map.set(tour, {
+        ...tour,
+        parsedLeaders: parseLeaders(tour.leader),
+        weekdayArray: getTourWeekdays(tour.start_date, tour.duration_days),
+      });
     }
-    const result: string[] = [];
-    if (hasTour) { result.push(EVENT_TYPE_TOUR); }
-    if (hasKurs) { result.push(EVENT_TYPE_KURS); }
-    return result;
-  }, [toursPassingAllExcept]);
 
-  const groups = useMemo(
-    () => {
-      const allGroups = toursPassingAllExcept("groups")
-        .flatMap((t) => t.group)
-        .filter((g: string) => g !== SPECIAL_GROUP_ALLE);
-      return [...new Set(allGroups)].sort((a, b) => groupRank(a) - groupRank(b));
-    },
-    [toursPassingAllExcept],
+    return map;
+  }, [tours]);
+
+  const computeMatchVector = useCallback(
+    (enrichedTour: EnrichedTour, selected: SelectedFilters): boolean[] => [
+      selected.selectedYears.size === 0 || selected.selectedYears.has(enrichedTour.start_date.slice(0, 4)),
+      selected.selectedTourTypes.size === 0 || selected.selectedTourTypes.has(enrichedTour.tour_type),
+      selected.selectedStatuses.size === 0 || selected.selectedStatuses.has(enrichedTour.status),
+      selected.selectedDurations.size === 0 || selected.selectedDurations.has(enrichedTour.duration_days),
+      selected.selectedDifficulties.size === 0 || selected.selectedDifficulties.has(enrichedTour.difficulty),
+      selected.selectedEventTypes.size === 0 ||
+        (selected.selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(enrichedTour.difficulty)) ||
+        (selected.selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(enrichedTour.difficulty)),
+      selected.selectedGroups.size === 0 || tourAppliesToAllGroups(enrichedTour) || enrichedTour.group.some((g) => selected.selectedGroups.has(g)),
+      selected.selectedLeaders.size === 0 || enrichedTour.parsedLeaders.some((leader) => selected.selectedLeaders.has(leader)),
+      selected.selectedTitles.size === 0 || selected.selectedTitles.has(enrichedTour.title),
+      selected.selectedWeekdays.size === 0 || enrichedTour.weekdayArray.every((d) => selected.selectedWeekdays.has(d)),
+    ],
+    [] // Static matching logic
   );
 
-  const leaders = useMemo(
-    () => {
-      const allLeaders: string[] = [];
-      for (const tour of toursPassingAllExcept("leaders")) {
-        const parsedLeaders = leadersByTourId.get(tour);
-        if (parsedLeaders) {
-          allLeaders.push(...parsedLeaders);
+  const enrichedTours = useMemo(() => Array.from(enrichedTourMap.values()), [enrichedTourMap]);
+
+  const {
+    years,
+    tourTypes,
+    statuses,
+    durations,
+    difficulties,
+    eventTypes,
+    groups,
+    leaders,
+    titles,
+  } = useMemo(() => {
+    const yearsSet = new Set<string>();
+    const tourTypesSet = new Set<string>();
+    const statusesSet = new Set<TourStatus>();
+    const durationsSet = new Set<number>();
+    const difficultiesSet = new Set<string>();
+    const groupsSet = new Set<string>();
+    const leadersSet = new Set<string>();
+    const titlesSet = new Set<string>();
+    let hasKursOption = false;
+    let hasTourOption = false;
+
+    const passExcept = (matchVector: boolean[], excludeIndex: number): boolean => {
+      for (let i = 0; i < matchVector.length; i++) {
+        if (i !== excludeIndex && !matchVector[i]) {
+          return false;
         }
       }
-      return [...new Set(allLeaders)].sort((a, b) => a.localeCompare(b));
-    },
-    [toursPassingAllExcept, leadersByTourId],
-  );
+      return true;
+    };
 
-  const titles = useMemo(
-    () => {
-      const allTitles = toursPassingAllExcept("titles").map((t) => t.title);
-      return [...new Set(allTitles)].sort((a, b) => a.localeCompare(b));
-    },
-    [toursPassingAllExcept],
-  );
+    for (const tour of enrichedTours) {
+      const matchVector = computeMatchVector(tour, selected);
+
+      if (passExcept(matchVector, DIMENSION_INDICES.year)) { yearsSet.add(tour.start_date.slice(0, 4)); }
+      if (passExcept(matchVector, DIMENSION_INDICES.tourType)) { tourTypesSet.add(tour.tour_type); }
+      if (passExcept(matchVector, DIMENSION_INDICES.status)) { statusesSet.add(tour.status); }
+      if (passExcept(matchVector, DIMENSION_INDICES.duration)) { durationsSet.add(tour.duration_days); }
+      if (passExcept(matchVector, DIMENSION_INDICES.difficulty)) { difficultiesSet.add(tour.difficulty); }
+      if (passExcept(matchVector, DIMENSION_INDICES.eventType)) {
+        if (isKurs(tour.difficulty)) { hasKursOption = true; } else { hasTourOption = true; }
+      }
+      if (passExcept(matchVector, DIMENSION_INDICES.group)) {
+        for (const group of tour.group) {
+          if (group !== SPECIAL_GROUP_ALLE) { groupsSet.add(group); }
+        }
+      }
+      if (passExcept(matchVector, DIMENSION_INDICES.leader)) { tour.parsedLeaders.forEach((leader) => leadersSet.add(leader)); }
+      if (passExcept(matchVector, DIMENSION_INDICES.title)) { titlesSet.add(tour.title); }
+    }
+
+    const eventTypesResult: string[] = [];
+    if (hasTourOption) { eventTypesResult.push(EVENT_TYPE_TOUR); }
+    if (hasKursOption) { eventTypesResult.push(EVENT_TYPE_KURS); }
+
+    return {
+      years: YEARS.filter((y) => yearsSet.has(y)),
+      tourTypes: TOUR_TYPES.map((t) => t.value).filter((v) => tourTypesSet.has(v)),
+      statuses: STATUS_ORDER.filter((s) => statusesSet.has(s)),
+      durations: [...durationsSet].sort((a, b) => a - b),
+      difficulties: [...difficultiesSet].sort(compareDifficulties),
+      eventTypes: eventTypesResult,
+      groups: [...groupsSet].sort((a, b) => groupRank(a) - groupRank(b)),
+      leaders: [...leadersSet].sort((a, b) => a.localeCompare(b)),
+      titles: [...titlesSet].sort((a, b) => a.localeCompare(b)),
+    };
+  }, [enrichedTours, selected, computeMatchVector]);
 
   // Setters from useState are stable — per React docs, they don't need to be in deps.
   // Including them here to satisfy React Compiler analysis.
@@ -215,29 +223,22 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
   // Setters are not used; only the selected* state values are checked.
   const matchesTour = useCallback(
     (tour: Tour) => {
-      if (selectedWeekdays.size > 0) {
-        const tourDays = getTourWeekdays(tour.start_date, tour.duration_days);
-        if (!tourDays.every((d) => selectedWeekdays.has(d))) { return false; }
+      const enrichedTour = enrichedTourMap.get(tour);
+      // Contract: tours passed here must be from enrichedTourMap. If undefined, tours array was mutated
+      // or a different array's tour was passed — both are bugs in calling code.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const matchVector = computeMatchVector(enrichedTour!, selected);
+
+      if (selected.selectedWeekdays.size > 0 && !matchVector[DIMENSION_INDICES.weekdays]) {
+        return false;
       }
-      // Filter out past tours unless showPastTours is enabled
-      if (!showPastTours && tour.start_date <= todayString) { return false; }
-      const tourLeaders = leadersByTourId.get(tour) ?? [];
-      return (
-        (selectedYears.size === 0 || selectedYears.has(tour.start_date.slice(0, 4))) &&
-        (selectedTourTypes.size === 0 || selectedTourTypes.has(tour.tour_type)) &&
-        (selectedStatuses.size === 0 || selectedStatuses.has(tour.status)) &&
-        (selectedDurations.size === 0 || selectedDurations.has(tour.duration_days)) &&
-        (selectedDifficulties.size === 0 || selectedDifficulties.has(tour.difficulty)) &&
-        (selectedEventTypes.size === 0 ||
-          (selectedEventTypes.has(EVENT_TYPE_KURS) && isKurs(tour.difficulty)) ||
-          (selectedEventTypes.has(EVENT_TYPE_TOUR) && !isKurs(tour.difficulty))
-        ) &&
-        (selectedGroups.size === 0 || tourAppliesToAllGroups(tour) || tour.group.some((g) => selectedGroups.has(g))) &&
-        (selectedLeaders.size === 0 || tourLeaders.some((leader) => selectedLeaders.has(leader))) &&
-        (selectedTitles.size === 0 || selectedTitles.has(tour.title))
-      );
+      if (!selected.showPastTours && tour.isPast) {
+        return false;
+      }
+
+      return matchVector.every((match) => match);
     },
-    [selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays, selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups, selectedLeaders, selectedTitles, showPastTours, todayString, leadersByTourId],
+    [selected, enrichedTourMap, computeMatchVector],
   );
 
   return {
