@@ -208,6 +208,7 @@ describe("generateIcs", () => {
     leader: "Max Muster",
     status: "open",
     detail_url: "https://sac-uto.ch/de/touren/123",
+    isPast: false,
   };
 
   it("includes required ICS structure", () => {
@@ -339,6 +340,7 @@ describe("buildGoogleCalendarUrl", () => {
     leader: "Max Muster",
     status: "open" as const,
     detail_url: "https://sac-uto.ch/de/touren/123",
+    isPast: false,
   };
 
   it("includes action=TEMPLATE, title, and date range", () => {
@@ -378,6 +380,7 @@ describe("buildGoogleCalendarRegistrationUrl", () => {
     leader: "Max Muster",
     status: "open" as const,
     detail_url: "https://sac-uto.ch/de/touren/123",
+    isPast: false,
   };
 
   it("prefixes title with Anmeldung:", () => {

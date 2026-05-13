@@ -1,9 +1,9 @@
 "use client";
 
-import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS, TABLE_ROWS_PER_PAGE } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
 import { formatDate, formatDuration, formatGroups, isKurs, unknownIfEmpty } from "@/lib/utils";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
@@ -82,7 +82,7 @@ const TourRow = memo(function TourRow({
           <button
             type="button"
             onClick={() => onToggle(i)}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+            className="flex items-center justify-center min-h-11 w-11 rounded text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 transition-colors"
             aria-expanded={expanded}
             aria-controls={`tour-detail-${i}`}
             aria-label={expanded ? `${tour.title} zuklappen` : `${tour.title} aufklappen`}
@@ -155,7 +155,11 @@ export function TableView({
   selectedFilters: SelectedFilters;
 }) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [lastTours, setLastTours] = useState(tours);
+  const [itemsToShow, setItemsToShow] = useState(TABLE_ROWS_PER_PAGE);
+  const [, startTransition] = useTransition();
+  const showMoreButtonRef = useRef<HTMLButtonElement>(null);
+  const previousTourLengthRef = useRef(tours.length);
+  const previousVisibleCountRef = useRef<number | null>(null);
   const {
     years,
     selectedYears,
@@ -188,12 +192,6 @@ export function TableView({
     matchesTour,
   } = useFilterState(tours, selectedFilters);
 
-  // Reset expanded rows when the tours list changes (derived state pattern)
-  if (lastTours !== tours) {
-    setLastTours(tours);
-    setExpandedRows(new Set());
-  }
-
   const toggleRow = useCallback((i: number) => {
     setExpandedRows((prev) => {
       const next = new Set(prev);
@@ -203,9 +201,34 @@ export function TableView({
   }, []);
 
   const visibleTours = useMemo(
-    () => tours.map((tour, i) => ({ tour, i })).filter(({ tour }) => matchesTour(tour)),
+    () => tours.filter((tour) => matchesTour(tour)).map((tour, i) => ({ tour, i })),
     [tours, matchesTour],
   );
+
+  const paginatedTours = useMemo(
+    () => visibleTours.slice(0, itemsToShow),
+    [visibleTours, itemsToShow],
+  );
+
+  // Reset state when data changes. Use refs to detect actual changes without triggering
+  // on first render. Since visibleTours is derived from tours, we check both:
+  // - tours.length: detects when data is loaded/refreshed
+  // - visibleTours.length: detects when filters are applied/removed
+  useEffect(() => {
+    const tourCountChanged = previousTourLengthRef.current !== tours.length;
+    const filterChanged = previousVisibleCountRef.current !== null && previousVisibleCountRef.current !== visibleTours.length;
+
+    if (tourCountChanged) {
+      previousTourLengthRef.current = tours.length;
+      setExpandedRows(new Set());
+      setItemsToShow(TABLE_ROWS_PER_PAGE);
+    } else if (filterChanged) {
+      setItemsToShow(TABLE_ROWS_PER_PAGE);
+    }
+
+    // Initialize ref on first run (after visibleTours is computed)
+    previousVisibleCountRef.current ??= visibleTours.length;
+  }, [tours.length, visibleTours.length]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -266,8 +289,8 @@ export function TableView({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {visibleTours.map(({ tour, i }) => (
-              <TourRow key={i} tour={tour} i={i} expanded={expandedRows.has(i)} onToggle={toggleRow} />
+            {paginatedTours.map(({ tour, i }) => (
+              <TourRow key={tour.detail_url} tour={tour} i={i} expanded={expandedRows.has(i)} onToggle={toggleRow} />
             ))}
             {visibleTours.length === 0 && (
               <tr>
@@ -279,8 +302,10 @@ export function TableView({
                       <p className="mb-3">Keine Touren für diese Filter.</p>
                       <button
                         type="button"
-                        onClick={resetFilters}
-                        className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          resetFilters();
+                        }}
+                        className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         Filter zurücksetzen
                       </button>
@@ -292,6 +317,24 @@ export function TableView({
           </tbody>
         </table>
       </div>
+      {itemsToShow < visibleTours.length && (
+        <div className="px-4 py-4 border-t border-gray-200 bg-gray-50 text-center">
+          <button
+            ref={showMoreButtonRef}
+            type="button"
+            onClick={() => {
+              startTransition(() => setItemsToShow((prev) => prev + TABLE_ROWS_PER_PAGE));
+              // Blur removes focus ring after click, allowing visual feedback to show
+              showMoreButtonRef.current?.blur();
+            }}
+            className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 sm:py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 transition-colors cursor-pointer"
+            aria-label={`Zeige ${Math.min(itemsToShow + TABLE_ROWS_PER_PAGE, visibleTours.length)} von ${visibleTours.length} Touren`}
+            aria-live="polite"
+          >
+            Mehr anzeigen ({itemsToShow} von {visibleTours.length})
+          </button>
+        </div>
+      )}
     </div>
   );
 }
