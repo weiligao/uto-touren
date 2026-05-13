@@ -8,7 +8,7 @@ A web app for searching, filtering and exporting tours from [SAC-Sektion Uto](ht
 
 ## Features
 
-### Powerful Filtering & Browsing
+### Filtering & Browsing
 - Faceted, chip-based filters for year, tour type, event type, group, status, weekday, duration, difficulty, tour leader name, tour title
 - Multi-select support: search and select multiple filters to match any combination
 - Collapsible filter panel with active-filter count badge

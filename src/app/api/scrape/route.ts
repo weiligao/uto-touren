@@ -27,10 +27,41 @@ function getCachedTours(year: string): Tour[] | null {
   return entry.tours;
 }
 
+function isTour(obj: unknown): obj is Tour {
+  if (!obj || typeof obj !== "object") { return false; }
+  const tour = obj as Record<string, unknown>;
+  return (
+    typeof tour.date === "string" &&
+    typeof tour.start_date === "string" &&
+    typeof tour.duration_days === "number" &&
+    typeof tour.tour_type === "string" &&
+    typeof tour.difficulty === "string" &&
+    Array.isArray(tour.group) &&
+    typeof tour.title === "string" &&
+    typeof tour.leader === "string" &&
+    (tour.status === "open" || tour.status === "full_or_cancelled" || tour.status === "not_yet_open" || tour.status === "unknown") &&
+    (tour.detail_url === null || typeof tour.detail_url === "string") &&
+    typeof tour.isPast === "boolean"
+  );
+}
+
 async function getRedisCache(year: string): Promise<Tour[] | null> {
   if (!redis) { return null; }
   try {
-    return await redis.get<Tour[]>(year) ?? null;
+    const data = await redis.get<Tour[]>(year);
+    if (!data) { return null; }
+    // Sample validation: check first and last tour to detect corruption.
+    if (!Array.isArray(data) || data.length === 0) {
+      // eslint-disable-next-line no-console
+      console.warn("Redis data is not a valid array for year:", year);
+      return null;
+    }
+    if (!isTour(data[0]) || !isTour(data[data.length - 1])) {
+      // eslint-disable-next-line no-console
+      console.warn("Redis data validation failed for year:", year);
+      return null;
+    }
+    return data;
   } catch (err) {
     // eslint-disable-next-line no-console
     console.warn("Redis get failed:", err instanceof Error ? err.message : err);
@@ -55,7 +86,9 @@ async function persistToCache(year: string, tours: Tour[]): Promise<void> {
 
 async function resolveTours(year: string): Promise<Tour[]> {
   const cached = getCachedTours(year);
-  if (cached !== null) { return cached; }
+  if (cached !== null) {
+    return cached;
+  }
 
   const existingFlight = inFlight.get(year);
   if (existingFlight) { return existingFlight; }
@@ -68,7 +101,6 @@ async function resolveTours(year: string): Promise<Tour[]> {
   try {
     const redisTours = await getRedisCache(year);
     if (redisTours !== null) {
-      scrapeResultCache.set(year, { tours: redisTours, ts: Date.now() });
       resolveFlight(redisTours);
       return redisTours;
     }

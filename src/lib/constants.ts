@@ -45,6 +45,9 @@ export const GROUPS = [
 const THIS_YEAR = new Date().getFullYear();
 export const YEARS = [String(THIS_YEAR), String(THIS_YEAR + 1)];
 
+/** Number of rows to display per page in the tours table */
+export const TABLE_ROWS_PER_PAGE = 20;
+
 export const STATUS_COLORS: Record<TourStatus, string> = {
   open: "bg-green-500",
   full_or_cancelled: "bg-red-500",

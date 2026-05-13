@@ -68,6 +68,8 @@ export function parseTourRows(html: string, year: number): Tour[] {
   const $ = cheerio.load(html);
   const tours: Tour[] = [];
 
+  const todayString = new Date().toISOString().split("T")[0];
+
   $("table tr").each((_i, row) => {
     const cells = $(row).find("td");
     if (cells.length < CELL.MIN_LENGTH) { return; }
@@ -78,9 +80,11 @@ export function parseTourRows(html: string, year: number): Tour[] {
     const startDate = parseGermanDate(dateStr, year);
     if (!startDate) { return; } // Skip tours with unparseable dates
 
+    const isoStartDate = toIsoDate(startDate);
     tours.push({
       date: dateStr,
-      start_date: toIsoDate(startDate),
+      start_date: isoStartDate,
+      isPast: isoStartDate <= todayString,
       duration_days: parseDuration(text[CELL.DURATION]),
       tour_type: text[CELL.TOUR_TYPE],
       difficulty: text[CELL.DIFFICULTY],
