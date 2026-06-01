@@ -42,8 +42,41 @@ export const GROUPS = [
   { value: "Senior/innen", label: "Senior/innen" },
 ] as const;
 
-const THIS_YEAR = new Date().getFullYear();
-export const YEARS = [String(THIS_YEAR), String(THIS_YEAR + 1)];
+/**
+ * Year constants for the historical backfill range.
+ * STARTUP_YEAR is captured at module load to ensure consistent behavior
+ * if the app remains running across year boundaries.
+ */
+const STARTUP_YEAR = new Date().getFullYear();
+const HISTORY_START_YEAR = 2013;
+const HISTORY_END_YEAR = STARTUP_YEAR + 1;
+
+/**
+ * All years from HISTORY_START_YEAR to HISTORY_END_YEAR.
+ * Used for initial full historical scrape. Calculated once at app startup.
+ */
+export const YEARS = Array.from(
+  { length: HISTORY_END_YEAR + 1 - HISTORY_START_YEAR },
+  (_, i) => String(HISTORY_START_YEAR + i),
+);
+
+/**
+ * Total count of historical years. Cached to avoid repeated length calculations.
+ */
+export const HISTORICAL_YEARS_COUNT = YEARS.length;
+
+/**
+ * Get years to scrape for regular updates (current and next year).
+ * Use this after the initial historical scrape is complete.
+ */
+export function getRegularUpdateScrapeTasks(): Array<{ year: string }> {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  return [
+    { year: String(currentYear) },
+    { year: String(currentYear + 1) },
+  ];
+}
 
 /** Number of rows to display per page in the tours table */
 export const TABLE_ROWS_PER_PAGE = 20;
