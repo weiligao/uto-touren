@@ -167,7 +167,7 @@ export async function GET(request: Request) {
     if (auth !== `Bearer ${secret}`) {
       // Extract client IP: x-forwarded-for contains comma-separated chain, take first (client IP)
       const forwardedFor = request.headers.get("x-forwarded-for");
-      const ip = forwardedFor?.split(",")[0]?.trim() || "unknown";
+      const ip = forwardedFor?.split(",")[0]?.trim() ?? "unknown";
       // eslint-disable-next-line no-console
       console.warn("Unauthorized cron access attempt", { ip });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -234,8 +234,10 @@ export async function GET(request: Request) {
       }
     } catch (err: unknown) {
       // Preserve detailed error info for internal logging, sanitize for API response
-      const errorMessage = err instanceof UpstreamError ? err.message :
-        err instanceof Error ? err.message : "Scrape failed";
+      let errorMessage = "Scrape failed";
+      if (err instanceof UpstreamError || err instanceof Error) {
+        errorMessage = err.message;
+      }
       // eslint-disable-next-line no-console
       console.error("Scrape failed for task", { task, error: errorMessage });
       results.push({
