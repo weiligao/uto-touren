@@ -23,8 +23,8 @@ A web app for searching, filtering and exporting tours from [SAC-Sektion Uto](ht
 
 ### Sharing, Caching & Automation
 - All filters and view state are persisted in the URL for easy sharing
-- Results cached in-memory for 24 hours for instant repeat filtering
-- Automated backend job (cron) fetches and updates tours daily for fresh data
+- Results cached in Redis (or in-memory fallback) for 24 hours for instant repeat filtering
+- Automated backend job (cron) fetches and updates tours with resumable backfill strategy
 
 ### Analytics & Monitoring
 - Vercel Analytics and Speed Insights for performance monitoring
@@ -48,6 +48,25 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm test` | Run Vitest tests |
 | `node scripts/generate-icons.mjs` | Regenerate app icons (apple-icon, 512 px) |
 
+## Caching & Scraping Strategy
+
+### Initial Backfill
+On first deployment, the cron job scrapes historical tours from 2013 to current+1 year. This is chunked across multiple cron invocations to prevent timeout. Per-year completion is tracked in Redis, enabling resumable backfill.
+
+**Track progress** via status endpoint:
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  "https://uto-touren.vercel.app/api/cron/warm-cache?status=check"
+```
+
+Response includes `pendingHistoricalYears` and `fullScrapeComplete` flag.
+
+### Regular Updates
+Once backfill completes (global flag set), cron switches to **regular-update mode**: scrapes the current and next calendar year on each invocation to capture newly-added or modified tours.
+
+### Cron Schedule
+Configured in `vercel.json`. See that file for the exact schedule.
+
 ## Environment Variables
 
 | Variable | Required | Description |
@@ -55,8 +74,9 @@ Open [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_APP_URL` | No | Canonical URL for OG metadata (defaults to `https://uto-touren.vercel.app`) |
 | `KV_REST_API_URL` | No | Upstash Redis REST endpoint — enables persistent cross-cold-start cache |
 | `KV_REST_API_TOKEN` | No | Upstash Redis REST token |
+| `CRON_SECRET` | No | Bearer token for cron endpoint authentication (required in production) |
 
-Without the Upstash env vars the app falls back to an in-process cache that is lost on each cold start.
+Without Upstash env vars the app falls back to an in-process cache that is lost on each cold start. Without `CRON_SECRET`, the cron endpoint is disabled in production.
 
 ## Tech Stack
 
