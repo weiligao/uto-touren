@@ -1,0 +1,30 @@
+# UtoTouren
+
+> A free, open-source web app for searching, filtering, and exporting tours and courses from SAC-Sektion Uto (Swiss Alpine Club, Zurich section).
+
+UtoTouren scrapes the official tour listing from sac-uto.ch, processes it server-side, and presents it through a filterable interface. Users can filter tours by year, type, group, status, weekday, duration, difficulty, leader, and title. Results can be downloaded as an .ics file or imported directly into Google Calendar.
+
+## Features
+
+- Faceted filters: year, tour type, event type, group, status, weekday, duration, difficulty, leader, title
+- Table view and monthly calendar view
+- Calendar export: .ics download or direct Google Calendar link
+- Tour details: route, equipment, accommodation, costs
+- All filter state persisted in the URL for easy sharing
+
+## Technical Details
+
+- Next.js 16 (React, TypeScript)
+- Server-side scraping of sac-uto.ch
+- Redis cache (7-day TTL); daily refresh via cron job
+- Hosted on Vercel
+- No login required; no personal data collected
+- Source code: https://github.com/weiligao/uto-touren
+
+## Language and Region
+
+UI language: German (Switzerland). Data covers SAC-Sektion Uto tours only (Zurich, Switzerland).
+
+## Disclaimer
+
+UtoTouren is not affiliated with SAC-Sektion Uto or the Swiss Alpine Club. It is an independent, non-commercial project.
