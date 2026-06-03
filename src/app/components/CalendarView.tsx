@@ -172,7 +172,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
           ref={closeButtonRef}
           type="button"
           onClick={onClose}
-          className="shrink-0 p-0.5 rounded text-gray-400 hover:text-gray-600 cursor-pointer"
+          className="shrink-0 p-0.5 rounded text-gray-500 hover:text-gray-700 cursor-pointer"
           aria-label="Schließen"
         >
           <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
