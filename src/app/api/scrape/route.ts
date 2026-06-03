@@ -48,8 +48,8 @@ function isTour(obj: unknown): obj is Tour {
     typeof tour.duration_days === "number" &&
     Number.isFinite(tour.duration_days) &&
     tour.duration_days > 0 &&
-    isNonEmptyString(tour.tour_type) &&
-    isNonEmptyString(tour.difficulty) &&
+    typeof tour.tour_type === "string" &&
+    typeof tour.difficulty === "string" &&
     Array.isArray(tour.group) &&
     tour.group.length > 0 &&
     tour.group.every((g) => isNonEmptyString(g)) &&
@@ -140,12 +140,12 @@ async function resolveTours(year: string): Promise<Tour[]> {
   inFlight.set(year, flightPromise);
 
   try {
-    const redisTours = await getRedisCache(year);
+        const redisTours = await getRedisCache(year);
     if (redisTours !== null) {
       resolveFlight(redisTours);
       return redisTours;
     }
-
+    
     const tours = await scrapeTours({ year });
     await persistToCache(year, tours);
     resolveFlight(tours);
