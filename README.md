@@ -23,7 +23,7 @@ A web app for searching, filtering and exporting tours from [SAC-Sektion Uto](ht
 
 ### Sharing, Caching & Automation
 - All filters and view state are persisted in the URL for easy sharing
-- Results cached in Redis (or in-memory fallback) for 24 hours for instant repeat filtering
+- Results cached in Redis for 7 days and in memory for the lifetime of a server instance, for instant repeat filtering
 - Automated backend job (cron) fetches and updates tours with resumable backfill strategy
 
 ### Analytics & Monitoring

@@ -78,7 +78,7 @@ function FilterRow({
       <div className="flex items-center gap-1.5 sm:pt-1">
         <span
           id={labelId}
-          className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 shrink-0"
+          className="text-[11px] font-semibold uppercase tracking-wider text-gray-600 shrink-0"
         >
           {label}
         </span>
@@ -277,7 +277,7 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
       <div className="flex items-center gap-1.5 sm:pt-1">
         <span
           id={labelId}
-          className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 shrink-0"
+          className="text-[11px] font-semibold uppercase tracking-wider text-gray-600 shrink-0"
         >
           {label}
         </span>
@@ -286,8 +286,6 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
           onReset={handleReset}
           visible={hasActive}
         />
-      </div>
-      <div className="flex flex-col gap-2">
         <div className="relative">
           <input
             ref={inputRef}

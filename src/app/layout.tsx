@@ -15,10 +15,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://uto-touren.vercel.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://uto-touren.vercel.app",
-  ),
+  metadataBase: new URL(APP_URL),
   alternates: {
     canonical: "/",
   },
@@ -64,6 +64,29 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "UtoTouren",
+  url: APP_URL,
+  description:
+    "Touren und Kurse der SAC-Sektion Uto suchen, filtern und in Google Kalender oder als .ics-Datei exportieren.",
+  applicationCategory: "SportsApplication",
+  operatingSystem: "Any",
+  inLanguage: "de-CH",
+  isAccessibleForFree: true,
+  author: {
+    "@type": "Person",
+    name: "Wei Li Gao",
+    url: "https://github.com/weiligao",
+  },
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "CHF",
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -74,6 +97,12 @@ export default function RootLayout({
       lang="de"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <a
           href="#main-content"
