@@ -2,7 +2,7 @@ import type { Tour } from "@/lib/types";
 import { FETCH_TIMEOUT_MS, SAC_FETCH_HEADERS } from "../_shared";
 import { getTotalCount, parseTourRows } from "./_parser";
 
-const BASE_URL = "https://sac-uto.ch/de/aktivitaeten/touren-und-kurse/";
+const BASE_URL = "https://www.sac-uto.ch/de/aktivitaeten/touren-und-kurse/";
 const PAGE_SIZE = 50;
 const MAX_OFFSET = 2000;
 const DELAY_BETWEEN_PAGES_MS = 1000;
@@ -35,17 +35,21 @@ export async function scrapeTours(
   let offset = 0;
   let total: number | null = null;
   let pagesLoaded = 0;
-  const yearNum = parseInt(year, 10);
+  const yearNum = parseInt(year, 10); // parseTourRows needs an integer; buildUrl needs the original string
 
   while (true) {
     const url = buildUrl(year, offset);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    const resp = await fetch(url, {
-      signal: controller.signal,
-      headers: SAC_FETCH_HEADERS,
-    }).catch(() => null);
-    clearTimeout(timeoutId);
+    let resp: Response | null;
+    try {
+      resp = await fetch(url, {
+        signal: controller.signal,
+        headers: SAC_FETCH_HEADERS,
+      }).catch(() => null);
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!resp) {
       throw new UpstreamError("Upstream request failed", 502);
@@ -53,8 +57,9 @@ export async function scrapeTours(
     if (!resp.ok) {
       if (resp.status === 429) {
         const retryAfter = resp.headers.get("Retry-After");
-        const msg = retryAfter
-          ? `SAC server is rate-limiting requests. Retry after ${retryAfter}s.`
+        const retryAfterSecs = retryAfter ? parseInt(retryAfter, 10) : null;
+        const msg = Number.isFinite(retryAfterSecs)
+          ? `SAC server is rate-limiting requests. Retry after ${retryAfterSecs}s.`
           : "SAC server is rate-limiting requests. Please try again later.";
         throw new UpstreamError(msg, 429);
       }

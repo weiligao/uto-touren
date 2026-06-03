@@ -3,10 +3,10 @@
 /** Timeout (ms) for fetch requests to SAC. Prevents hanging on slow/blocked responses. */
 export const FETCH_TIMEOUT_MS = 10_000;
 
-/** Cache TTL in seconds. Tours are updated daily via cron, so 24h is safe. */
-export const CACHE_REVALIDATE_SECONDS = 86_400; // 24 hours
+/** Cache TTL in seconds. Cron refreshes daily; 7-day TTL keeps Redis warm for resilience if SAC is down. */
+export const CACHE_REVALIDATE_SECONDS = 604_800; // 7 days
 
-/** Cache TTL in milliseconds. Precomputed from CACHE_REVALIDATE_SECONDS for performance. */
+/** Cache TTL in milliseconds. Derived from CACHE_REVALIDATE_SECONDS to avoid repeating the unit conversion at call sites. */
 export const CACHE_REVALIDATE_MS = CACHE_REVALIDATE_SECONDS * 1000;
 
 /**
