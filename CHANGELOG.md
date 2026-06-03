@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.1](https://github.com/weiligao/uto-touren/compare/v1.17.0...v1.17.1) (2026-06-03)
+
+
+### Bug Fixes
+
+* add fallback to stale cache ([#106](https://github.com/weiligao/uto-touren/issues/106)) ([a79c658](https://github.com/weiligao/uto-touren/commit/a79c658986f025289d9252129b4777e74421d11a))
+
 ## [1.17.0](https://github.com/weiligao/uto-touren/compare/v1.16.0...v1.17.0) (2026-06-02)
 
 
