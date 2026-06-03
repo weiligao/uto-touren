@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.18.0](https://github.com/weiligao/uto-touren/compare/v1.17.1...v1.18.0) (2026-06-03)
+
+
+### Features
+
+* SEO improvements ([#111](https://github.com/weiligao/uto-touren/issues/111)) ([0470e69](https://github.com/weiligao/uto-touren/commit/0470e6964ec1dfbcfda64d2bf4fa3706341e149e))
+
+
+### Bug Fixes
+
+* relax cache validation and remove cache fallback ([#108](https://github.com/weiligao/uto-touren/issues/108)) ([1734de6](https://github.com/weiligao/uto-touren/commit/1734de6a30983d3dc4cf3a4aee778aa3b39c5ada))
+
 ## [1.17.1](https://github.com/weiligao/uto-touren/compare/v1.17.0...v1.17.1) (2026-06-03)
 
 
