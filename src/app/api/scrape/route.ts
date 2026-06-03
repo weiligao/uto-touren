@@ -13,9 +13,12 @@ const VALID_YEARS = new Set<string>(YEARS);
 // In-flight deduplication: if a scrape for the same year is already running,
 // return the same promise instead of issuing duplicate upstream requests.
 // Memory is bounded to the number of valid years (~15 years), so no cleanup needed.
-const inFlight = new Map<string, Promise<Tour[]>>();
+type TourSource = "sac-uto.ch" | "redis" | "memory";
 
-// Module-level result cache with a TTL matching CACHE_REVALIDATE_SECONDS.
+const inFlight = new Map<string, Promise<{ tours: Tour[]; source: TourSource }>>();
+
+// Module-level short-circuit cache: avoids Redis round-trips within a single instance lifetime.
+// On serverless (Vercel), instances are recycled after inactivity, so entries rarely survive long.
 // Bounded to valid years only, so memory usage is negligible (~15 entries max).
 const scrapeResultCache = new Map<string, { tours: Tour[]; ts: number }>();
 
@@ -48,13 +51,12 @@ function isTour(obj: unknown): obj is Tour {
     typeof tour.duration_days === "number" &&
     Number.isFinite(tour.duration_days) &&
     tour.duration_days > 0 &&
-    isNonEmptyString(tour.tour_type) &&
-    isNonEmptyString(tour.difficulty) &&
+    typeof tour.tour_type === "string" &&
+    typeof tour.difficulty === "string" &&
     Array.isArray(tour.group) &&
-    tour.group.length > 0 &&
     tour.group.every((g) => isNonEmptyString(g)) &&
     isNonEmptyString(tour.title) &&
-    isNonEmptyString(tour.leader) &&
+    typeof tour.leader === "string" &&
     (typeof tour.status === "string" && VALID_TOUR_STATUSES.has(tour.status as TourStatus)) &&
     (tour.detail_url === null || isNonEmptyString(tour.detail_url)) &&
     typeof tour.isPast === "boolean"
@@ -113,16 +115,16 @@ async function setRedisCache(year: string, tours: Tour[]): Promise<void> {
   }
 }
 
-async function persistToCache(year: string, tours: Tour[]): Promise<void> {
+function persistToCache(year: string, tours: Tour[]): void {
   scrapeResultCache.set(year, { tours, ts: Date.now() });
-  await setRedisCache(year, tours);
+  void setRedisCache(year, tours);
 }
 
 /**
  * Resolve tours for a given year, with three-tier caching and in-flight deduplication.
  * Prevents duplicate concurrent scrapes by tracking promises in-flight.
  */
-async function resolveTours(year: string): Promise<Tour[]> {
+async function resolveTours(year: string): Promise<{ tours: Tour[]; source: TourSource }> {
   // Check in-flight deduplication first, before memory cache.
   // This prevents duplicate upstream requests when concurrent calls arrive.
   const existingFlight = inFlight.get(year);
@@ -130,26 +132,28 @@ async function resolveTours(year: string): Promise<Tour[]> {
 
   const cached = getCachedTours(year);
   if (cached !== null) {
-    return cached;
+    return { tours: cached, source: "memory" };
   }
 
   // Start a new scrape promise and track it to deduplicate concurrent requests.
-  let resolveFlight!: (tours: Tour[]) => void;
+  let resolveFlight!: (result: { tours: Tour[]; source: TourSource }) => void;
   let rejectFlight!: (err: unknown) => void;
-  const flightPromise = new Promise<Tour[]>((res, rej) => { resolveFlight = res; rejectFlight = rej; });
+  const flightPromise = new Promise<{ tours: Tour[]; source: TourSource }>((res, rej) => { resolveFlight = res; rejectFlight = rej; });
+  // Suppress unhandled rejection when no concurrent waiters are attached to flightPromise.
+  flightPromise.catch(() => {});
   inFlight.set(year, flightPromise);
 
   try {
     const redisTours = await getRedisCache(year);
     if (redisTours !== null) {
-      resolveFlight(redisTours);
-      return redisTours;
+      resolveFlight({ tours: redisTours, source: "redis" });
+      return { tours: redisTours, source: "redis" };
     }
 
     const tours = await scrapeTours({ year });
-    await persistToCache(year, tours);
-    resolveFlight(tours);
-    return tours;
+    persistToCache(year, tours);
+    resolveFlight({ tours, source: "sac-uto.ch" });
+    return { tours, source: "sac-uto.ch" };
   } catch (err) {
     rejectFlight(err);
     throw err;
@@ -165,16 +169,15 @@ async function resolveTours(year: string): Promise<Tour[]> {
  *
  * @query year - Year as string (required, must be in VALID_YEARS range)
  *
- * @success 200 - { source: "sac-uto.ch" | "cached (stale)", year, tours: Tour[], stale?: true }
+ * @success 200 - { source: "sac-uto.ch" | "redis" | "memory", year, tours: Tour[] }
  * @error 400 - Invalid year parameter
- * @error 502 - Failed to fetch from SAC (with stale fallback if available)
- * @error 500 - Internal error (no cache available)
+ * @error 502 - Failed to fetch from SAC
+ * @error 500 - Internal error
  *
  * Cache strategy:
- * 1. Memory cache (24h TTL)
- * 2. Redis cache (24h TTL)
+ * 1. Memory cache (7-day TTL)
+ * 2. Redis cache (7-day TTL) — long TTL provides resilience if SAC is down for days
  * 3. Fresh scrape from SAC
- * 4. Stale cache fallback (if scrape fails)
  */
 export async function GET(request: NextRequest) {
   const year = request.nextUrl.searchParams.get("year") ?? "";
@@ -184,29 +187,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const tours = await resolveTours(year);
-    const response = NextResponse.json({ source: "sac-uto.ch", year, tours });
+    const { tours, source } = await resolveTours(year);
+    const response = NextResponse.json({ source, year, tours });
     response.headers.set("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
     return response;
   } catch (err) {
-    // Fallback: serve stale cache if scraping fails (e.g., SAC is down)
-    const staleTours = await getRedisCache(year);
-
-    if (staleTours !== null) {
-      // Serve stale cache (even if empty array) when scraping fails
-      // eslint-disable-next-line no-console
-      console.warn("Serving stale cache due to scrape failure", { year });
-      const response = NextResponse.json({
-        source: "cached (stale)",
-        year,
-        tours: staleTours,
-        stale: true,
-      });
-      response.headers.set("Cache-Control", "public, max-age=60, stale-while-revalidate=86400");
-      return response;
-    }
-
-    // No cache available; return scrape error (with sanitized message)
     if (err instanceof UpstreamError) {
       // Sanitize error message to prevent information disclosure
       // (SAC URLs, internal error details, etc.)
