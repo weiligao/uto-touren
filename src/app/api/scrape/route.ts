@@ -13,9 +13,7 @@ const VALID_YEARS = new Set<string>(YEARS);
 // In-flight deduplication: if a scrape for the same year is already running,
 // return the same promise instead of issuing duplicate upstream requests.
 // Memory is bounded to the number of valid years (~15 years), so no cleanup needed.
-type TourSource = "sac-uto.ch" | "redis" | "memory";
-
-const inFlight = new Map<string, Promise<{ tours: Tour[]; source: TourSource }>>();
+const inFlight = new Map<string, Promise<Tour[]>>();
 
 // Module-level short-circuit cache: avoids Redis round-trips within a single instance lifetime.
 // On serverless (Vercel), instances are recycled after inactivity, so entries rarely survive long.
@@ -124,21 +122,19 @@ function persistToCache(year: string, tours: Tour[]): void {
  * Resolve tours for a given year, with three-tier caching and in-flight deduplication.
  * Prevents duplicate concurrent scrapes by tracking promises in-flight.
  */
-async function resolveTours(year: string): Promise<{ tours: Tour[]; source: TourSource }> {
+async function resolveTours(year: string): Promise<Tour[]> {
   // Check in-flight deduplication first, before memory cache.
   // This prevents duplicate upstream requests when concurrent calls arrive.
   const existingFlight = inFlight.get(year);
   if (existingFlight) { return existingFlight; }
 
   const cached = getCachedTours(year);
-  if (cached !== null) {
-    return { tours: cached, source: "memory" };
-  }
+  if (cached !== null) { return cached; }
 
   // Start a new scrape promise and track it to deduplicate concurrent requests.
-  let resolveFlight!: (result: { tours: Tour[]; source: TourSource }) => void;
+  let resolveFlight!: (tours: Tour[]) => void;
   let rejectFlight!: (err: unknown) => void;
-  const flightPromise = new Promise<{ tours: Tour[]; source: TourSource }>((res, rej) => { resolveFlight = res; rejectFlight = rej; });
+  const flightPromise = new Promise<Tour[]>((res, rej) => { resolveFlight = res; rejectFlight = rej; });
   // Suppress unhandled rejection when no concurrent waiters are attached to flightPromise.
   flightPromise.catch(() => {});
   inFlight.set(year, flightPromise);
@@ -146,14 +142,14 @@ async function resolveTours(year: string): Promise<{ tours: Tour[]; source: Tour
   try {
     const redisTours = await getRedisCache(year);
     if (redisTours !== null) {
-      resolveFlight({ tours: redisTours, source: "redis" });
-      return { tours: redisTours, source: "redis" };
+      resolveFlight(redisTours);
+      return redisTours;
     }
 
     const tours = await scrapeTours({ year });
     persistToCache(year, tours);
-    resolveFlight({ tours, source: "sac-uto.ch" });
-    return { tours, source: "sac-uto.ch" };
+    resolveFlight(tours);
+    return tours;
   } catch (err) {
     rejectFlight(err);
     throw err;
@@ -169,7 +165,7 @@ async function resolveTours(year: string): Promise<{ tours: Tour[]; source: Tour
  *
  * @query year - Year as string (required, must be in VALID_YEARS range)
  *
- * @success 200 - { source: "sac-uto.ch" | "redis" | "memory", year, tours: Tour[] }
+ * @success 200 - { year, tours: Tour[] }
  * @error 400 - Invalid year parameter
  * @error 502 - Failed to fetch from SAC
  * @error 500 - Internal error
@@ -187,8 +183,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { tours, source } = await resolveTours(year);
-    const response = NextResponse.json({ source, year, tours });
+    const tours = await resolveTours(year);
+    const response = NextResponse.json({ year, tours });
     response.headers.set("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
     return response;
   } catch (err) {
