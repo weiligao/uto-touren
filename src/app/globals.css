@@ -26,3 +26,42 @@
   mask-image: linear-gradient(to right, black 0%, black calc(100% - 2rem), transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 2rem), transparent 100%);
 }
+
+/* Scroll shadows for horizontally-scrollable table.
+   The outer wrapper has pseudo-elements with fixed positioning (not scrolling).
+   The inner scroll container toggles classes on its parent wrapper. */
+.scroll-shadow-wrapper {
+  position: relative;
+}
+
+.scroll-shadow-wrapper::before,
+.scroll-shadow-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 5; /* Below sticky cells (z-10) but above table body */
+}
+
+.scroll-shadow-wrapper::before {
+  left: 0;
+  background: linear-gradient(to left, transparent, rgba(0, 0, 0, 0.1));
+}
+
+.scroll-shadow-wrapper::after {
+  right: 0;
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.1));
+}
+
+.scroll-shadow-wrapper.scroll-shadow-left::before {
+  opacity: 1;
+}
+
+.scroll-shadow-wrapper.scroll-shadow-right::after {
+  opacity: 1;
+}
+
