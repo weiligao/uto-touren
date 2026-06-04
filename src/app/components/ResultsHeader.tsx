@@ -304,7 +304,7 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
             aria-autocomplete="list"
             aria-expanded={isDropdownVisible ? "true" : "false"}
             aria-haspopup="listbox"
-            aria-label={placeholder}
+            aria-labelledby={labelId}
             aria-controls={dropdownId}
           />
 
@@ -312,12 +312,13 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
             <div
               id={dropdownId}
               role="listbox"
-              className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-md z-10 max-h-48 overflow-y-auto"
+              className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-md z-20 max-h-48 overflow-y-auto"
+              aria-label={label}
             >
               {availableItems.length > 0 ? (
                 availableItems.map((item, idx) => (
                   <button
-                    key={`${item}-${idx}`}
+                    key={item}
                     ref={(el) => {
                       if (el) {
                         dropdownButtonsRef.current.set(idx, el);
@@ -347,9 +348,9 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
 
         {selectedList.length > 0 && (
           <div className="flex gap-1.5 overflow-x-auto whitespace-nowrap px-1 py-1 hide-scrollbar scrollable-chips sm:flex-wrap sm:overflow-visible sm:whitespace-normal">
-            {selectedList.map((item, idx) => (
+            {selectedList.map((item) => (
               <button
-                key={`selected-${item}-${idx}`}
+                key={item}
                 type="button"
                 aria-pressed={true}
                 aria-label={`${item} entfernen`}
