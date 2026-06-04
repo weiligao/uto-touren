@@ -286,6 +286,9 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
           onReset={handleReset}
           visible={hasActive}
         />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
         <div className="relative">
           <input
             ref={inputRef}
