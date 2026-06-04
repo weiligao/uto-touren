@@ -68,7 +68,7 @@ export default function HomeClient({ initialTours }: HomeClientProps) {
     searchParams.get("showPast") === "true",
   );
 
-  const selectedFilters: SelectedFilters = {
+  const selectedFilters: SelectedFilters = useMemo(() => ({
     selectedYears, setSelectedYears,
     selectedTourTypes, setSelectedTourTypes,
     selectedStatuses, setSelectedStatuses,
@@ -80,7 +80,11 @@ export default function HomeClient({ initialTours }: HomeClientProps) {
     selectedLeaders, setSelectedLeaders,
     selectedTitles, setSelectedTitles,
     showPastTours, setShowPastTours,
-  };
+  }), [
+    selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays,
+    selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups,
+    selectedLeaders, selectedTitles, showPastTours,
+  ]);
 
   // Seed with server-prefetched current-year tours so the table renders immediately
   // after hydration without waiting for the client fetch to complete.
@@ -124,7 +128,7 @@ export default function HomeClient({ initialTours }: HomeClientProps) {
       }
     })();
     return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Derive year for CalendarView: use the single selected year, minimum year from allTours if no selection, or current year as fallback.
   const calendarYear = useMemo(() => {

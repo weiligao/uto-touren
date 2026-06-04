@@ -160,6 +160,7 @@ export function TableView({
   const showMoreButtonRef = useRef<HTMLButtonElement>(null);
   const previousTourLengthRef = useRef(tours.length);
   const previousVisibleCountRef = useRef<number | null>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
   const {
     years,
     selectedYears,
@@ -230,6 +231,37 @@ export function TableView({
     previousVisibleCountRef.current ??= visibleTours.length;
   }, [tours.length, visibleTours.length]);
 
+  // Update scroll shadow visibility based on scroll position and overflow
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) {
+      return;
+    }
+    const wrapper = el.parentElement;
+    if (!wrapper?.classList) {
+      return;
+    } // Guard: ensure wrapper has classList
+
+    const update = () => {
+      const hasOverflow = el.scrollWidth > el.clientWidth;
+      const atStart = el.scrollLeft <= 1;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1;
+
+      wrapper.classList.toggle("scroll-shadow-left", hasOverflow && !atStart);
+      wrapper.classList.toggle("scroll-shadow-right", hasOverflow && !atEnd);
+    };
+
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <ResultsHeader
@@ -267,8 +299,9 @@ export function TableView({
         showPastTours={selectedFilters.showPastTours}
         onShowPastToursChange={selectedFilters.setShowPastTours}
       />
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm" aria-label="Tourenliste">
+      <div className="scroll-shadow-wrapper">
+        <div ref={tableScrollRef} className="overflow-x-auto">
+          <table className="w-full text-sm" aria-label="Tourenliste">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               {TABLE_COLUMNS.map((col) => (
@@ -316,6 +349,7 @@ export function TableView({
             )}
           </tbody>
         </table>
+        </div>
       </div>
       {itemsToShow < visibleTours.length && (
         <div className="px-4 py-4 border-t border-gray-200 bg-gray-50 text-center">
