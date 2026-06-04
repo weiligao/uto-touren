@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/weiligao/uto-touren/compare/v1.18.0...v1.19.0) (2026-06-04)
+
+
+### Features
+
+* UX improvements and fixes ([#112](https://github.com/weiligao/uto-touren/issues/112)) ([f0f87ca](https://github.com/weiligao/uto-touren/commit/f0f87ca3211704e2ce205032b57663daac74ca4d))
+
 ## [1.18.0](https://github.com/weiligao/uto-touren/compare/v1.17.1...v1.18.0) (2026-06-03)
 
 
