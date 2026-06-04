@@ -234,9 +234,13 @@ export function TableView({
   // Update scroll shadow visibility based on scroll position and overflow
   useEffect(() => {
     const el = tableScrollRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     const wrapper = el.parentElement;
-    if (!wrapper?.classList) return; // Guard: ensure wrapper has classList
+    if (!wrapper?.classList) {
+      return;
+    } // Guard: ensure wrapper has classList
 
     const update = () => {
       const hasOverflow = el.scrollWidth > el.clientWidth;

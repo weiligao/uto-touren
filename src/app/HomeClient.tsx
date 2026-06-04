@@ -128,7 +128,7 @@ export default function HomeClient({ initialTours }: HomeClientProps) {
       }
     })();
     return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Derive year for CalendarView: use the single selected year, minimum year from allTours if no selection, or current year as fallback.
   const calendarYear = useMemo(() => {
