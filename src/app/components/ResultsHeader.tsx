@@ -313,7 +313,6 @@ const SearchableFilterRow = memo(function SearchableFilterRow({
               id={dropdownId}
               role="listbox"
               className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-md z-20 max-h-48 overflow-y-auto"
-              aria-label={label}
             >
               {availableItems.length > 0 ? (
                 availableItems.map((item, idx) => (

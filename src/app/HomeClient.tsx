@@ -68,7 +68,7 @@ export default function HomeClient({ initialTours }: HomeClientProps) {
     searchParams.get("showPast") === "true",
   );
 
-  const selectedFilters: SelectedFilters = {
+  const selectedFilters: SelectedFilters = useMemo(() => ({
     selectedYears, setSelectedYears,
     selectedTourTypes, setSelectedTourTypes,
     selectedStatuses, setSelectedStatuses,
@@ -80,7 +80,11 @@ export default function HomeClient({ initialTours }: HomeClientProps) {
     selectedLeaders, setSelectedLeaders,
     selectedTitles, setSelectedTitles,
     showPastTours, setShowPastTours,
-  };
+  }), [
+    selectedYears, selectedTourTypes, selectedStatuses, selectedWeekdays,
+    selectedDurations, selectedDifficulties, selectedEventTypes, selectedGroups,
+    selectedLeaders, selectedTitles, showPastTours,
+  ]);
 
   // Seed with server-prefetched current-year tours so the table renders immediately
   // after hydration without waiting for the client fetch to complete.
