@@ -3,10 +3,39 @@
  * Module-level caches (inFlight, scrapeResultCache) are singletons per server instance,
  * so deduplication and memory caching work across both callers.
  */
-import { CACHE_REVALIDATE_MS, CACHE_REVALIDATE_SECONDS } from "@/app/api/_shared";
+import { CACHE_REVALIDATE_SECONDS } from "@/app/api/_shared";
 import { scrapeTours } from "@/app/api/scrape/_scraper";
 import { redis } from "@/lib/redis";
 import type { Tour, TourStatus } from "@/lib/types";
+
+/** Cache TTL in milliseconds. Derived from CACHE_REVALIDATE_SECONDS to avoid repeating the unit conversion at call sites. */
+const CACHE_REVALIDATE_MS = CACHE_REVALIDATE_SECONDS * 1000;
+
+/**
+ * Determine the Redis cache TTL (in seconds) for a given year.
+ *
+ * - Current and next year: finite TTL (CACHE_REVALIDATE_SECONDS). These years
+ *   change frequently and are refreshed daily by the cron job; the TTL provides
+ *   a fallback window if a scrape fails.
+ * - Historical years: no TTL (returns undefined → never expires). Past tour data
+ *   is immutable, so it is cached permanently.
+ *
+ * An unparseable year falls back to the finite TTL so a malformed entry cannot
+ * live in the cache forever.
+ *
+ * @param year - The year as a string (e.g. "2026").
+ * @param currentYear - The current calendar year, passed in to avoid repeated
+ *   Date construction when called in a loop.
+ * @returns TTL in seconds, or undefined for no expiration.
+ */
+function getCacheTTLForYear(year: string, currentYear: number): number | undefined {
+  const yearNum = Number.parseInt(year, 10);
+  if (!Number.isInteger(yearNum)) {
+    return CACHE_REVALIDATE_SECONDS;
+  }
+  const isCurrentOrNext = yearNum === currentYear || yearNum === currentYear + 1;
+  return isCurrentOrNext ? CACHE_REVALIDATE_SECONDS : undefined;
+}
 
 // In-flight deduplication: if a scrape for the same year is already running,
 // return the same promise instead of issuing duplicate upstream requests.
@@ -90,10 +119,18 @@ async function getRedisCache(year: string): Promise<Tour[] | null> {
   }
 }
 
-async function setRedisCache(year: string, tours: Tour[]): Promise<void> {
+/**
+ * Write tours to Redis with a year-appropriate TTL (see getCacheTTLForYear):
+ * current/next year expire after CACHE_REVALIDATE_SECONDS, historical years
+ * are stored without expiration. No-op when Redis is not configured.
+ * Errors are swallowed (logged) since a failed cache write is not fatal.
+ */
+export async function writeToursToRedis(year: string, tours: Tour[]): Promise<void> {
   if (!redis) { return; }
   try {
-    await redis.set(year, tours, { ex: CACHE_REVALIDATE_SECONDS });
+    const ttl = getCacheTTLForYear(year, new Date().getFullYear());
+    const options = ttl ? { ex: ttl } : {};
+    await redis.set(year, tours, options);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.warn("Redis set failed:", err instanceof Error ? err.message : err);
@@ -102,7 +139,7 @@ async function setRedisCache(year: string, tours: Tour[]): Promise<void> {
 
 function persistToCache(year: string, tours: Tour[]): void {
   scrapeResultCache.set(year, { tours, ts: Date.now() });
-  void setRedisCache(year, tours);
+  void writeToursToRedis(year, tours);
 }
 
 /**
@@ -111,7 +148,8 @@ function persistToCache(year: string, tours: Tour[]): void {
  *
  * Cache strategy:
  * 1. Memory cache (instance lifetime, short-circuits Redis round-trip)
- * 2. Redis cache (7-day TTL — long TTL provides resilience if SAC is down for days)
+ * 2. Redis cache (current/next year: 7-day TTL for fallback if a scrape fails;
+ *    historical years: no TTL since past tour data is immutable)
  * 3. Fresh scrape from SAC
  */
 export async function resolveTours(year: string): Promise<Tour[]> {
