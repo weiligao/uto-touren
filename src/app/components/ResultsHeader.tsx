@@ -468,7 +468,7 @@ export const ResultsHeader = memo(function ResultsHeader({
     (selectedLeaders?.size ?? 0) +
     (selectedTitles?.size ?? 0);
   const [advancedOpenLocal, setAdvancedOpenLocal] = useState(advancedActiveCount > 0);
-  const advancedOpen = advancedActiveCount > 0 || advancedOpenLocal;
+  const advancedOpen = advancedOpenLocal;
 
   const filterPanelId = useId();
   const yearLabelId = useId();

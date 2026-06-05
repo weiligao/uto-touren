@@ -169,6 +169,9 @@ export function useFilterState(tours: Tour[], selected: SelectedFilters): Filter
     };
 
     for (const tour of enrichedTours) {
+      // Exclude past tours from facet options when they're hidden, so the filter
+      // lists stay consistent with the visible (matchesTour) result set.
+      if (!selected.showPastTours && tour.isPast) { continue; }
       const matchVector = computeMatchVector(tour, selected);
 
       if (passExcept(matchVector, DIMENSION_INDICES.year)) { yearsSet.add(tour.start_date.slice(0, 4)); }
