@@ -297,7 +297,6 @@ export function CalendarView({
     [tours],
   );
 
-  const [month, setMonth] = useState(() => detectInitialMonth(calendarTours, parseInt(year, 10)));
   const toursList = useMemo(() => calendarTours.map((ct) => ct.tour), [calendarTours]);
   const {
     years,
@@ -334,6 +333,12 @@ export function CalendarView({
     () => calendarTours.filter((ct) => matchesTour(ct.tour)),
     [calendarTours, matchesTour],
   );
+
+  // Open on the first month that has a visible (filtered) tour, so that with
+  // "show past tours" disabled the calendar starts on the first upcoming event
+  // rather than the earliest historical one. Computed after visibleCalendarTours
+  // so the lazy initializer already reflects the active filters.
+  const [month, setMonth] = useState(() => detectInitialMonth(visibleCalendarTours, yearNum));
 
   const { minMonth, maxMonth } = useMemo(() => {
     // Calculate navigation bounds from filtered tours - constrain navigation to months with matching events
