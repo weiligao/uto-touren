@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0](https://github.com/weiligao/uto-touren/compare/v1.19.0...v1.20.0) (2026-06-05)
+
+
+### Features
+
+* enhance caching strategy for historical tours with year-dependent TTL ([#114](https://github.com/weiligao/uto-touren/issues/114)) ([9314180](https://github.com/weiligao/uto-touren/commit/93141809957b91336b96526f7b1895b2d23eee82))
+
 ## [1.19.0](https://github.com/weiligao/uto-touren/compare/v1.18.0...v1.19.0) (2026-06-04)
 
 
