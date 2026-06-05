@@ -64,6 +64,14 @@ Response includes `pendingHistoricalYears` and `fullScrapeComplete` flag.
 ### Regular Updates
 Once backfill completes (global flag set), cron switches to **regular-update mode**: scrapes the current and next calendar year on each invocation to capture newly-added or modified tours.
 
+### Cache TTL
+Cached tour data uses a year-dependent TTL in Redis:
+
+- **Current and next year**: 7-day TTL. These years change frequently and are refreshed daily by cron; the TTL provides a fallback window if a scrape fails.
+- **Historical years**: no TTL (cached permanently). Past tour data is immutable, so it never expires and is not lost if a scrape later returns incomplete results.
+
+When the calendar year rolls over, the previous current-year entry is rewritten with no TTL on its next scrape, automatically transitioning it to permanent storage.
+
 ### Cron Schedule
 Configured in `vercel.json`. See that file for the exact schedule.
 

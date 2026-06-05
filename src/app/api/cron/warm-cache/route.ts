@@ -1,8 +1,7 @@
 import { HISTORICAL_YEARS_COUNT, YEARS, getRegularUpdateScrapeTasks } from "@/lib/constants";
 import { redis } from "@/lib/redis";
-import type { Tour } from "@/lib/types";
 import { NextResponse } from "next/server";
-import { CACHE_REVALIDATE_SECONDS } from "../../_shared";
+import { writeToursToRedis } from "../../../tours";
 import { UpstreamError, scrapeTours } from "../../scrape/_scraper";
 
 export const maxDuration = 300;
@@ -138,17 +137,6 @@ async function isFullScrapeComplete(): Promise<{ complete: boolean; completedAt?
   }
 }
 
-async function cacheTours(year: string, tours: Tour[]): Promise<void> {
-  if (!redis) { return; }
-  try {
-    await redis.set(year, tours, { ex: CACHE_REVALIDATE_SECONDS });
-  } catch {
-    // eslint-disable-next-line no-console
-    console.warn("Failed to cache tours for year", { year });
-    // Continue anyway; cache miss is not fatal
-  }
-}
-
 export async function GET(request: Request) {
   const isDev = process.env.NODE_ENV === "development";
   const secret = process.env.CRON_SECRET;
@@ -226,7 +214,7 @@ export async function GET(request: Request) {
     }
     try {
       const tours = await scrapeTours(task);
-      await cacheTours(task.year, tours);
+      await writeToursToRedis(task.year, tours);
       results.push({ year: task.year, count: tours.length });
       // Only mark per-year completion during backfill; regular updates re-run every cron.
       if (isFullScrape) {
