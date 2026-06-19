@@ -2,7 +2,7 @@
 
 import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS, TABLE_ROWS_PER_PAGE } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
-import { formatDate, formatDuration, formatGroups, isKurs, unknownIfEmpty } from "@/lib/utils";
+import { formatDuration, formatGroups, isKurs, unknownIfEmpty } from "@/lib/utils";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
@@ -14,13 +14,50 @@ const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }
   { label: "Status", center: true, mobileHidden: true },
   { label: "Typ", mobileHidden: true },
   { label: "Anlass", mobileHidden: true },
-  { label: "Datum" },
   { label: "Dauer", mobileHidden: true },
   { label: "Schwierigkeit", mobileHidden: true },
   { label: "Gruppe", mobileHidden: true },
   { label: "Titel" },
   { label: "Leiter/in", mobileHidden: true },
 ];
+// +1 calendar-button column (desktop only) +1 expand-button column (mobile only)
+const TABLE_COLSPAN = TABLE_COLUMNS.length + 2;
+
+// --- Date grouping helpers ---
+
+type DateGroup = {
+  startKey: string; // YYYY-MM-DD
+  items: Array<{ tour: Tour; i: number }>;
+};
+
+const DATE_GROUP_FORMAT = new Intl.DateTimeFormat("de-CH", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+function formatGroupDate(dateKey: string): string {
+  if (!dateKey) return "Datum unbekannt";
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return DATE_GROUP_FORMAT.format(new Date(y, m - 1, d));
+}
+
+function groupByDate(items: Array<{ tour: Tour; i: number }>): DateGroup[] {
+  const map = new Map<string, DateGroup>();
+  for (const item of items) {
+    const key = item.tour.start_date || "";
+    if (!map.has(key)) {
+      map.set(key, { startKey: key, items: [] });
+    }
+    map.get(key)!.items.push(item);
+  }
+  return Array.from(map.values()).sort((a, b) => {
+    if (!a.startKey) return 1;
+    if (!b.startKey) return -1;
+    return a.startKey < b.startKey ? -1 : a.startKey > b.startKey ? 1 : 0;
+  });
+}
 
 function StatusDot({ status }: { status: TourStatus }) {
   return (
@@ -45,7 +82,7 @@ const TourRow = memo(function TourRow({
 }) {
   return (
     <>
-      <tr className="hover:bg-gray-50 transition-colors">
+      <tr className="hover:bg-gray-50 transition-colors border-b border-gray-100">
         <td className="hidden sm:table-cell px-4 py-3 text-center">
           <StatusDot status={tour.status} />
         </td>
@@ -54,13 +91,6 @@ const TourRow = memo(function TourRow({
         </td>
         <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
           {isKurs(tour.difficulty) ? EVENT_TYPE_KURS : EVENT_TYPE_TOUR}
-        </td>
-        <td className="px-4 py-3 whitespace-nowrap text-gray-900">
-          <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className={`sm:hidden inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status] ?? STATUS_COLORS.unknown}`} />
-            <span className="sr-only sm:hidden">{STATUS_LABELS[tour.status] ?? STATUS_LABELS.unknown}</span>
-            {formatDate(tour.start_date, tour.date)}
-          </span>
         </td>
         <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-gray-700">
           {formatDuration(tour.duration_days)}
@@ -72,7 +102,11 @@ const TourRow = memo(function TourRow({
           {formatGroups(tour.group)}
         </td>
         <td className="px-4 py-3 text-gray-900">
-          <TourTitle title={tour.title} url={tour.detail_url} />
+          <span className="inline-flex items-center gap-1.5">
+            <span aria-hidden="true" className={`sm:hidden inline-block h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[tour.status] ?? STATUS_COLORS.unknown}`} />
+            <span className="sr-only sm:hidden">{STATUS_LABELS[tour.status] ?? STATUS_LABELS.unknown}</span>
+            <TourTitle title={tour.title} url={tour.detail_url} />
+          </span>
         </td>
         <td className="hidden sm:table-cell px-4 py-3 text-gray-700">{unknownIfEmpty(tour.leader)}</td>
         <td className="hidden sm:table-cell px-3 py-3 text-center">
@@ -102,7 +136,7 @@ const TourRow = memo(function TourRow({
         hidden={!expanded}
         className="sm:hidden bg-gray-50 border-b border-gray-100"
       >
-        <td colSpan={3} className="px-4 py-3">
+        <td colSpan={TABLE_COLSPAN} className="px-4 py-3">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
             <div>
               <dt className="font-medium text-gray-500">Status</dt>
@@ -211,6 +245,8 @@ export function TableView({
     [visibleTours, itemsToShow],
   );
 
+  const groupedTours = useMemo(() => groupByDate(paginatedTours), [paginatedTours]);
+
   // Reset state when data changes. Use refs to detect actual changes without triggering
   // on first render. Since visibleTours is derived from tours, we check both:
   // - tours.length: detects when data is loaded/refreshed
@@ -224,11 +260,12 @@ export function TableView({
       setExpandedRows(new Set());
       setItemsToShow(TABLE_ROWS_PER_PAGE);
     } else if (filterChanged) {
+      setExpandedRows(new Set());
       setItemsToShow(TABLE_ROWS_PER_PAGE);
     }
 
-    // Initialize ref on first run (after visibleTours is computed)
-    previousVisibleCountRef.current ??= visibleTours.length;
+    // Always keep ref in sync so filterChanged compares against the true previous value
+    previousVisibleCountRef.current = visibleTours.length;
   }, [tours.length, visibleTours.length]);
 
   // Update scroll shadow visibility based on scroll position and overflow
@@ -321,13 +358,10 @@ export function TableView({
               <th scope="col" className="sm:hidden px-2 pr-4 py-3 w-8" aria-label="Zeile aufklappen" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {paginatedTours.map(({ tour, i }) => (
-              <TourRow key={tour.detail_url} tour={tour} i={i} expanded={expandedRows.has(i)} onToggle={toggleRow} />
-            ))}
-            {visibleTours.length === 0 && (
+          {visibleTours.length === 0 ? (
+            <tbody>
               <tr>
-                <td colSpan={TABLE_COLUMNS.length + 2} className="px-6 py-16 text-center text-sm text-gray-500">
+                <td colSpan={TABLE_COLSPAN} className="px-6 py-16 text-center text-sm text-gray-500">
                   {tours.length === 0 ? (
                     "Keine Touren gefunden."
                   ) : (
@@ -335,9 +369,7 @@ export function TableView({
                       <p className="mb-3">Keine Touren für diese Filter.</p>
                       <button
                         type="button"
-                        onClick={() => {
-                          resetFilters();
-                        }}
+                        onClick={resetFilters}
                         className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         Filter zurücksetzen
@@ -346,8 +378,27 @@ export function TableView({
                   )}
                 </td>
               </tr>
-            )}
-          </tbody>
+            </tbody>
+          ) : groupedTours.map((group) => (
+            <tbody key={group.startKey || "__unknown__"} aria-labelledby={`date-group-${group.startKey || "unknown"}`}>
+              {/* Date group header — scope="rowgroup" + aria-labelledby covers both spec-compliant and legacy AT */}
+              <tr className="bg-gray-100 border-t-2 border-gray-300">
+                <th
+                  id={`date-group-${group.startKey || "unknown"}`}
+                  scope="rowgroup"
+                  colSpan={TABLE_COLSPAN}
+                  className="px-4 py-2 text-left font-normal"
+                >
+                  <time dateTime={group.startKey || undefined} className="text-sm font-semibold text-gray-700">
+                    {formatGroupDate(group.startKey)}
+                  </time>
+                </th>
+              </tr>
+              {group.items.map(({ tour, i }) => (
+                <TourRow key={tour.detail_url ?? i} tour={tour} i={i} expanded={expandedRows.has(i)} onToggle={toggleRow} />
+              ))}
+            </tbody>
+          ))}
         </table>
         </div>
       </div>
