@@ -68,7 +68,7 @@ export function parseTourRows(html: string, year: number): Tour[] {
   const $ = cheerio.load(html);
   const tours: Tour[] = [];
 
-  const todayString = new Date().toISOString().split("T")[0];
+  const todayString = toIsoDate(new Date());
 
   $("table tr").each((_i, row) => {
     const cells = $(row).find("td");
@@ -100,10 +100,18 @@ export function parseTourRows(html: string, year: number): Tour[] {
 }
 
 /**
- * Extract the total tour count from the SAC pagination indicator "X-Y / N".
- * Returns null if the indicator is absent (falls back to empty-page guard).
+ * Extract the total tour count from the SAC pagination indicator.
+ * Two formats:
+ * - Paginated (>50 results): "1 - 50 / 1288"
+ * - Single page (≤50 results): just a number, e.g. " 3" before </form>
+ * Returns null if neither format is found.
  */
 export function getTotalCount(html: string): number | null {
-  const match = html.match(/\d+(?:&nbsp;|\s)*-(?:&nbsp;|\s)*\d+(?:&nbsp;|\s)*\/(?:&nbsp;|\s)*(\d+)/);
-  return match ? parseInt(match[1], 10) : null;
+  // Paginated format: "X - Y / N"
+  const paginatedMatch = html.match(/\d+(?:&nbsp;|\s)*-(?:&nbsp;|\s)*\d+(?:&nbsp;|\s)*\/(?:&nbsp;|\s)*(\d+)/);
+  if (paginatedMatch) { return parseInt(paginatedMatch[1], 10); }
+  // Single-page format: standalone number immediately before </form>...<div class="table-responsive">
+  const singlePageMatch = html.match(/(\d+)\s*<\/form>[\s\S]*?<div class="table-responsive">/);
+  if (singlePageMatch) { return parseInt(singlePageMatch[1], 10); }
+  return null;
 }
