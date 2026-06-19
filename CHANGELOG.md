@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.1](https://github.com/weiligao/uto-touren/compare/v1.22.0...v1.22.1) (2026-06-19)
+
+
+### Bug Fixes
+
+* remove title column on mobile ([#128](https://github.com/weiligao/uto-touren/issues/128)) ([7c690c9](https://github.com/weiligao/uto-touren/commit/7c690c9cddf988234e6f297e2bc8e28b8866ee88))
+
 ## [1.22.0](https://github.com/weiligao/uto-touren/compare/v1.21.0...v1.22.0) (2026-06-19)
 
 
