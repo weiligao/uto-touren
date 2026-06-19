@@ -475,6 +475,7 @@ export function CalendarView({
         showPastTours={selectedFilters.showPastTours}
         onShowPastToursChange={selectedFilters.setShowPastTours}
       />
+      <hr className="border-t-2 border-gray-200 m-0" />
 
       <div ref={calendarContainerRef} className="relative p-4 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded" tabIndex={0} aria-label="Tourkalender, navigierbar mit Pfeil-Tasten oder Wischgeste">
         <FullCalendar
