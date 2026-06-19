@@ -10,15 +10,15 @@ import { TourTitle } from "./TourTitle";
 import type { SelectedFilters } from "./useFilterState";
 import { useFilterState } from "./useFilterState";
 
-const TABLE_COLUMNS: { label: string; mobileHidden?: boolean; center?: boolean }[] = [
-  { label: "Status", center: true, mobileHidden: true },
-  { label: "Typ", mobileHidden: true },
-  { label: "Anlass", mobileHidden: true },
-  { label: "Dauer", mobileHidden: true },
-  { label: "Schwierigkeit", mobileHidden: true },
-  { label: "Gruppe", mobileHidden: true },
+const TABLE_COLUMNS: { label: string; center?: boolean }[] = [
+  { label: "Status", center: true },
+  { label: "Typ" },
+  { label: "Anlass" },
+  { label: "Dauer" },
+  { label: "Schwierigkeit" },
+  { label: "Gruppe" },
   { label: "Titel" },
-  { label: "Leiter/in", mobileHidden: true },
+  { label: "Leiter/in" },
 ];
 // +1 calendar-button column (desktop only) +1 expand-button column (mobile only)
 const TABLE_COLSPAN = TABLE_COLUMNS.length + 2;
@@ -351,26 +351,22 @@ export function TableView({
         showPastTours={selectedFilters.showPastTours}
         onShowPastToursChange={selectedFilters.setShowPastTours}
       />
+      <hr className="border-t-2 border-gray-200 m-0" />
       <div className="scroll-shadow-wrapper">
         <div ref={tableScrollRef} className="overflow-x-auto">
           <table className="w-full text-sm" aria-label="Tourenliste">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+          <thead className="hidden sm:table-header-group bg-gray-50 border-b border-gray-200">
+            <tr>
               {TABLE_COLUMNS.map((col) => (
                 <th
                   key={col.label}
                   scope="col"
-                  className={[
-                    "px-4 py-3 font-medium text-gray-600",
-                    col.center ? "text-center" : "text-left",
-                    col.mobileHidden ? "hidden sm:table-cell" : "",
-                  ].join(" ")}
+                  className={`px-4 py-3 font-medium text-gray-600 ${col.center ? "text-center" : "text-left"}`}
                 >
                   {col.label}
                 </th>
               ))}
-              <th scope="col" className="hidden sm:table-cell px-2 py-3 w-8" aria-label="Zum Kalender hinzufügen" />
-              <th scope="col" className="sm:hidden px-2 pr-4 py-3 w-8" aria-label="Zeile aufklappen" />
+              <th scope="col" className="px-2 py-3 w-8" aria-label="Zum Kalender hinzufügen" />
             </tr>
           </thead>
           {visibleTours.length === 0 ? (
