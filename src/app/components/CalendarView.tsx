@@ -1,21 +1,37 @@
 "use client";
 
-import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_ARIA_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
+import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
 import { formatDuration, formatGroups, isKurs, parseDateString, unknownIfEmpty } from "@/lib/utils";
-import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import type { EventClickArg } from "@fullcalendar/core";
+import deLocale from "@fullcalendar/core/locales/de";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import FullCalendar from "@fullcalendar/react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import "./calendar-theme.css";
 import { CalendarExportButtons } from "./IcsButton";
 import { ResultsHeader } from "./ResultsHeader";
 import { TourTitle } from "./TourTitle";
 import type { SelectedFilters } from "./useFilterState";
 import { useFilterState } from "./useFilterState";
 
-const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-const WEEKDAY_FULL_NAMES = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
-const MONTH_NAMES = [
-  "Januar", "Februar", "März", "April", "Mai", "Juni",
-  "Juli", "August", "September", "Oktober", "November", "Dezember",
-];
+// UI Constants
+const TOOLTIP_WIDTH = 256; // w-64
+const TOOLTIP_APPROX_HEIGHT = 420;
+const VIEWPORT_MARGIN = 8;
+const MOBILE_BREAKPOINT = 640;
+
+// Swipe gesture constants
+const SWIPE_THRESHOLD_PX = 50;
+const POSITION_UPDATE_DELAY_MS = 0;
+
+/** Format a Date to YYYY-MM-DD string in local timezone (no ISO conversion) */
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 interface CalendarTour {
   tour: Tour & { start_date: string };
@@ -23,49 +39,7 @@ interface CalendarTour {
   days: number;
 }
 
-function getCalendarDays(year: number, month: number) {
-  // Monday = 0 ... Sunday = 6
-  const startDow = (new Date(year, month, 1).getDay() + 6) % 7;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const cells: (number | null)[] = [];
-  for (let i = 0; i < startDow; i++) {cells.push(null);}
-  for (let d = 1; d <= daysInMonth; d++) {cells.push(d);}
-  while (cells.length % 7 !== 0) {cells.push(null);}
-
-  return cells;
-}
-
-function dateKey(year: number, month: number, day: number) {
-  return `${year}-${month}-${day}`;
-}
-
-function buildTourMap(tours: CalendarTour[], year: number, month: number) {
-  const map = new Map<string, CalendarTour[]>();
-
-  for (const ct of tours) {
-    for (let d = 0; d < ct.days; d++) {
-      const date = new Date(
-        ct.startDate.getFullYear(),
-        ct.startDate.getMonth(),
-        ct.startDate.getDate() + d,
-      );
-      if (date.getFullYear() === year && date.getMonth() === month) {
-        const key = dateKey(year, month, date.getDate());
-        const list = map.get(key);
-        if (list) { list.push(ct); } else { map.set(key, [ct]); }
-      }
-    }
-  }
-
-  return map;
-}
-
-const TOOLTIP_WIDTH = 256; // w-64
-const TOOLTIP_APPROX_HEIGHT = 300;
-const VIEWPORT_MARGIN = 8;
-
-function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: React.RefObject<HTMLDivElement | null>; onClose: () => void }) {
+function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: React.RefObject<HTMLElement | null>; onClose: () => void }) {
   const titleId = useId();
   const [dialogStyle, setDialogStyle] = useState<{
     top: number;
@@ -80,13 +54,14 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
   // Keep position current as the user scrolls or resizes the viewport.
   // Throttled to one update per animation frame to avoid forcing layout
   // on every scroll event (which triggers getBoundingClientRect + setState).
+  // Position tooltip and manage focus/click-outside in one consolidated effect
   useEffect(() => {
     function updatePosition() {
       if (!anchorRef.current) { return; }
       const rect = anchorRef.current.getBoundingClientRect();
       const above = rect.top - TOOLTIP_APPROX_HEIGHT > VIEWPORT_MARGIN;
       const top = above ? rect.top - 8 : rect.bottom + 8;
-      if (window.innerWidth < 640) {
+      if (window.innerWidth < MOBILE_BREAKPOINT) {
         setDialogStyle({ top, left: 12, right: 12, transform: above ? "translateY(-100%)" : "none" });
       } else {
         const rawLeft = rect.left + rect.width / 2;
@@ -97,6 +72,8 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         setDialogStyle({ top, left: clampedLeft, width: TOOLTIP_WIDTH, transform: `translate(-50%, ${above ? "-100%" : "0"})` });
       }
     }
+
+    // Position update: RAF-throttled on scroll/resize
     let rafId: number | null = null;
     function onScrollOrResize() {
       if (rafId !== null) { return; }
@@ -105,35 +82,47 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
         updatePosition();
       });
     }
-    updatePosition(); // set position synchronously on open
-    window.addEventListener("resize", onScrollOrResize);
-    window.addEventListener("scroll", onScrollOrResize, { passive: true });
-    return () => {
-      if (rafId !== null) { cancelAnimationFrame(rafId); }
-      window.removeEventListener("resize", onScrollOrResize);
-      window.removeEventListener("scroll", onScrollOrResize);
-    };
-  }, [anchorRef]);
 
-  // Move focus to the close button when the dialog opens
-  useEffect(() => {
-    closeButtonRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node;
-      const insideAnchor = anchorRef.current?.contains(target) ?? false;
-      const insideDialog = dialogRef.current?.contains(target) ?? false;
+    // Outside-click handler: close when clicking outside both anchor and dialog
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      // Get the composed path for better delegation, fallback to target
+      const eventPath = (e as Event & { composedPath(): EventTarget[] }).composedPath?.();
+      const path = eventPath ?? [e.target as EventTarget];
+      const insideAnchor = path.some((el: EventTarget) => el === anchorRef.current);
+      const insideDialog = path.some((el: EventTarget) => el === dialogRef.current);
       if (!insideAnchor && !insideDialog) {
         onClose();
       }
     };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler);
+
+    // Save initial focus to restore later
+    const initialFocus = document.activeElement as HTMLElement;
+
+    // Focus close button on open
+    closeButtonRef.current?.focus();
+
+    // Set initial position
+    updatePosition();
+    const timeoutId = setTimeout(updatePosition, POSITION_UPDATE_DELAY_MS);
+
+    // Attach listeners
+    window.addEventListener("resize", onScrollOrResize);
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    // Cleanup
     return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
+      clearTimeout(timeoutId);
+      if (rafId !== null) { cancelAnimationFrame(rafId); }
+      window.removeEventListener("resize", onScrollOrResize);
+      window.removeEventListener("scroll", onScrollOrResize);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      // Restore focus to the opening button when dialog closes
+      if (initialFocus && initialFocus !== document.body) {
+        initialFocus.focus();
+      }
     };
   }, [anchorRef, onClose]);
 
@@ -145,6 +134,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      aria-describedby="tour-details"
       onKeyDown={(e) => {
         if (e.key === "Escape") { onClose(); return; }
         if (e.key === "Tab" && dialogRef.current) {
@@ -180,7 +170,7 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
           </svg>
         </button>
       </div>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+      <dl id="tour-details" className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
         <div>
           <dt className="font-medium text-gray-500">Status</dt>
           <dd className="flex items-center gap-1.5 text-gray-800">
@@ -218,61 +208,9 @@ function TourTooltip({ tour, anchorRef, onClose }: { tour: Tour; anchorRef: Reac
   );
 }
 
-const TourPill = memo(function TourPill({
-  ct,
-}: {
-  ct: CalendarTour;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const dotColor = STATUS_COLORS[ct.tour.status];
-  const handleClose = useCallback(() => {
-    setOpen(false);
-    buttonRef.current?.focus();
-  }, []);
 
-  return (
-    <div ref={ref} className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        aria-label={`${ct.tour.title} — ${STATUS_ARIA_LABELS[ct.tour.status] ?? STATUS_ARIA_LABELS.unknown}`}
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight bg-blue-50 hover:bg-blue-100 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-      >
-        <span aria-hidden="true" className={`shrink-0 inline-block h-2 w-2 rounded-full ${dotColor}`} />
-        <span className="truncate">{ct.tour.title}</span>
-      </button>
-      {open && <TourTooltip tour={ct.tour} anchorRef={ref} onClose={handleClose} />}
-    </div>
-  );
-});
 
-/**
- * Calculates a month offset relative to the given year.
- * Month offset = 0 for Jan of yearNum, -1 for Dec of yearNum-1, 12 for Jan of yearNum+1, etc.
- * This allows year-aware calendar navigation where month can go negative or exceed 11.
- */
-function toMonthOffset(year: number, month: number, yearNum: number): number {
-  return (year - yearNum) * 12 + month;
-}
 
-/**
- * Finds the first month (earliest month offset) with a tour.
- * Used to auto-navigate calendar to the first event after filtering.
- */
-function detectInitialMonth(tours: CalendarTour[], yearNum: number): number {
-  if (tours.length === 0) { return 0; }
-  return tours.reduce((min, ct) => {
-    const offset = toMonthOffset(ct.startDate.getFullYear(), ct.startDate.getMonth(), yearNum);
-    return Math.min(min, offset);
-  }, Infinity);
-}
-
-const SWIPE_THRESHOLD = 50;
 
 export function CalendarView({
   tours,
@@ -284,6 +222,70 @@ export function CalendarView({
   selectedFilters: SelectedFilters;
 }) {
   const yearNum = parseInt(year, 10);
+  const calendarRef = useRef<FullCalendar>(null);
+
+  // Handle swipe gestures and keyboard navigation for month navigation
+  useEffect(() => {
+    const container = calendarContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (!e.touches[0]) {
+        return;
+      }
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!e.changedTouches[0]) {
+        return;
+      }
+      // Defensive check: touchStartRef may not be initialized if touchStart didn't fire
+      const { x: startX = 0, y: startY = 0 } = touchStartRef.current || {};
+      const endX = e.changedTouches[0].clientX;
+      const endY = e.changedTouches[0].clientY;
+
+      const deltaX = endX - startX;
+      const deltaY = endY - startY;
+
+      // Only register swipe if horizontal movement is significantly greater than vertical
+      // and swipe distance exceeds threshold
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD_PX) {
+        e.preventDefault();
+        if (deltaX > 0) {
+          // Swiped right: go to previous month
+          calendarRef.current?.getApi()?.prev();
+        } else {
+          // Swiped left: go to next month
+          calendarRef.current?.getApi()?.next();
+        }
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Allow keyboard navigation (arrow keys) for better a11y
+      if (e.key === "ArrowLeft") {
+        calendarRef.current?.getApi()?.prev();
+      } else if (e.key === "ArrowRight") {
+        calendarRef.current?.getApi()?.next();
+      }
+    };
+
+    container.addEventListener("touchstart", handleTouchStart, { passive: true });
+    container.addEventListener("touchend", handleTouchEnd);
+    container.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchend", handleTouchEnd);
+      container.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const calendarTours = useMemo<CalendarTour[]>(
     () =>
@@ -334,66 +336,107 @@ export function CalendarView({
     [calendarTours, matchesTour],
   );
 
-  // Open on the first month that has a visible (filtered) tour, so that with
-  // "show past tours" disabled the calendar starts on the first upcoming event
-  // rather than the earliest historical one. Computed after visibleCalendarTours
-  // so the lazy initializer already reflects the active filters.
-  const [month, setMonth] = useState(() => detectInitialMonth(visibleCalendarTours, yearNum));
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const eventAnchorRef = useRef<HTMLElement | null>(null);
+  const touchStartRef = useRef({ x: 0, y: 0 });
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
 
-  const { minMonth, maxMonth } = useMemo(() => {
-    // Calculate navigation bounds from filtered tours - constrain navigation to months with matching events
+  // Calculate min/max month boundaries from visible tours (using timestamps for efficiency)
+  const { minDate, maxDate } = useMemo(() => {
     if (visibleCalendarTours.length === 0) {
-      // No tours match filter: allow full range navigation
-      return { minMonth: -Infinity, maxMonth: Infinity };
+      return { minDate: null, maxDate: null };
     }
-    return visibleCalendarTours.reduce(
-      (acc, ct) => {
-        const offset = toMonthOffset(ct.startDate.getFullYear(), ct.startDate.getMonth(), yearNum);
-        return { minMonth: Math.min(acc.minMonth, offset), maxMonth: Math.max(acc.maxMonth, offset) };
-      },
-      { minMonth: Infinity, maxMonth: -Infinity },
-    );
-  }, [visibleCalendarTours, yearNum]);
-
-  // Skip the initial run — useState already set the correct month via the lazy initializer.
-  // Auto-navigate to first month with events when tours data or filters change.
-  // Skip first render using a ref to avoid unnecessary navigation on mount.
-  const isFirstRender = useRef(true);
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
+    let minTime = visibleCalendarTours[0].startDate.getTime();
+    let maxTime = visibleCalendarTours[0].startDate.getTime();
+    for (const ct of visibleCalendarTours) {
+      const startTime = ct.startDate.getTime();
+      if (startTime < minTime) {
+        minTime = startTime;
+      }
+      const endDate = new Date(ct.startDate);
+      endDate.setDate(endDate.getDate() + ct.days - 1);
+      const endTime = endDate.getTime();
+      if (endTime > maxTime) {
+        maxTime = endTime;
+      }
     }
-    const newMonth = detectInitialMonth(visibleCalendarTours, yearNum);
-    // Valid use case: auto-navigate calendar to first month with filtered events
-    setMonth(newMonth);
-  }, [visibleCalendarTours, yearNum]);
+    return { minDate: new Date(minTime), maxDate: new Date(maxTime) };
+  }, [visibleCalendarTours]);
+  const events = useMemo(
+    () =>
+      visibleCalendarTours.map((ct, index) => {
+        const endDate = new Date(ct.startDate);
+        endDate.setDate(endDate.getDate() + Math.max(0, ct.days - 1));
 
-  const displayYear = yearNum + Math.floor(month / 12);
-  const displayMonth = ((month % 12) + 12) % 12;
+        const exclusiveEnd = new Date(endDate);
+        exclusiveEnd.setDate(exclusiveEnd.getDate() + 1);
 
-  const cells = useMemo(() => getCalendarDays(displayYear, displayMonth), [displayYear, displayMonth]);
-  const tourMap = useMemo(
-    () => buildTourMap(visibleCalendarTours, displayYear, displayMonth),
-    [visibleCalendarTours, displayYear, displayMonth],
+        return {
+          // Use detail_url for unique ID, fallback to combination with index for safety
+          id: ct.tour.detail_url ?? `tour-${ct.tour.start_date}-${index}`,
+          title: ct.tour.title,
+          start: formatLocalDate(ct.startDate),
+          end: formatLocalDate(exclusiveEnd),
+          extendedProps: {
+            tour: ct.tour,
+            days: ct.days,
+          },
+        };
+      }),
+    [visibleCalendarTours],
   );
 
-  const prevMonth = useCallback(() => setMonth((m) => Math.max(m - 1, minMonth)), [minMonth]);
-  const nextMonth = useCallback(() => setMonth((m) => Math.min(m + 1, maxMonth)), [maxMonth]);
+  // Detect initial month to show first upcoming tour
+  const initialDate = useMemo(() => {
+    if (visibleCalendarTours.length === 0) {
+      return new Date(yearNum, 0, 1);
+    }
+    const firstTour = visibleCalendarTours[0];
+    return firstTour.startDate;
+  }, [visibleCalendarTours, yearNum]);
 
-  const swipeStartX = useRef<number | null>(null);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    swipeStartX.current = e.touches[0].clientX;
+  const handleEventClick = useCallback((info: EventClickArg) => {
+    eventAnchorRef.current = info.el;
+    setSelectedEventId(info.event.id);
   }, []);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (swipeStartX.current === null) { return; }
-    const dx = e.changedTouches[0].clientX - swipeStartX.current;
-    swipeStartX.current = null;
-    if (dx > SWIPE_THRESHOLD) { prevMonth(); }
-    else if (dx < -SWIPE_THRESHOLD) { nextMonth(); }
-  }, [prevMonth, nextMonth]);
+  // Memoize eventContent to avoid recreating on every render
+  const renderEventContent = useCallback(
+    ({ event }: { event: typeof events[0] }) => {
+      const tour = event.extendedProps?.tour as Tour | undefined;
+      if (!tour) {
+        return null;
+      }
+
+      const dotColor = STATUS_COLORS[tour.status] ?? STATUS_COLORS.unknown;
+
+      return (
+        <button
+          type="button"
+          className="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight text-gray-700 bg-blue-50 hover:bg-blue-100 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400"
+          onClick={(e) => { e.stopPropagation(); eventAnchorRef.current = e.currentTarget as HTMLElement; setSelectedEventId(event.id); }}
+          aria-label={`Tour öffnen: ${tour.title}`}
+        >
+          <span aria-hidden="true" className={`shrink-0 inline-block h-2 w-2 rounded-full ${dotColor}`} />
+          <span className="truncate font-medium">{tour.title}</span>
+        </button>
+      );
+    },
+    [setSelectedEventId],
+  );
+
+  // Create event map for O(1) lookup instead of O(n) search
+  const eventMap = useMemo(
+    () => new Map(events.map((e) => [e.id, e])),
+    [events],
+  );
+
+  const selectedTour = useMemo(() => {
+    if (!selectedEventId) { return null; }
+    const event = eventMap.get(selectedEventId);
+    if (!event) { return null; }
+    return event.extendedProps.tour as Tour;
+  }, [selectedEventId, eventMap]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -433,94 +476,36 @@ export function CalendarView({
         onShowPastToursChange={selectedFilters.setShowPastTours}
       />
 
-      {/* Month navigation */}
-      <nav aria-label="Monat wählen" className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
-        <button
-          type="button"
-          onClick={prevMonth}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowLeft") { e.preventDefault(); prevMonth(); }
+      <div ref={calendarContainerRef} className="relative p-4 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded" tabIndex={0} aria-label="Tourkalender, navigierbar mit Pfeil-Tasten oder Wischgeste">
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[dayGridPlugin]}
+          initialView="dayGridMonth"
+          initialDate={initialDate}
+          events={events}
+          locale={deLocale}
+          eventContent={renderEventContent}
+          height="auto"
+          contentHeight="auto"
+          eventClick={handleEventClick}
+          fixedWeekCount={false}
+          validRange={{
+            start: minDate ? new Date(minDate.getFullYear(), minDate.getMonth(), 1) : undefined,
+            end: maxDate ? new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0) : undefined,
           }}
-          disabled={month <= minMonth}
-          aria-label={month <= minMonth ? "Keine weiteren Touren in vorherigen Monaten" : `Zu ${MONTH_NAMES[((month - 1) % 12 + 12) % 12]}`}
-          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-        >
-          <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <span aria-live="polite" aria-atomic="true" className="text-sm font-semibold text-gray-800">
-          {MONTH_NAMES[displayMonth]} {displayYear}
-        </span>
-        <button
-          type="button"
-          onClick={nextMonth}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowRight") { e.preventDefault(); nextMonth(); }
-          }}
-          disabled={month >= maxMonth}
-          aria-label={month >= maxMonth ? "Keine weiteren Touren in künftigen Monaten" : `Zu ${MONTH_NAMES[((month + 1) % 12 + 12) % 12]}`}
-          className="p-1 rounded hover:bg-gray-100 text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-default focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-        >
-          <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </nav>
-      <div className="p-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        <div role="grid" aria-label={`${MONTH_NAMES[displayMonth]} ${displayYear} Kalender`} className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
-          {/* Header row */}
-          <div role="row" className="contents">
-            {WEEKDAYS.map((d, idx) => (
-              <div
-                key={d}
-                role="columnheader"
-                aria-label={WEEKDAY_FULL_NAMES[idx]}
-                className="bg-gray-50 text-center text-xs font-medium text-gray-500 py-2"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Data rows */}
-          {Array.from({ length: Math.ceil(cells.length / 7) }, (_, rowIdx) =>
-            cells.slice(rowIdx * 7, rowIdx * 7 + 7)
-          ).map((row, rowIdx) => (
-            <div key={`row-${yearNum}-${month}-${rowIdx}`} role="row" className="contents">
-              {row.map((day, colIdx) => {
-                const cellIdx = rowIdx * 7 + colIdx;
-                const key = day ? dateKey(displayYear, displayMonth, day) : `empty-${cellIdx}`;
-                const toursForDay = day ? tourMap.get(key) ?? [] : [];
-                return (
-                  <div
-                    key={key}
-                    role="gridcell"
-                    aria-hidden={day === null ? "true" : undefined}
-                    className={`min-h-22.5 p-1 ${day ? "bg-white" : "bg-gray-50"}`}
-                  >
-                    {day && (
-                      <>
-                        <time
-                          dateTime={`${displayYear}-${String(displayMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`}
-                          className="text-xs text-gray-500 mb-0.5 block"
-                        >
-                          {day}
-                        </time>
-                        <div className="space-y-0.5 overflow-y-auto max-h-17.5">
-                          {toursForDay.map((ct) => (
-                            <TourPill key={ct.tour.detail_url ?? `${ct.tour.title}-${ct.tour.start_date}`} ct={ct} />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+          displayEventTime={false}
+          displayEventEnd={false}
+          eventDisplay="block"
+        />
       </div>
+
+      {selectedTour && selectedEventId && (
+        <TourTooltip
+          tour={selectedTour}
+          anchorRef={eventAnchorRef}
+          onClose={() => setSelectedEventId(null)}
+        />
+      )}
     </div>
   );
 }

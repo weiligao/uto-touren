@@ -20,7 +20,7 @@ const CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} ${VERCEL_HOSTS}${!isProduction ? ` ${VERCEL_PREVIEW_HOSTS}` : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "font-src 'self'",
+  "font-src 'self' data:",
   "img-src 'self' data: blob:",
   `connect-src 'self' ${VERCEL_HOSTS}${!isProduction ? ` ${VERCEL_PREVIEW_HOSTS}` : ""}`,
   `frame-src ${!isProduction ? "https://vercel.live" : "'none'"}`,

@@ -1,13 +1,19 @@
 "use client";
 
-import { CalendarView } from "@/app/components/CalendarView";
 import { TableView } from "@/app/components/TableView";
 import type { SelectedFilters } from "@/app/components/useFilterState";
 import { YEARS } from "@/lib/constants";
 import type { Tour, TourStatus } from "@/lib/types";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+
+// Dynamically import CalendarView with SSR disabled to avoid hydration issues with FullCalendar
+const CalendarView = dynamic(() => import("@/app/components/CalendarView").then((mod) => ({ default: mod.CalendarView })), {
+  ssr: false,
+  loading: () => <div className="p-8 text-center text-gray-500">Kalender wird geladen...</div>,
+});
 
 /** Parse a comma-separated URL param into a Set of strings. */
 function parseStringSet(v: string | null): Set<string> {
@@ -138,7 +144,7 @@ export default function HomeClient({ initialTours }: HomeClientProps) {
         .map((t) => parseInt(t.start_date.slice(0, 4), 10))
         .filter((year) => Number.isFinite(year));
       if (parsedYears.length > 0) {
-        const minYear = Math.min(...parsedYears);
+        const minYear = parsedYears.reduce((a, b) => a < b ? a : b);
         if (Number.isFinite(minYear)) { return String(minYear); }
       }
     }
