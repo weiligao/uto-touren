@@ -38,7 +38,9 @@ const DATE_GROUP_FORMAT = new Intl.DateTimeFormat("de-CH", {
 });
 
 function formatGroupDate(dateKey: string): string {
-  if (!dateKey) return "Datum unbekannt";
+  if (!dateKey) {
+    return "Datum unbekannt";
+  }
   const [y, m, d] = dateKey.split("-").map(Number);
   return DATE_GROUP_FORMAT.format(new Date(y, m - 1, d));
 }
@@ -50,12 +52,25 @@ function groupByDate(items: Array<{ tour: Tour; i: number }>): DateGroup[] {
     if (!map.has(key)) {
       map.set(key, { startKey: key, items: [] });
     }
-    map.get(key)!.items.push(item);
+    const group = map.get(key);
+    if (group) {
+      group.items.push(item);
+    }
   }
   return Array.from(map.values()).sort((a, b) => {
-    if (!a.startKey) return 1;
-    if (!b.startKey) return -1;
-    return a.startKey < b.startKey ? -1 : a.startKey > b.startKey ? 1 : 0;
+    if (!a.startKey) {
+      return 1;
+    }
+    if (!b.startKey) {
+      return -1;
+    }
+    if (a.startKey < b.startKey) {
+      return -1;
+    }
+    if (a.startKey > b.startKey) {
+      return 1;
+    }
+    return 0;
   });
 }
 
