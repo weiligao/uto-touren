@@ -1,0 +1,138 @@
+/**
+ * FullCalendar Theme Customization
+ * 
+ * Strategy (per https://fullcalendar.io/docs/css-customization):
+ * 1. Use built-in FullCalendar options in CalendarView.tsx as first choice
+ * 2. Use CSS Custom Properties (variables)
+ * 3. Override properties only as last resort (brittle, version-dependent)
+ * 
+ * CSS Variables approach is maintainable and survives FullCalendar updates.
+ * !important used only where FullCalendar's specificity requires it.
+ */
+
+.fc {
+  /* FullCalendar CSS Variables (https://fullcalendar.io/docs/css-customization) */
+  /* Scoped to .fc to avoid polluting global :root */
+
+  /* Borders */
+  --fc-border-color: rgb(229, 231, 235);
+
+  /* Button styling via CSS variables */
+  --fc-button-text-color: rgb(37, 99, 235);
+  --fc-button-bg-color: rgb(239, 246, 255);
+  --fc-button-border-color: rgb(229, 231, 235);
+  --fc-button-hover-bg-color: rgb(219, 234, 254);
+  --fc-button-active-bg-color: rgb(219, 234, 254);
+  --fc-button-font-size: 0.75rem;
+  --fc-button-padding: 0.375rem 0.75rem;
+
+  /* Event styling */
+  --fc-daygrid-event-dot-width: 6px;
+  --fc-col-header-cell-padding: 0.5rem;
+  --fc-event-border-radius: 0.375rem;
+
+  /* Header styling */
+  --fc-col-header-text-color: rgb(55, 65, 81);
+  --fc-col-header-bg-color: rgb(249, 250, 251);
+
+  /* Day styling */
+  --fc-daygrid-day-number-font-size: 0.75rem;
+  --fc-daygrid-day-number-text-color: rgb(75, 85, 99);
+  --fc-daygrid-day-other-bg-color: rgb(249, 250, 251);
+  --fc-daygrid-day-hover-bg-color: rgb(240, 249, 255);
+
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-size: 0.875rem;
+}
+
+.fc-button-group {
+  display: inline-flex;
+  gap: 0;
+  margin-right: 0.5rem;
+}
+
+/* Rule 3 overrides: FullCalendar's specificity on .fc-button requires !important.
+ * font-size and padding are also set via --fc-button-* variables above (rule 2),
+ * but FullCalendar does not apply those variables to all properties, so overrides are needed. */
+.fc-button {
+  font-weight: 500 !important;
+  text-transform: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border-right: 1px solid var(--fc-button-border-color) !important;
+}
+
+.fc-button.fc-prev-button {
+  border-radius: 0.375rem 0 0 0.375rem !important;
+}
+
+.fc-button.fc-next-button {
+  border-radius: 0 0.375rem 0.375rem 0 !important;
+  border-right: 1px solid var(--fc-button-border-color) !important;
+}
+
+.fc-button.fc-today-button {
+  margin-left: 0.5rem !important;
+  border-radius: 0.375rem !important;
+  border-right: none !important;
+}
+
+.fc-button-primary {
+  color: var(--fc-button-text-color) !important;
+  background-color: var(--fc-button-bg-color) !important;
+  border-color: var(--fc-button-border-color) !important;
+}
+
+.fc-button-primary:hover {
+  background-color: var(--fc-button-hover-bg-color) !important;
+}
+
+.fc-button-primary.fc-button-active {
+  background-color: var(--fc-button-active-bg-color) !important;
+}
+
+/* Rule 3 override: replace FullCalendar's default grey focus ring
+ * (.fc-button:focus sets outline: 5px auto -webkit-focus-ring-color and
+ *  .fc-button-primary:focus sets box-shadow: 0 0 0 .2rem rgba(76,91,106,.5))
+ * with the app-standard blue focus ring matching Tailwind focus:ring-2 focus:ring-blue-500. */
+.fc-button-primary:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgb(59, 130, 246) !important;
+}
+
+.fc-col-header {
+  background-color: rgb(249, 250, 251);
+}
+
+.fc-col-header-cell {
+  color: rgb(55, 65, 81);
+  font-weight: 600;
+  font-size: 0.75rem;
+  border-color: rgb(229, 231, 235);
+}
+
+.fc-daygrid-day {
+  border-color: rgb(229, 231, 235);
+}
+
+.fc-daygrid-day.fc-day-other {
+  background-color: rgb(249, 250, 251);
+  opacity: 0.5;
+}
+
+.fc-daygrid-day-number {
+  font-size: 0.75rem;
+  color: rgb(75, 85, 99);
+}
+
+.fc-daygrid-day-bg:hover {
+  background-color: rgb(240, 249, 255) !important;
+}
+
+/* Rule 3 override: FullCalendar sets border/background on .fc-daygrid-event by default.
+ * CSS variables don't expose these properties, so !important overrides are required
+ * to render custom event content (buttons) without the default event chrome. */
+.fc-daygrid-event {
+  border: none !important;
+  background: none !important;
+}
