@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.0](https://github.com/weiligao/uto-touren/compare/v1.20.0...v1.21.0) (2026-06-05)
+
+
+### Features
+
+* calendar improvements ([#116](https://github.com/weiligao/uto-touren/issues/116)) ([8feac96](https://github.com/weiligao/uto-touren/commit/8feac96be6014af83b8742bc394a87db03c2794c))
+
 ## [1.20.0](https://github.com/weiligao/uto-touren/compare/v1.19.0...v1.20.0) (2026-06-05)
 
 
