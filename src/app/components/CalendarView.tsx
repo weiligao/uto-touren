@@ -3,10 +3,14 @@
 import { EVENT_TYPE_KURS, EVENT_TYPE_TOUR, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import type { Tour } from "@/lib/types";
 import { formatDuration, formatGroups, isKurs, parseDateString, unknownIfEmpty } from "@/lib/utils";
-import type { EventClickArg } from "@fullcalendar/core";
-import deLocale from "@fullcalendar/core/locales/de";
-import dayGridPlugin from "@fullcalendar/daygrid";
+import type { CalendarRef, EventClickInfo, EventDisplayInfo } from "@fullcalendar/react";
 import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/react/daygrid";
+import deLocale from "@fullcalendar/react/locales/de";
+import "@fullcalendar/react/skeleton.css";
+import classicThemePlugin from "@fullcalendar/react/themes/classic";
+import "@fullcalendar/react/themes/classic/palette.css";
+import "@fullcalendar/react/themes/classic/theme.css";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import "./calendar-theme.css";
 import { CalendarExportButtons } from "./IcsButton";
@@ -222,7 +226,7 @@ export function CalendarView({
   selectedFilters: SelectedFilters;
 }) {
   const yearNum = parseInt(year, 10);
-  const calendarRef = useRef<FullCalendar>(null);
+  const calendarRef = useRef<CalendarRef>(null);
 
   // Handle swipe gestures and keyboard navigation for month navigation
   useEffect(() => {
@@ -395,14 +399,14 @@ export function CalendarView({
     return firstTour.startDate;
   }, [visibleCalendarTours, yearNum]);
 
-  const handleEventClick = useCallback((info: EventClickArg) => {
+  const handleEventClick = useCallback((info: EventClickInfo) => {
     eventAnchorRef.current = info.el;
     setSelectedEventId(info.event.id);
   }, []);
 
   // Memoize eventContent to avoid recreating on every render
   const renderEventContent = useCallback(
-    ({ event }: { event: typeof events[0] }) => {
+    ({ event }: EventDisplayInfo) => {
       const tour = event.extendedProps?.tour as Tour | undefined;
       if (!tour) {
         return null;
@@ -477,11 +481,17 @@ export function CalendarView({
       />
       <hr className="border-t-2 border-gray-200 m-0" />
 
-      <div ref={calendarContainerRef} className="relative p-4 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded" tabIndex={0} aria-label="Tourkalender, navigierbar mit Pfeil-Tasten oder Wischgeste">
+      <div ref={calendarContainerRef} className="uto-calendar relative p-4 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded" tabIndex={0} aria-label="Tourkalender, navigierbar mit Pfeil-Tasten oder Wischgeste">
         <FullCalendar
           ref={calendarRef}
-          plugins={[dayGridPlugin]}
+          plugins={[classicThemePlugin, dayGridPlugin]}
           initialView="dayGridMonth"
+          // v7 hides the toolbar by default; restore the v6 default layout
+          headerToolbar={{ start: "title", end: "today prev,next" }}
+          dayHeaderClass="bg-gray-50 text-xs font-semibold text-gray-700"
+          dayCellClass={(info) => (info.isOther ? "bg-gray-50 opacity-50" : "hover:bg-sky-50")}
+          dayCellTopInnerClass="text-xs text-gray-600"
+          buttonClass="text-xs font-medium"
           initialDate={initialDate}
           events={events}
           locale={deLocale}
