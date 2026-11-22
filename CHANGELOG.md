@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.2](https://github.com/weiligao/uto-touren/compare/v1.22.1...v1.22.2) (2026-11-22)
+
+
+### Bug Fixes
+
+* **deps:** upgrade FullCalendar to v7.1.5 ([#168](https://github.com/weiligao/uto-touren/issues/168)) ([443b58e](https://github.com/weiligao/uto-touren/commit/443b58e313ca95babcd0fdd90a4020650a5458b5))
+
 ## [1.22.1](https://github.com/weiligao/uto-touren/compare/v1.22.0...v1.22.1) (2026-06-19)
 
 
