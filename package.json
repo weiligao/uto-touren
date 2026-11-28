@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@fullcalendar/react": "^7.1.5",
-    "@upstash/redis": "^1.38.0",
+    "@upstash/redis": "^1.41.1",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.1.0",
     "cheerio": "^1.2.0",
